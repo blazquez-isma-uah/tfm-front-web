@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import {
-    getInstrumentsPage,
+    searchInstrumentsPage,
     createInstrument,
     deleteInstrument,
     updateInstrument,
@@ -30,6 +30,7 @@ function InstrumentsPage() {
     // Valores que realmente se usan en la llamada (solo actualizados al pulsar Buscar)
     const [searchName, setSearchName] = useState('')
     const [searchVoice, setSearchVoice] = useState('')
+    // Ordenación
     const [sortField, setSortField] = useState<'instrumentName' | 'voice' | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
@@ -56,7 +57,7 @@ function InstrumentsPage() {
             try {
                 const sort = sortField != null ? [`${sortField},${sortDirection}`] : undefined
 
-                const data = await getInstrumentsPage(
+                const data = await searchInstrumentsPage(
                     {
                         page,
                         size,
@@ -82,7 +83,7 @@ function InstrumentsPage() {
     if (!isAdmin) {
         return (
             <div>
-                <h1>Instrumentos</h1>
+                <h1>Gestión de Instrumentos</h1>
                 <p>No tienes permisos para ver esta sección.</p>
             </div>
         )
@@ -231,7 +232,7 @@ function InstrumentsPage() {
 
     return (
         <div>
-            <h1>Instrumentos</h1>
+            <h1>Gestión de Instrumentos</h1>
 
             {/* Toolbar con formulario de búsqueda + botón Nuevo */}
             <form

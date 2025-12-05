@@ -7,7 +7,7 @@ export interface InstrumentSearchParams extends PageableRequest {
     voice?: string
 }
 
-export async function getInstrumentsPage(
+export async function searchInstrumentsPage(
     params: InstrumentSearchParams,
     token?: string,
 ): Promise<PaginatedResponseInstrumentDTO> {

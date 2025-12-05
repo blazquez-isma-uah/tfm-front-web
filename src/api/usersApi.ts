@@ -1,5 +1,5 @@
 import { api, authHeaders } from './httpClient'
-import type { PaginatedResponseUserDTO } from '../types/users'
+import type { PaginatedResponseUserDTO, UserDTO } from '../types/users'
 import type { PageableRequest } from '../types/pagination'
 
 export interface UserSearchParams extends PageableRequest {
@@ -16,7 +16,7 @@ export async function searchUsersPage(
     params: UserSearchParams,
     token?: string,
 ): Promise<PaginatedResponseUserDTO> {
-    const { page = 0, size = 10, sort, username, firstName, lastName, secondLastName, 
+    const { page = 0, size = 10, sort, username, firstName, lastName, secondLastName,
         email, active, roleName } = params
 
     const queryParams: Record<string, any> = {
@@ -42,4 +42,90 @@ export async function searchUsersPage(
     })
 
     return response.data
+}
+
+// GET /api/users/{userId}
+export async function getUserById(userId: number, token?: string): Promise<UserDTO> {
+    const response = await api.get<UserDTO>(`/api/users/${userId}`, {
+        headers: authHeaders(token),
+    })
+    return response.data
+}
+
+// PUT /api/users/{userId}
+export interface UserUpdatePayload {
+    email: string
+    firstName: string
+    lastName: string
+    secondLastName?: string
+    birthDate?: string
+    bandJoinDate?: string
+    phone?: string
+    notes?: string
+    profilePictureUrl?: string
+}
+
+export async function updateUser(
+    userId: number,
+    payload: UserUpdatePayload,
+    version: number,
+    token?: string,
+): Promise<UserDTO> {
+    const response = await api.put<UserDTO>(`/api/users/${userId}`, payload, {
+        headers: {
+            ...authHeaders(token),
+            'If-Match': `W/"${version}"`,
+        },
+    })
+    return response.data
+}
+
+// DELETE /api/users/{userId}
+export async function deleteUser(
+    userId: number,
+    version: number,
+    token?: string,
+): Promise<void> {
+    await api.delete(`/api/users/${userId}`, {
+        headers: {
+            ...authHeaders(token),
+            'If-Match': `W/"${version}"`,
+        },
+    })
+}
+
+// PUT /api/users/{userId}/enable
+export async function enableUser(
+    userId: number,
+    version: number,
+    token?: string,
+): Promise<void> {
+    await api.put(
+        `/api/users/${userId}/enable`,
+        {},
+        {
+            headers: {
+                ...authHeaders(token),
+                'If-Match': `W/"${version}"`,
+            },
+        },
+    )
+}
+
+// PUT /api/users/{userId}/disable
+export async function disableUser(
+    userId: number,
+    version: number,
+    token?: string,
+): Promise<void> {
+    await api.put(
+        `/api/users/${userId}/disable`,
+        {},
+        {
+            headers: {
+                ...authHeaders(token),
+                'If-Match': `W/"${version}"`,
+            },
+        },
+    )
 }

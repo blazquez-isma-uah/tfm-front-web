@@ -7,8 +7,12 @@ import {
     updateInstrument,
 } from '../../api/instrumentsApi'
 import type { InstrumentDTO, InstrumentRequestDTO } from '../../types/instruments'
+import { PaginationBar } from '../../components/PaginationBar'
+import { DataTable, type SortState } from '../../components/DataTable'
 
 type ViewMode = 'LIST' | 'CREATE' | 'EDIT'
+
+type SortableField = 'instrumentName' | 'voice'
 
 function InstrumentsPage() {
     const { token, hasRole } = useAuth()
@@ -21,8 +25,10 @@ function InstrumentsPage() {
     const [error, setError] = useState<string | null>(null)
 
     const [page, setPage] = useState(0)
-    const [size] = useState(10)
+    const [size, setSize] = useState(10)
     const [totalPages, setTotalPages] = useState(0)
+    const [totalElements, setTotalElements] = useState(0)
+
 
     // Valores que ve el usuario en los inputs de búsqueda
     const [filterName, setFilterName] = useState('')
@@ -31,8 +37,48 @@ function InstrumentsPage() {
     const [searchName, setSearchName] = useState('')
     const [searchVoice, setSearchVoice] = useState('')
     // Ordenación
-    const [sortField, setSortField] = useState<'instrumentName' | 'voice' | null>(null)
+    const [sortField, setSortField] = useState<SortableField | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+    const sortState: SortState<SortableField> = {
+        field: sortField,
+        direction: sortDirection,
+    }
+
+    // columnas
+    const instrumentColumns = [
+        {
+            key: 'instrumentName',
+            header: 'Nombre',
+            sortable: true,
+            sortField: 'instrumentName' as SortableField,
+        },
+        {
+            key: 'voice',
+            header: 'Voz',
+            sortable: true,
+            sortField: 'voice' as SortableField,
+        },
+        {
+            key: 'actions',
+            header: 'Acciones',
+            sortable: false,
+            width: 200,
+            render: (i: InstrumentDTO) => (
+                <>
+                    <button
+                        type="button"
+                        style={{ marginRight: '0.3rem' }}
+                        onClick={() => handleOpenEdit(i)}
+                    >
+                        Editar
+                    </button>
+                    <button type="button" onClick={() => handleDelete(i)}>
+                        Eliminar
+                    </button>
+                </>
+            ),
+        },
+    ]
 
     // Form "Nuevo"
     const [newInstrument, setNewInstrument] = useState<InstrumentRequestDTO>({
@@ -69,6 +115,7 @@ function InstrumentsPage() {
                 )
                 setInstruments(data.content ?? [])
                 setTotalPages(data.totalPages ?? 1)
+                setTotalElements(data.totalElements ?? 0)
             } catch (e: any) {
                 console.error('Error loading instruments', e)
                 setError('Error cargando instrumentos')
@@ -227,6 +274,15 @@ function InstrumentsPage() {
         }
     }
 
+    const handlePageChange = (newPage: number) => {
+        setPage(newPage)
+    }
+
+    const handlePageSizeChange = (newSize: number) => {
+        // al cambiar tamaño de página, lo normal es ir a la primera
+        setSize(newSize)
+        setPage(0)
+    }
 
     // ---- render ----
 
@@ -274,98 +330,21 @@ function InstrumentsPage() {
             {/* LISTA */}
             {mode === 'LIST' && !loading && !error && (
                 <>
-                    <table
-                        style={{
-                            width: '100%',
-                            borderCollapse: 'collapse',
-                            background: '#ffffff',
-                            borderRadius: '0.5rem',
-                            overflow: 'hidden',
-                        }}
-                    >
-                        {/* Cabeceras clicables para ordenar */}
-                        <thead style={{ background: '#e5e7eb' }}>
-                            <tr>
-                                <th
-                                    style={{
-                                        padding: '0.5rem',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                    }}
-                                    onClick={() => handleSort('instrumentName')}
-                                >
-                                    Nombre{' '}
-                                    {sortField === 'instrumentName' &&
-                                        (sortDirection === 'asc' ? '▲' : '▼')}
-                                </th>
-                                <th
-                                    style={{
-                                        padding: '0.5rem',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                    }}
-                                    onClick={() => handleSort('voice')}
-                                >
-                                    Voz{' '}
-                                    {sortField === 'voice' && (sortDirection === 'asc' ? '▲' : '▼')}
-                                </th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left', width: '140px' }}>
-                                    Acciones
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {instruments.length === 0 && (
-                                <tr>
-                                    <td colSpan={3} style={{ padding: '0.75rem' }}>
-                                        No hay instrumentos para los filtros actuales.
-                                    </td>
-                                </tr>
-                            )}
-                            {instruments.map((i) => (
-                                <tr key={i.id}>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        {i.instrumentName}
-                                    </td>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        {i.voice}
-                                    </td>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        <button
-                                            type="button"
-                                            style={{ marginRight: '0.3rem' }}
-                                            onClick={() => handleOpenEdit(i)}
-                                        >
-                                            Editar
-                                        </button>
-                                        <button type="button" onClick={() => handleDelete(i)}>
-                                            Borrar
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-
-                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                        <button
-                            disabled={page === 0}
-                            onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        >
-                            Anterior
-                        </button>
-                        <span style={{ fontSize: '0.9rem' }}>
-                            Página {page + 1} de {totalPages || 1}
-                        </span>
-                        <button
-                            disabled={totalPages === 0 || page >= totalPages - 1}
-                            onClick={() => setPage((p) => p + 1)}
-                        >
-                            Siguiente
-                        </button>
-                    </div>
+                    <DataTable<InstrumentDTO, SortableField>
+                        columns={instrumentColumns}
+                        data={instruments}
+                        sortState={sortState}
+                        onSortChange={handleSort}
+                    />
+                    <PaginationBar
+                        page={page}
+                        totalPages={totalPages}
+                        pageSize={size}
+                        currentCount={instruments.length}
+                        totalElements={totalElements}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
                 </>
             )}
 

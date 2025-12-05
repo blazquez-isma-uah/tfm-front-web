@@ -4,6 +4,8 @@ import { searchUsersPage } from '../../api/usersApi'
 import { getAllRoles } from '../../api/rolesApi'
 import type { UserDTO } from '../../types/users'
 import type { KeycloakRoleResponse } from '../../types/roles'
+import { PaginationBar } from '../../components/PaginationBar'
+import { DataTable, type SortState } from '../../components/DataTable'
 
 type ViewMode = 'LIST' // en usuarios, de momento solo lista; los formularios vendrán luego
 
@@ -16,8 +18,9 @@ function UsersPage() {
     const [error, setError] = useState<string | null>(null)
 
     const [page, setPage] = useState(0)
-    const [size] = useState(10)
+    const [size, setSize] = useState(10)
     const [totalPages, setTotalPages] = useState(0)
+    const [totalElements, setTotalElements] = useState(0)
 
     const isAdmin = hasRole('ADMIN')
     const [mode] = useState<ViewMode>('LIST')
@@ -46,6 +49,54 @@ function UsersPage() {
     // roles disponibles
     const [roles, setRoles] = useState<KeycloakRoleResponse[]>([])
     const [rolesLoading, setRolesLoading] = useState(false)
+
+    const sortState: SortState<SortableField> = {
+        field: sortField,
+        direction: sortDirection,
+    }
+
+    // columnas
+    const userColumns = [
+        {
+            key: 'username',
+            header: 'Username',
+            sortable: true,
+            sortField: 'username' as SortableField,
+        },
+        {
+            key: 'firstName',
+            header: 'Nombre',
+            sortable: true,
+            sortField: 'firstName' as SortableField,
+        },
+        {
+            key: 'lastName',
+            header: 'Apellidos',
+            sortable: true,
+            sortField: 'lastName' as SortableField,
+            render: (u: UserDTO) =>
+                [u.lastName, u.secondLastName].filter(Boolean).join(' '),
+        },
+        {
+            key: 'email',
+            header: 'Email',
+            sortable: true,
+            sortField: 'email' as SortableField,
+        },
+        {
+            key: 'active',
+            header: 'Activo',
+            sortable: true,
+            sortField: 'active' as SortableField,
+            render: (u: UserDTO) => (u.active ? 'Sí' : 'No'),
+        },
+        {
+            key: 'roles',
+            header: 'Roles',
+            sortable: false,
+            render: (u: UserDTO) => (u.roles ?? []).join(', '),
+        },
+    ]
 
     // Cargar roles una vez al montar la página (por sesión de vista)
     useEffect(() => {
@@ -91,6 +142,7 @@ function UsersPage() {
                 )
                 setUsers(data.content ?? [])
                 setTotalPages(data.totalPages ?? 1)
+                setTotalElements(data.totalElements ?? 0)
             } catch (e: any) {
                 console.error('Error en getUsersPage (detallado):', e)
                 console.error('Response:', e?.response)
@@ -101,7 +153,7 @@ function UsersPage() {
         }
 
         load()
-    }, [token, isAdmin, page, size, searchUsername, searchFirstName, searchLastName, searchSecondLastName, 
+    }, [token, isAdmin, page, size, searchUsername, searchFirstName, searchLastName, searchSecondLastName,
         searchEmail, searchActive, searchRoleName, sortField, sortDirection])
 
     if (!isAdmin) {
@@ -148,8 +200,12 @@ function UsersPage() {
         }
     }
 
-    const renderSortMarker = (field: SortableField) =>
-        sortField === field ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : ''
+    const handlePageChange = (newPage: number) => setPage(newPage)
+    const handlePageSizeChange = (newSize: number) => {
+        setSize(newSize)
+        setPage(0)
+    }
+
 
     // ----- render -----
 
@@ -228,11 +284,11 @@ function UsersPage() {
 
                 <div
                     style={
-{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        alignItems: 'center',
-                    }}
+                        {
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
+                        }}
                 >
                     <button type="submit">Buscar</button>
                 </div>
@@ -243,126 +299,21 @@ function UsersPage() {
 
             {mode === 'LIST' && !loading && !error && (
                 <>
-                    <table
-                        style={{
-                            width: '100%',
-                            borderCollapse: 'collapse',
-                            marginTop: '1rem',
-                            background: '#ffffff',
-                            borderRadius: '0.5rem',
-                            overflow: 'hidden',
-                        }}
-                    >
-                        <thead style={{ background: '#e5e7eb' }}>
-                            <tr>
-                                <th
-                                    style={{
-                                        padding: '0.5rem',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                    }}
-                                    onClick={() => handleSort('username')}
-                                >
-                                    Username{renderSortMarker('username')}
-                                </th>
-                                <th
-                                    style={{
-                                        padding: '0.5rem',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                    }}
-                                    onClick={() => handleSort('firstName')}
-                                >
-                                    Nombre{renderSortMarker('firstName')}
-                                </th>
-                                <th
-                                    style={{
-                                        padding: '0.5rem',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                    }}
-                                    onClick={() => handleSort('lastName')}
-                                >
-                                    Apellidos{renderSortMarker('lastName')}
-                                </th>
-                                <th
-                                    style={{
-                                        padding: '0.5rem',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                    }}
-                                    onClick={() => handleSort('email')}
-                                >
-                                    Email{renderSortMarker('email')}
-                                </th>
-                                <th
-                                    style={{
-                                        padding: '0.5rem',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                    }}
-                                    onClick={() => handleSort('active')}
-                                >
-                                    Activo{renderSortMarker('active')}
-                                </th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Roles</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} style={{ padding: '0.75rem' }}>
-                                        No hay usuarios en esta página.
-                                    </td>
-                                </tr>
-                            )}
-                            {users.map((u) => (
-                                <tr key={u.id}>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        {u.username}
-                                    </td>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        {u.firstName}
-                                    </td>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        {[u.lastName, u.secondLastName].filter(Boolean).join(' ')}
-                                    </td>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        {u.email}
-                                    </td>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        {u.active ? 'Sí' : 'No'}
-                                    </td>
-                                    <td style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}>
-                                        {(u.roles ?? []).join(', ')}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-
-                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                        <button
-                            disabled={page === 0}
-                            onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        >
-                            Anterior
-                        </button>
-                        <span style={{ fontSize: '0.9rem' }}>
-                            Página {page + 1} de {totalPages || 1}
-                        </span>
-                        <button
-                            disabled={totalPages === 0 || page >= totalPages - 1}
-                            onClick={() => setPage((p) => p + 1)}
-                        >
-                            Siguiente
-                        </button>
-                    </div>
+                    <DataTable<UserDTO, SortableField>
+                        columns={userColumns}
+                        data={users}
+                        sortState={sortState}
+                        onSortChange={handleSort}
+                    />
+                    <PaginationBar
+                        page={page}
+                        totalPages={totalPages}
+                        pageSize={size}
+                        currentCount={users.length}
+                        totalElements={totalElements}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
                 </>
             )}
         </div>

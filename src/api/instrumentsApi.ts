@@ -21,7 +21,7 @@ export async function getInstrumentsPage(
     if (instrumentName) queryParams.instrumentName = instrumentName
     if (voice) queryParams.voice = voice
     if (sort && sort.length > 0) {
-        queryParams.sort = sort
+        queryParams.sort = sort.length === 1 ? sort[0] : sort
     }
 
     // uso /api/instruments/search aunque los filtros sean opcionales

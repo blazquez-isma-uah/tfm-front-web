@@ -4,11 +4,10 @@ import {
     getInstrumentsPage,
     createInstrument,
     deleteInstrument,
-    updateInstrument
+    updateInstrument,
 } from '../../api/instrumentsApi'
 import type { InstrumentDTO, InstrumentRequestDTO } from '../../types/instruments'
 
-// View mode para mostrar solo la lista, el formulario de creación o el de edición
 type ViewMode = 'LIST' | 'CREATE' | 'EDIT'
 
 function InstrumentsPage() {
@@ -25,22 +24,29 @@ function InstrumentsPage() {
     const [size] = useState(10)
     const [totalPages, setTotalPages] = useState(0)
 
+    // Valores que ve el usuario en los inputs de búsqueda
     const [filterName, setFilterName] = useState('')
     const [filterVoice, setFilterVoice] = useState('')
+    // Valores que realmente se usan en la llamada (solo actualizados al pulsar Buscar)
+    const [searchName, setSearchName] = useState('')
+    const [searchVoice, setSearchVoice] = useState('')
+    const [sortField, setSortField] = useState<'instrumentName' | 'voice' | null>(null)
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
-    // Formulario de creación
-    const [showCreate, setShowCreate] = useState(false)
+    // Form "Nuevo"
     const [newInstrument, setNewInstrument] = useState<InstrumentRequestDTO>({
         instrumentName: '',
         voice: '',
     })
-    // Formulario de edición
+
+    // Form "Editar"
     const [editing, setEditing] = useState<InstrumentDTO | null>(null)
     const [editData, setEditData] = useState<InstrumentRequestDTO>({
         instrumentName: '',
         voice: '',
     })
 
+    // Carga de la lista (solo depende de filtros efectivos + paginación)
     useEffect(() => {
         if (!token || !isAdmin) return
 
@@ -48,12 +54,15 @@ function InstrumentsPage() {
             setLoading(true)
             setError(null)
             try {
+                const sort = sortField != null ? [`${sortField},${sortDirection}`] : undefined
+
                 const data = await getInstrumentsPage(
                     {
                         page,
                         size,
-                        instrumentName: filterName || undefined,
-                        voice: filterVoice || undefined,
+                        instrumentName: searchName || undefined,
+                        voice: searchVoice || undefined,
+                        sort,
                     },
                     token,
                 )
@@ -68,7 +77,7 @@ function InstrumentsPage() {
         }
 
         load()
-    }, [token, isAdmin, page, size, filterName, filterVoice])
+    }, [token, isAdmin, page, size, searchName, searchVoice, sortField, sortDirection])
 
     if (!isAdmin) {
         return (
@@ -79,7 +88,8 @@ function InstrumentsPage() {
         )
     }
 
-    // ---- acciones de UI ----
+    // ---- helpers de UI ----
+
     const resetForms = () => {
         setNewInstrument({ instrumentName: '', voice: '' })
         setEditing(null)
@@ -91,15 +101,21 @@ function InstrumentsPage() {
         resetForms()
     }
 
-
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault()
+        // Cerramos cualquier formulario y mostramos lista
         switchToList()
+        // Reiniciamos paginación
         setPage(0)
-        // El efecto ya recargará con los nuevos filtros
+        // Aplicamos filtros efectivos
+        setSearchName(filterName.trim())
+        setSearchVoice(filterVoice.trim())
     }
 
     const handleOpenCreate = () => {
+        // limpiar filtros al abrir formulario
+        setFilterName('')
+        setFilterVoice('')
         setMode('CREATE')
         // formulario nuevo siempre limpio
         setNewInstrument({ instrumentName: '', voice: '' })
@@ -109,6 +125,9 @@ function InstrumentsPage() {
     }
 
     const handleOpenEdit = (inst: InstrumentDTO) => {
+        // limpiar filtros al abrir formulario
+        setFilterName('')
+        setFilterVoice('')
         setMode('EDIT')
         setEditing(inst)
         setEditData({
@@ -127,11 +146,13 @@ function InstrumentsPage() {
             setLoading(true)
             setError(null)
             await createInstrument(newInstrument, token)
-            // al guardar, vuelvo a lista, reseteo formularios y recargo primera página
+            // Al guardar: volvemos a lista, reseteamos forms y recargamos desde la página 0
             switchToList()
             setPage(0)
+            // Forzamos recarga con los filtros efectivos actuales (searchName/searchVoice)
+            // el useEffect ya se encargará
         } catch (err) {
-            console.error('Error creating instrument', err)
+            console.error('Error creando instrumento', err)
             setError('Error creando instrumento')
         } finally {
             setLoading(false)
@@ -145,12 +166,15 @@ function InstrumentsPage() {
         try {
             setLoading(true)
             setError(null)
-            const updated = await updateInstrument(editing.id, editData, editing.version, token)
-            // actualizamos la lista local
-            setInstruments((prev) =>
-                prev.map((i) => (i.id === updated.id ? updated : i)),
+            const updated = await updateInstrument(
+                editing.id,
+                editData,
+                editing.version,
+                token,
             )
-            // volvemos a lista y reseteamos formularios
+            // Actualizamos en memoria la lista actual (sin perder filtros ni página)
+            setInstruments((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
+            // Volvemos a lista
             switchToList()
         } catch (e: any) {
             console.error('Error updating instrument', e)
@@ -176,7 +200,6 @@ function InstrumentsPage() {
             setLoading(true)
             setError(null)
             await deleteInstrument(inst.id, inst.version, token)
-            // quitamos de la lista local sin recargar toda la página
             setInstruments((prev) => prev.filter((i) => i.id !== inst.id))
         } catch (e: any) {
             console.error('Error deleting instrument', e)
@@ -191,13 +214,26 @@ function InstrumentsPage() {
         }
     }
 
-      // ---- render ----
+    const handleSort = (field: 'instrumentName' | 'voice') => {
+        setPage(0)
+        if (sortField === field) {
+            // misma columna → alternar asc/desc
+            setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+        } else {
+            // nueva columna → empezar por asc
+            setSortField(field)
+            setSortDirection('asc')
+        }
+    }
+
+
+    // ---- render ----
 
     return (
         <div>
             <h1>Instrumentos</h1>
 
-            {/* Toolbar siempre visible  */}
+            {/* Toolbar con formulario de búsqueda + botón Nuevo */}
             <form
                 onSubmit={handleSearchSubmit}
                 style={{
@@ -234,7 +270,7 @@ function InstrumentsPage() {
             {loading && <p>Cargando instrumentos...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
 
-            {/* Lista de instrumentos */}
+            {/* LISTA */}
             {mode === 'LIST' && !loading && !error && (
                 <>
                     <table
@@ -246,10 +282,34 @@ function InstrumentsPage() {
                             overflow: 'hidden',
                         }}
                     >
+                        {/* Cabeceras clicables para ordenar */}
                         <thead style={{ background: '#e5e7eb' }}>
                             <tr>
-                                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Nombre</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Voz</th>
+                                <th
+                                    style={{
+                                        padding: '0.5rem',
+                                        textAlign: 'left',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                    }}
+                                    onClick={() => handleSort('instrumentName')}
+                                >
+                                    Nombre{' '}
+                                    {sortField === 'instrumentName' &&
+                                        (sortDirection === 'asc' ? '▲' : '▼')}
+                                </th>
+                                <th
+                                    style={{
+                                        padding: '0.5rem',
+                                        textAlign: 'left',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                    }}
+                                    onClick={() => handleSort('voice')}
+                                >
+                                    Voz{' '}
+                                    {sortField === 'voice' && (sortDirection === 'asc' ? '▲' : '▼')}
+                                </th>
                                 <th style={{ padding: '0.5rem', textAlign: 'left', width: '140px' }}>
                                     Acciones
                                 </th>
@@ -308,7 +368,7 @@ function InstrumentsPage() {
                 </>
             )}
 
-            {/* Formulario de creación inline */}
+            {/* FORMULARIO NUEVO */}
             {mode === 'CREATE' && (
                 <form
                     onSubmit={handleCreateSubmit}
@@ -364,8 +424,8 @@ function InstrumentsPage() {
                     </div>
                 </form>
             )}
-            
-            {/* Formulario de edición inline */}
+
+            {/* FORMULARIO EDITAR */}
             {mode === 'EDIT' && editing && (
                 <form
                     onSubmit={handleEditSubmit}
@@ -384,7 +444,10 @@ function InstrumentsPage() {
                                 type="text"
                                 value={editData.instrumentName}
                                 onChange={(e) =>
-                                    setEditData((prev) => ({ ...prev, instrumentName: e.target.value }))
+                                    setEditData((prev) => ({
+                                        ...prev,
+                                        instrumentName: e.target.value,
+                                    }))
                                 }
                                 required
                             />
@@ -397,7 +460,10 @@ function InstrumentsPage() {
                                 type="text"
                                 value={editData.voice}
                                 onChange={(e) =>
-                                    setEditData((prev) => ({ ...prev, voice: e.target.value }))
+                                    setEditData((prev) => ({
+                                        ...prev,
+                                        voice: e.target.value,
+                                    }))
                                 }
                                 required
                             />
@@ -416,7 +482,6 @@ function InstrumentsPage() {
                 </form>
             )}
         </div>
-
     )
 }
 

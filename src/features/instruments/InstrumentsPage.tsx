@@ -29,6 +29,7 @@ function InstrumentsPage() {
     const [totalPages, setTotalPages] = useState(0)
     const [totalElements, setTotalElements] = useState(0)
 
+    const [searchTrigger, setSearchTrigger] = useState(0)
 
     // Valores que ve el usuario en los inputs de búsqueda
     const [filterName, setFilterName] = useState('')
@@ -125,7 +126,7 @@ function InstrumentsPage() {
         }
 
         load()
-    }, [token, isAdmin, page, size, searchName, searchVoice, sortField, sortDirection])
+    }, [token, isAdmin, page, size, searchName, searchVoice, sortField, sortDirection, searchTrigger])
 
     if (!isAdmin) {
         return (
@@ -158,6 +159,8 @@ function InstrumentsPage() {
         // Aplicamos filtros efectivos
         setSearchName(filterName.trim())
         setSearchVoice(filterVoice.trim())
+        // Forzar recarga aunque los filtros no cambien
+        setSearchTrigger((prev) => prev + 1)
     }
 
     const handleOpenCreate = () => {

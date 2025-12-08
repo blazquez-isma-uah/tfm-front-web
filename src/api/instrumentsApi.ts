@@ -1,12 +1,15 @@
 import { api, authHeaders } from './httpClient'
 import type { PaginatedResponseInstrumentDTO, InstrumentRequestDTO, InstrumentDTO } from '../types/instruments'
 import type { PageableRequest } from '../types/pagination'
+import type { UserDTO } from '../types/users'
+
 
 export interface InstrumentSearchParams extends PageableRequest {
     instrumentName?: string
     voice?: string
 }
 
+// GET /api/instruments/search
 export async function searchInstrumentsPage(
     params: InstrumentSearchParams,
     token?: string,
@@ -33,6 +36,7 @@ export async function searchInstrumentsPage(
     return response.data
 }
 
+// POST /api/instruments
 export async function createInstrument(
     body: InstrumentRequestDTO,
     token?: string,
@@ -45,6 +49,7 @@ export async function createInstrument(
     return response.data
 }
 
+// PUT /api/instruments/{id}
 export async function updateInstrument(
     id: number,
     body: InstrumentRequestDTO,
@@ -60,6 +65,7 @@ export async function updateInstrument(
     return response.data
 }
 
+// DELETE /api/instruments/{id}
 export async function deleteInstrument(
     id: number,
     version: number,
@@ -71,4 +77,36 @@ export async function deleteInstrument(
             'If-Match': `W/"${version}"`,
         },
     })
+}
+
+// Obtener todos los instrumentos (sin paginar, para listas desplegables, etc.)
+// GET /api/instruments/search?page=0&size=1000
+export async function getAllInstruments(
+  token?: string,
+): Promise<InstrumentDTO[]> {
+  const response = await api.get<PaginatedResponseInstrumentDTO>(
+    '/api/instruments/search',
+    {
+      params: { page: 0, size: 1000 }, // asumiendo que no se va a tener más de 1000
+      headers: authHeaders(token),
+    },
+  )
+  return response.data.content ?? []
+}
+
+// Asignar lista completa de instrumentos a un usuario
+// PUT /api/instruments/user/{userId} con body = List<Long> (ids)
+export async function setUserInstruments(
+  userId: number,
+  instrumentIds: number[],
+  version: number,
+  token?: string,
+): Promise<UserDTO> {
+  const response = await api.put(`/api/instruments/user/${userId}`, instrumentIds, {
+    headers: {
+      ...authHeaders(token),
+      'If-Match': `W/"${version}"`,
+    },
+  })
+    return response.data
 }

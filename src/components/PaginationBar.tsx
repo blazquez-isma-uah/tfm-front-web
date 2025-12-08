@@ -13,7 +13,6 @@ export function PaginationBar({
     page,
     totalPages,
     pageSize,
-    currentCount,
     totalElements,
     onPageChange,
     onPageSizeChange,

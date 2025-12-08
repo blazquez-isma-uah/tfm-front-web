@@ -4,13 +4,15 @@ import {
     searchUsersPage, getUserById, updateUser, enableUser, disableUser,
     deleteUser, type UserUpdatePayload,
 } from '../../api/usersApi'
-
+import { getAllInstruments, setUserInstruments } from '../../api/instrumentsApi'
+import type { InstrumentDTO } from '../../types/instruments'
 import { getAllRoles } from '../../api/rolesApi'
 import type { UserDTO } from '../../types/users'
 import type { KeycloakRoleResponse } from '../../types/roles'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
 import { formatDate } from '../../utils/date'
+import { groupInstrumentsByInitial, type InstrumentGroup } from '../../utils/instrumentUtils'
 
 type ViewMode = 'LIST' | 'DETAIL' | 'EDIT'
 
@@ -33,6 +35,12 @@ function UsersPage() {
     const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null)
     const [saving, setSaving] = useState(false)
 
+    // Gestion de Instrumentos del usuario
+    const [allGroupedInstruments, setAllGroupedInstruments] = useState<InstrumentGroup[]>([])
+    const [instrumentsLoading, setInstrumentsLoading] = useState(false)
+    const [managingInstruments, setManagingInstruments] = useState(false)
+    const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<number[]>([])
+
     // filtros visibles
     const [filterUsername, setFilterUsername] = useState('')
     const [filterFirstName, setFilterFirstName] = useState('')
@@ -50,6 +58,8 @@ function UsersPage() {
     const [searchEmail, setSearchEmail] = useState('')
     const [searchActive, setSearchActive] = useState<boolean | undefined>(undefined)
     const [searchRoleName, setSearchRoleName] = useState<string | undefined>(undefined)
+
+    const [searchTrigger, setSearchTrigger] = useState(0)
 
     // ordenación
     const [sortField, setSortField] = useState<SortableField | null>(null)
@@ -201,7 +211,7 @@ function UsersPage() {
 
         load()
     }, [token, isAdmin, page, size, searchUsername, searchFirstName, searchLastName, searchSecondLastName,
-        searchEmail, searchActive, searchRoleName, sortField, sortDirection])
+        searchEmail, searchActive, searchRoleName, sortField, sortDirection, searchTrigger])
 
     if (!isAdmin) {
         return (
@@ -237,6 +247,9 @@ function UsersPage() {
         // siempre que lanzamos una búsqueda, volvemos a LIST
         setMode('LIST')
         setSelectedUser(null)
+
+        // Forzar recarga aunque los filtros no cambien
+        setSearchTrigger((prev) => prev + 1)
     }
 
     const handleSort = (field: SortableField) => {
@@ -382,6 +395,84 @@ function UsersPage() {
         }
     }
 
+
+    // Handler para gestionar instrumentos del usuario
+    const openManageInstruments = async (user: UserDTO) => {
+        if (!token) return
+
+        setError(null)
+        setManagingInstruments(true)
+        setInstrumentsLoading(true)
+
+        try {
+            // Traer usuario completo y actualizado
+            const fullUser = await getUserById(user.id, token)
+            console.log('Usuario completo:', fullUser)
+            setSelectedUser(fullUser)
+
+            // Cargar instrumentos si aún no los tenemos
+            const instruments = await getAllInstruments(token)
+            setAllGroupedInstruments(groupInstrumentsByInitial(instruments))
+
+            // Extraer IDs de instrumentos del usuario de forma segura
+            const currentIds =
+                fullUser.instruments
+                    ?.map((inst: any) => {
+                        if (typeof inst === 'number') return inst
+                        if (inst && typeof inst.id === 'number') return inst.id
+                        if (inst && typeof inst.instrumentId === 'number') return inst.instrumentId
+                        return undefined
+                    })
+                    .filter((id): id is number => id != null) ?? []
+
+            setSelectedInstrumentIds(currentIds)
+        } catch (e) {
+            console.error('Error cargando instrumentos para gestión de usuario', e)
+            setError('Error cargando instrumentos del usuario')
+            setManagingInstruments(false)
+        } finally {
+            setInstrumentsLoading(false)
+        }
+    }
+
+    // Handler para marcar/desmarcar checkboxes de instrumentos
+    const toggleInstrumentForUser = (instrumentId: number) => {
+        setSelectedInstrumentIds((prev) =>
+            prev.includes(instrumentId)
+                ? prev.filter((id) => id !== instrumentId)
+                : [...prev, instrumentId],
+        )
+    }
+    // Handler para guardar instrumentos asignados al usuario
+    const handleSaveUserInstruments = async (e: FormEvent) => {
+        e.preventDefault()
+        if (!token || !selectedUser || !selectedUser.id) return
+
+        try {
+            setSaving(true)
+            setError(null)
+
+            // tras guardar, podría recargarse el usuario para tener instrumentos actualizados
+            const refreshed = await setUserInstruments(selectedUser.id, selectedInstrumentIds, selectedUser.version, token)
+            setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
+
+            setSelectedUser(refreshed)
+            setManagingInstruments(false)
+        } catch (e) {
+            console.error('Error guardando instrumentos del usuario', e)
+            setError('Error guardando instrumentos del usuario')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    // Handler para cancelar gestión de instrumentos
+    const handleCancelManageInstruments = () => {
+        setManagingInstruments(false)
+        setSelectedInstrumentIds([])
+    }
+
+
     // ----- render -----
 
     return (
@@ -494,7 +585,7 @@ function UsersPage() {
             )}
 
             {/* DETALLE */}
-            {mode === 'DETAIL' && selectedUser && (
+            {mode === 'DETAIL' && selectedUser && !managingInstruments && (
                 <div
                     style={{
                         marginTop: '1rem',
@@ -528,7 +619,18 @@ function UsersPage() {
                     </p>
                     <p>
                         <strong>Instrumentos:</strong>{' '}
-                        {(selectedUser.instruments ?? []).join(', ')}
+                        {selectedUser.instruments && selectedUser.instruments.length > 0
+                            ? [...selectedUser.instruments]
+                                .sort((a: any, b: any) => {
+                                    const na = (a?.instrumentName ?? String(a)).toString().toLowerCase()
+                                    const nb = (b?.instrumentName ?? String(b)).toString().toLowerCase()
+                                    return na.localeCompare(nb)
+                                })
+                                .map((inst: any) =>
+                                    inst && inst.instrumentName
+                                        ? `${inst.instrumentName}${inst.voice ? ' ' + inst.voice : ''}`
+                                        : String(inst)
+                                ).join(', ') : '-'}
                     </p>
                     <p>
                         <strong>Fecha nacimiento:</strong> {formatDate(selectedUser.birthDate)}
@@ -554,6 +656,9 @@ function UsersPage() {
                         </button>
                         <button type="button" onClick={() => handleEditUser(selectedUser)}>
                             Editar
+                        </button>
+                        <button type="button" onClick={() => openManageInstruments(selectedUser)}>
+                            Gestionar instrumentos
                         </button>
                     </div>
                 </div>
@@ -695,6 +800,93 @@ function UsersPage() {
                     </div>
                 </form>
             )}
+            {/* GESTIÓN DE INSTRUMENTOS */}
+            {mode === 'DETAIL' && selectedUser && managingInstruments && (
+                <form
+                    onSubmit={handleSaveUserInstruments}
+                    style={{
+                        marginTop: '1rem',
+                        padding: '1rem',
+                        borderRadius: '0.5rem',
+                        border: '1px solid #e5e7eb',
+                        background: '#ffffff',
+                    }}
+                >
+                    <h3>Gestionar instrumentos de {selectedUser.username}</h3>
+
+                    {instrumentsLoading ? (
+                        <p>Cargando instrumentos...</p>
+                    ) : (
+                        <div
+                            style={{
+                                maxHeight: '300px',
+                                overflowY: 'auto',
+                                padding: '0.5rem 1rem',
+                                columnCount: 5,          // nº de columnas
+                                columnGap: '0.5rem',     // separación entre columnas
+                            }}
+                        >
+                            {allGroupedInstruments.map((group) => (
+                                <div key={group.letter} style={{
+                                    breakInside: 'avoid',           // evita que un grupo se parta entre columnas
+                                    WebkitColumnBreakInside: 'avoid',
+                                    marginBottom: '0.5rem',
+                                } as any}>
+                                    <div
+                                        style={{
+                                            fontWeight: 'bold',
+                                            fontSize: '0.95rem',
+                                            marginBottom: '0.15rem',
+                                        }}
+                                    >
+                                        {group.letter}
+                                    </div>
+
+                                    {group.items.map((inst) => (
+                                        <label
+                                            key={inst.id}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.35rem',
+                                                fontSize: '0.85rem',
+                                                padding: '1px 0',
+                                                marginLeft: '0.75rem',
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedInstrumentIds.includes(inst.id)}
+                                                onChange={() => toggleInstrumentForUser(inst.id)}
+                                            />
+                                            <span>
+                                                {inst.instrumentName} {inst.voice && `(${inst.voice})`}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            ))}
+                            {allGroupedInstruments.length === 0 && (
+                                <p>No hay instrumentos definidos en el sistema.</p>
+                            )}
+                        </div>
+                    )}
+
+                    <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                        <button type="submit" disabled={saving}>
+                            {saving ? 'Guardando...' : 'Guardar instrumentos'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleCancelManageInstruments}
+                            disabled={saving}
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            )}
+
         </div>
     )
 }

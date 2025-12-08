@@ -1,3 +1,4 @@
+import type { InstrumentDTO } from './instruments'
 import type { PageResponse } from './pagination'
 
 export interface UserDTO {
@@ -17,7 +18,7 @@ export interface UserDTO {
     profilePictureUrl?: string
     active: boolean
     roles: string[]
-    instruments: string[] // según tu esquema actual
+    instruments?: InstrumentDTO[]
 }
 
 export type PaginatedResponseUserDTO = PageResponse<UserDTO>

@@ -52,7 +52,34 @@ export async function getUserById(userId: number, token?: string): Promise<UserD
     return response.data
 }
 
-// PUT /api/users/{userId}
+export interface UserCreatePayload {
+  email: string
+  username: string
+  password: string
+  firstName: string
+  lastName: string
+  secondLastName?: string
+  birthDate?: string
+  bandJoinDate?: string
+  systemSignupDate?: string
+  phone?: string
+  notes?: string
+  profilePictureUrl?: string
+  instrumentIds: number[]
+  roles: string[]
+}
+
+// POST /api/users
+export async function createUser(
+  payload: UserCreatePayload,
+  token: string,
+): Promise<UserDTO> {
+  const response = await api.post<UserDTO>('/api/users', payload, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.data
+}
+
 export interface UserUpdatePayload {
     email: string
     firstName: string
@@ -65,6 +92,7 @@ export interface UserUpdatePayload {
     profilePictureUrl?: string
 }
 
+// PUT /api/users/{userId}
 export async function updateUser(
     userId: number,
     payload: UserUpdatePayload,

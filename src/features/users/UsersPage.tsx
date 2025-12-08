@@ -1,8 +1,15 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import {
-    searchUsersPage, getUserById, updateUser, enableUser, disableUser,
-    deleteUser, type UserUpdatePayload,
+    searchUsersPage,
+    getUserById,
+    updateUser,
+    enableUser,
+    disableUser,
+    deleteUser,
+    type UserUpdatePayload,
+    createUser,
+    type UserCreatePayload,
 } from '../../api/usersApi'
 import { getAllInstruments, setUserInstruments } from '../../api/instrumentsApi'
 import type { InstrumentDTO } from '../../types/instruments'
@@ -12,9 +19,146 @@ import type { KeycloakRoleResponse } from '../../types/roles'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
 import { formatDate } from '../../utils/date'
-import { groupInstrumentsByInitial, type InstrumentGroup } from '../../utils/instrumentUtils'
+import {
+    groupInstrumentsByInitial,
+    type InstrumentGroup,
+} from '../../utils/instrumentUtils'
 
-type ViewMode = 'LIST' | 'DETAIL' | 'EDIT'
+// ==== estilos reutilizables ====
+
+const pageContainerStyle: React.CSSProperties = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '1.5rem 1.75rem',
+}
+
+const pageTitleStyle: React.CSSProperties = {
+    fontSize: '1.8rem',
+    fontWeight: 700,
+    marginBottom: '1rem',
+}
+
+const cardStyle: React.CSSProperties = {
+    background: '#ffffff',
+    borderRadius: '0.75rem',
+    border: '1px solid #e5e7eb',
+    padding: '1rem 1.25rem',
+    boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+}
+
+const sectionTitleStyle: React.CSSProperties = {
+    fontSize: '1.05rem',
+    fontWeight: 600,
+    marginBottom: '0.75rem',
+}
+
+const searchGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '0.75rem',
+}
+
+const searchActionsRowStyle: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '0.75rem',
+}
+
+const inputBaseStyle: React.CSSProperties = {
+    padding: '0.45rem 0.6rem',
+    borderRadius: '0.45rem',
+    border: '1px solid #d1d5db',
+    fontSize: '0.9rem',
+    width: '100%',
+    boxSizing: 'border-box',
+}
+
+const selectStyle = inputBaseStyle
+
+const buttonBase: React.CSSProperties = {
+    border: 'none',
+    borderRadius: '999px',
+    padding: '0.38rem 0.9rem',
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.3rem',
+}
+
+const primaryButton: React.CSSProperties = {
+    ...buttonBase,
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+}
+
+const secondaryButton: React.CSSProperties = {
+    ...buttonBase,
+    backgroundColor: '#e5e7eb',
+    color: '#111827',
+}
+
+const subtleButton: React.CSSProperties = {
+    ...buttonBase,
+    backgroundColor: '#f3f4f6',
+    color: '#111827',
+}
+
+const dangerButton: React.CSSProperties = {
+    ...buttonBase,
+    backgroundColor: '#fee2e2',
+    color: '#b91c1c',
+}
+
+const formGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '0.75rem 1rem',
+}
+
+const formFieldStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem',
+    fontSize: '0.85rem',
+}
+
+const labelTextStyle: React.CSSProperties = {
+    fontWeight: 500,
+    color: '#374151',
+}
+
+const textareaStyle: React.CSSProperties = {
+    ...inputBaseStyle,
+    minHeight: '80px',
+    resize: 'vertical',
+}
+
+const detailGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: '0.75rem 1.5rem',
+}
+
+const detailItemStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.15rem',
+    fontSize: '0.9rem',
+}
+
+const detailLabelStyle: React.CSSProperties = {
+    fontWeight: 600,
+    color: '#4b5563',
+}
+
+const detailValueStyle: React.CSSProperties = {
+    color: '#111827',
+}
+
+// ====================================================
+
+type ViewMode = 'LIST' | 'DETAIL' | 'EDIT' | 'CREATE'
 
 type SortableField = 'username' | 'firstName' | 'lastName' | 'email' | 'active'
 
@@ -35,11 +179,15 @@ function UsersPage() {
     const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null)
     const [saving, setSaving] = useState(false)
 
-    // Gestion de Instrumentos del usuario
-    const [allGroupedInstruments, setAllGroupedInstruments] = useState<InstrumentGroup[]>([])
+    // Gestión de instrumentos
+    const [allGroupedInstruments, setAllGroupedInstruments] = useState<
+        InstrumentGroup[]
+    >([])
     const [instrumentsLoading, setInstrumentsLoading] = useState(false)
     const [managingInstruments, setManagingInstruments] = useState(false)
-    const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<number[]>([])
+    const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<number[]>(
+        [],
+    )
 
     // filtros visibles
     const [filterUsername, setFilterUsername] = useState('')
@@ -47,7 +195,9 @@ function UsersPage() {
     const [filterLastName, setFilterLastName] = useState('')
     const [filterSecondLastName, setFilterSecondLastName] = useState('')
     const [filterEmail, setFilterEmail] = useState('')
-    const [filterActive, setFilterActive] = useState<'all' | 'true' | 'false'>('all')
+    const [filterActive, setFilterActive] = useState<'all' | 'true' | 'false'>(
+        'all',
+    )
     const [filterRole, setFilterRole] = useState('')
 
     // filtros efectivos
@@ -56,8 +206,12 @@ function UsersPage() {
     const [searchLastName, setSearchLastName] = useState('')
     const [searchSecondLastName, setSearchSecondLastName] = useState('')
     const [searchEmail, setSearchEmail] = useState('')
-    const [searchActive, setSearchActive] = useState<boolean | undefined>(undefined)
-    const [searchRoleName, setSearchRoleName] = useState<string | undefined>(undefined)
+    const [searchActive, setSearchActive] = useState<boolean | undefined>(
+        undefined,
+    )
+    const [searchRoleName, setSearchRoleName] = useState<string | undefined>(
+        undefined,
+    )
 
     const [searchTrigger, setSearchTrigger] = useState(0)
 
@@ -74,7 +228,26 @@ function UsersPage() {
     const [roles, setRoles] = useState<KeycloakRoleResponse[]>([])
     const [rolesLoading, setRolesLoading] = useState(false)
 
-    // estado del formulario de edición
+    // formulario creación
+    const [createPayload, setCreatePayload] = useState<UserCreatePayload>({
+        email: '',
+        username: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        secondLastName: '',
+        birthDate: '',
+        bandJoinDate: '',
+        systemSignupDate: '',
+        phone: '',
+        notes: '',
+        profilePictureUrl: '',
+        instrumentIds: [],
+        roles: [],
+    })
+
+
+    // formulario edición
     const [editPayload, setEditPayload] = useState<UserUpdatePayload>({
         email: '',
         firstName: '',
@@ -87,7 +260,7 @@ function UsersPage() {
         profilePictureUrl: '',
     })
 
-    // columnas
+    // columnas tabla
     const userColumns = [
         {
             key: 'username',
@@ -134,18 +307,30 @@ function UsersPage() {
             sortable: false,
             render: (u: UserDTO) => (
                 <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => handleViewDetails(u)}>
+                    <button
+                        type="button"
+                        style={subtleButton}
+                        onClick={() => handleViewDetails(u)}
+                    >
                         Ver
                     </button>
-                    <button type="button" onClick={() => handleEditUser(u)}>
+                    <button
+                        type="button"
+                        style={secondaryButton}
+                        onClick={() => handleEditUser(u)}
+                    >
                         Editar
                     </button>
-                    <button type="button" onClick={() => handleToggleActive(u)}>
+                    <button
+                        type="button"
+                        style={subtleButton}
+                        onClick={() => handleToggleActive(u)}
+                    >
                         {u.active ? 'Desactivar' : 'Activar'}
                     </button>
                     <button
                         type="button"
-                        style={{ color: 'red' }}
+                        style={dangerButton}
                         onClick={() => handleDeleteUser(u)}
                     >
                         Eliminar
@@ -155,7 +340,9 @@ function UsersPage() {
         },
     ]
 
-    // Cargar roles una vez al montar la página (por sesión de vista)
+    // ===== efectos =====
+
+    // roles
     useEffect(() => {
         if (!token || !isAdmin) return
 
@@ -166,7 +353,6 @@ function UsersPage() {
                 setRoles(data)
             } catch (e) {
                 console.error('Error loading roles', e)
-                // No rompe la UI si falla; simplemente el combo se quedará vacío
             } finally {
                 setRolesLoading(false)
             }
@@ -174,6 +360,7 @@ function UsersPage() {
         loadRoles()
     }, [token, isAdmin])
 
+    // lista usuarios
     useEffect(() => {
         if (!token || !isAdmin) return
 
@@ -181,7 +368,8 @@ function UsersPage() {
             setLoading(true)
             setError(null)
             try {
-                const sort = sortField != null ? [`${sortField},${sortDirection}`] : undefined
+                const sort =
+                    sortField != null ? [`${sortField},${sortDirection}`] : undefined
                 const data = await searchUsersPage(
                     {
                         page,
@@ -202,7 +390,6 @@ function UsersPage() {
                 setTotalElements(data.totalElements ?? 0)
             } catch (e: any) {
                 console.error('Error en getUsersPage (detallado):', e)
-                console.error('Response:', e?.response)
                 setError('Error cargando usuarios')
             } finally {
                 setLoading(false)
@@ -210,19 +397,34 @@ function UsersPage() {
         }
 
         load()
-    }, [token, isAdmin, page, size, searchUsername, searchFirstName, searchLastName, searchSecondLastName,
-        searchEmail, searchActive, searchRoleName, sortField, sortDirection, searchTrigger])
+    }, [
+        token,
+        isAdmin,
+        page,
+        size,
+        searchUsername,
+        searchFirstName,
+        searchLastName,
+        searchSecondLastName,
+        searchEmail,
+        searchActive,
+        searchRoleName,
+        sortField,
+        sortDirection,
+        searchTrigger,
+    ])
 
     if (!isAdmin) {
         return (
-            <div>
-                <h1>Gestión de usuarios</h1>
+            <div style={pageContainerStyle}>
+                <h1 style={pageTitleStyle}>Gestión de usuarios</h1>
                 <p>No tienes permisos para ver esta sección.</p>
             </div>
         )
     }
 
-    // ---- helpers de UI ----
+    // ===== helpers UI =====
+
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault()
         setPage(0)
@@ -244,21 +446,16 @@ function UsersPage() {
         const roleTrim = filterRole.trim()
         setSearchRoleName(roleTrim === '' ? undefined : roleTrim)
 
-        // siempre que lanzamos una búsqueda, volvemos a LIST
         setMode('LIST')
         setSelectedUser(null)
-
-        // Forzar recarga aunque los filtros no cambien
         setSearchTrigger((prev) => prev + 1)
     }
 
     const handleSort = (field: SortableField) => {
         setPage(0)
         if (sortField === field) {
-            // misma columna → alternar asc/desc
             setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
         } else {
-            // nueva columna → empezar por asc
             setSortField(field)
             setSortDirection('asc')
         }
@@ -272,11 +469,90 @@ function UsersPage() {
 
     const handleViewDetails = (user: UserDTO) => {
         setSelectedUser(user)
+        setManagingInstruments(false)
         setMode('DETAIL')
     }
 
+    const handleOpenCreateUser = () => {
+        setSelectedUser(null)
+        setManagingInstruments(false)
+        setMode('CREATE')
+        setCreatePayload({
+            email: '',
+            username: '',
+            password: '',
+            firstName: '',
+            lastName: '',
+            secondLastName: '',
+            birthDate: '',
+            bandJoinDate: '',
+            systemSignupDate: '',
+            phone: '',
+            notes: '',
+            profilePictureUrl: '',
+            instrumentIds: [],
+            roles: [],
+        })
+    }
+
+    const handleCreateFieldChange = (
+        field: keyof UserCreatePayload,
+        value: string,
+    ) => {
+        setCreatePayload((prev) => ({
+            ...prev,
+            [field]: value,
+        }))
+    }
+
+    const handleToggleCreateRole = (roleName: string) => {
+        setCreatePayload((prev) => ({
+            ...prev,
+            roles: prev.roles.includes(roleName)
+                ? prev.roles.filter((r) => r !== roleName)
+                : [...prev.roles, roleName],
+        }))
+    }
+
+    const handleSubmitCreateUser = async (e: FormEvent) => {
+        e.preventDefault()
+        if (!token) return
+
+        try {
+            setSaving(true)
+            setError(null)
+
+            const payloadToSend: UserCreatePayload = {
+                ...createPayload,
+                secondLastName: createPayload.secondLastName || undefined,
+                birthDate: createPayload.birthDate || undefined,
+                bandJoinDate: createPayload.bandJoinDate || undefined,
+                systemSignupDate: createPayload.systemSignupDate || undefined,
+                phone: createPayload.phone || undefined,
+                notes: createPayload.notes || undefined,
+                profilePictureUrl: createPayload.profilePictureUrl || undefined,
+                instrumentIds: createPayload.instrumentIds ?? [],
+                roles: createPayload.roles ?? [],
+            }
+
+            await createUser(payloadToSend, token)
+
+            // volvemos a la lista y recargamos
+            setMode('LIST')
+            setPage(0)
+            setSearchTrigger((prev) => prev + 1)
+        } catch (e) {
+            console.error('Error creando usuario', e)
+            setError('Error creando usuario')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+
     const handleEditUser = (user: UserDTO) => {
         setSelectedUser(user)
+        setManagingInstruments(false)
         setEditPayload({
             email: user.email ?? '',
             firstName: user.firstName ?? '',
@@ -294,6 +570,7 @@ function UsersPage() {
     const handleCancelDetailOrEdit = () => {
         setMode('LIST')
         setSelectedUser(null)
+        setManagingInstruments(false)
     }
 
     const handleEditFieldChange = (
@@ -318,7 +595,6 @@ function UsersPage() {
                 selectedUser.id,
                 {
                     ...editPayload,
-                    // limpiar strings vacíos a undefined para no enviar basura si no quieres
                     secondLastName: editPayload.secondLastName || undefined,
                     birthDate: editPayload.birthDate || undefined,
                     bandJoinDate: editPayload.bandJoinDate || undefined,
@@ -330,9 +606,7 @@ function UsersPage() {
                 token,
             )
 
-            setUsers((prev) =>
-                prev.map((u) => (u.id === updated.id ? updated : u)),
-            )
+            setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
             setSelectedUser(updated)
             setMode('LIST')
         } catch (e: any) {
@@ -358,11 +632,8 @@ function UsersPage() {
                 await enableUser(user.id, user.version, token)
             }
 
-            // después de enable/disable, recargamos solo ese usuario para tener versión y estado nuevos
             const refreshed = await getUserById(user.id, token)
-            setUsers((prev) =>
-                prev.map((u) => (u.id === refreshed.id ? refreshed : u)),
-            )
+            setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
 
             if (selectedUser && selectedUser.id === refreshed.id) {
                 setSelectedUser(refreshed)
@@ -383,7 +654,6 @@ function UsersPage() {
             setError(null)
             await deleteUser(user.id, user.version, token)
 
-            // decisión sencilla: recargar desde la primera página para evitar líos de paginación
             setPage(0)
             setMode('LIST')
             if (selectedUser && selectedUser.id === user.id) {
@@ -395,8 +665,8 @@ function UsersPage() {
         }
     }
 
+    // instrumentos
 
-    // Handler para gestionar instrumentos del usuario
     const openManageInstruments = async (user: UserDTO) => {
         if (!token) return
 
@@ -405,27 +675,25 @@ function UsersPage() {
         setInstrumentsLoading(true)
 
         try {
-            // Traer usuario completo y actualizado
             const fullUser = await getUserById(user.id, token)
-            console.log('Usuario completo:', fullUser)
             setSelectedUser(fullUser)
 
-            // Cargar instrumentos si aún no los tenemos
             const instruments = await getAllInstruments(token)
             setAllGroupedInstruments(groupInstrumentsByInitial(instruments))
 
-            // Extraer IDs de instrumentos del usuario de forma segura
             const currentIds =
                 fullUser.instruments
                     ?.map((inst: any) => {
                         if (typeof inst === 'number') return inst
                         if (inst && typeof inst.id === 'number') return inst.id
-                        if (inst && typeof inst.instrumentId === 'number') return inst.instrumentId
+                        if (inst && typeof inst.instrumentId === 'number')
+                            return inst.instrumentId
                         return undefined
                     })
                     .filter((id): id is number => id != null) ?? []
 
             setSelectedInstrumentIds(currentIds)
+            setMode('DETAIL')
         } catch (e) {
             console.error('Error cargando instrumentos para gestión de usuario', e)
             setError('Error cargando instrumentos del usuario')
@@ -435,7 +703,6 @@ function UsersPage() {
         }
     }
 
-    // Handler para marcar/desmarcar checkboxes de instrumentos
     const toggleInstrumentForUser = (instrumentId: number) => {
         setSelectedInstrumentIds((prev) =>
             prev.includes(instrumentId)
@@ -443,7 +710,7 @@ function UsersPage() {
                 : [...prev, instrumentId],
         )
     }
-    // Handler para guardar instrumentos asignados al usuario
+
     const handleSaveUserInstruments = async (e: FormEvent) => {
         e.preventDefault()
         if (!token || !selectedUser || !selectedUser.id) return
@@ -452,8 +719,12 @@ function UsersPage() {
             setSaving(true)
             setError(null)
 
-            // tras guardar, podría recargarse el usuario para tener instrumentos actualizados
-            const refreshed = await setUserInstruments(selectedUser.id, selectedInstrumentIds, selectedUser.version, token)
+            const refreshed = await setUserInstruments(
+                selectedUser.id,
+                selectedInstrumentIds,
+                selectedUser.version,
+                token,
+            )
             setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
 
             setSelectedUser(refreshed)
@@ -466,112 +737,116 @@ function UsersPage() {
         }
     }
 
-    // Handler para cancelar gestión de instrumentos
     const handleCancelManageInstruments = () => {
         setManagingInstruments(false)
         setSelectedInstrumentIds([])
     }
 
-
-    // ----- render -----
+    // ===== render =====
 
     return (
-        <div>
-            <h1>Gestión de usuarios</h1>
+        <div style={pageContainerStyle}>
+            <h1 style={pageTitleStyle}>Gestión de usuarios</h1>
 
-            {/* Formulario de búsqueda */}
-            <form
-                onSubmit={handleSearchSubmit}
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                    gap: '0.5rem',
-                    alignItems: 'center',
-                    marginBottom: '1rem',
-                }}
-            >
-                <input
-                    type="text"
-                    placeholder="Username"
-                    value={filterUsername}
-                    onChange={(e) => setFilterUsername(e.target.value)}
-                    style={{ padding: '0.4rem 0.6rem' }}
-                />
-                <input
-                    type="text"
-                    placeholder="Nombre"
-                    value={filterFirstName}
-                    onChange={(e) => setFilterFirstName(e.target.value)}
-                    style={{ padding: '0.4rem 0.6rem' }}
-                />
-                <input
-                    type="text"
-                    placeholder="1er apellido"
-                    value={filterLastName}
-                    onChange={(e) => setFilterLastName(e.target.value)}
-                    style={{ padding: '0.4rem 0.6rem' }}
-                />
-                <input
-                    type="text"
-                    placeholder="2º apellido"
-                    value={filterSecondLastName}
-                    onChange={(e) => setFilterSecondLastName(e.target.value)}
-                    style={{ padding: '0.4rem 0.6rem' }}
-                />
-                <input
-                    type="text"
-                    placeholder="Email"
-                    value={filterEmail}
-                    onChange={(e) => setFilterEmail(e.target.value)}
-                    style={{ padding: '0.4rem 0.6rem' }}
-                />
-                <select
-                    value={filterActive}
-                    onChange={(e) => setFilterActive(e.target.value as 'all' | 'true' | 'false')}
-                    style={{ padding: '0.4rem 0.6rem' }}
-                >
-                    <option value="all">Todos</option>
-                    <option value="true">Activos</option>
-                    <option value="false">Inactivos</option>
-                </select>
-                <select
-                    value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)}
-                    style={{ padding: '0.4rem 0.6rem' }}
-                    disabled={rolesLoading}
-                >
-                    <option value="">Rol (todos)</option>
-                    {roles.map((r) => (
-                        <option key={r.id} value={r.name}>
-                            {r.name}
-                        </option>
-                    ))}
-                </select>
-
-                <div
-                    style={
-                        {
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            alignItems: 'center',
-                        }}
-                >
-                    <button type="submit">Buscar</button>
+            {/* Buscador */}
+            <form onSubmit={handleSearchSubmit} style={{ ...cardStyle, marginBottom: '1rem' }}>
+                <div style={sectionTitleStyle}>Filtros de búsqueda</div>
+                <div style={searchGridStyle}>
+                    <input
+                        type="text"
+                        placeholder="Username"
+                        value={filterUsername}
+                        onChange={(e) => setFilterUsername(e.target.value)}
+                        style={inputBaseStyle}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Nombre"
+                        value={filterFirstName}
+                        onChange={(e) => setFilterFirstName(e.target.value)}
+                        style={inputBaseStyle}
+                    />
+                    <input
+                        type="text"
+                        placeholder="1er apellido"
+                        value={filterLastName}
+                        onChange={(e) => setFilterLastName(e.target.value)}
+                        style={inputBaseStyle}
+                    />
+                    <input
+                        type="text"
+                        placeholder="2º apellido"
+                        value={filterSecondLastName}
+                        onChange={(e) => setFilterSecondLastName(e.target.value)}
+                        style={inputBaseStyle}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Email"
+                        value={filterEmail}
+                        onChange={(e) => setFilterEmail(e.target.value)}
+                        style={inputBaseStyle}
+                    />
+                    <select
+                        value={filterActive}
+                        onChange={(e) =>
+                            setFilterActive(e.target.value as 'all' | 'true' | 'false')
+                        }
+                        style={selectStyle}
+                    >
+                        <option value="all">Todos</option>
+                        <option value="true">Activos</option>
+                        <option value="false">Inactivos</option>
+                    </select>
+                    <select
+                        value={filterRole}
+                        onChange={(e) => setFilterRole(e.target.value)}
+                        style={selectStyle}
+                        disabled={rolesLoading}
+                    >
+                        <option value="">Rol (todos)</option>
+                        {roles.map((r) => (
+                            <option key={r.id} value={r.name}>
+                                {r.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
+                <div
+                    style={{
+                        ...searchActionsRowStyle,
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <button type="submit" style={primaryButton}>
+                        Buscar
+                    </button>
+
+                    <button
+                        type="button"
+                        style={secondaryButton}
+                        onClick={handleOpenCreateUser}
+                    >
+                        + Nuevo usuario
+                    </button>
+                </div>
+
             </form>
 
             {loading && <p>Cargando usuarios...</p>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}
 
             {/* LISTA */}
             {mode === 'LIST' && !loading && !error && (
                 <>
-                    <DataTable<UserDTO, SortableField>
-                        columns={userColumns}
-                        data={users}
-                        sortState={sortState}
-                        onSortChange={handleSort}
-                    />
+                    <div style={cardStyle}>
+                        <DataTable<UserDTO, SortableField>
+                            columns={userColumns}
+                            data={users}
+                            sortState={sortState}
+                            onSortChange={handleSort}
+                        />
+                    </div>
                     <PaginationBar
                         page={page}
                         totalPages={totalPages}
@@ -586,78 +861,124 @@ function UsersPage() {
 
             {/* DETALLE */}
             {mode === 'DETAIL' && selectedUser && !managingInstruments && (
-                <div
-                    style={{
-                        marginTop: '1rem',
-                        padding: '1rem',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #e5e7eb',
-                        background: '#ffffff',
-                    }}
-                >
-                    <h2>Detalle de usuario</h2>
-                    <p>
-                        <strong>Username:</strong> {selectedUser.username}
-                    </p>
-                    <p>
-                        <strong>Nombre:</strong> {selectedUser.firstName}
-                    </p>
-                    <p>
-                        <strong>Apellidos:</strong>{' '}
-                        {[selectedUser.lastName, selectedUser.secondLastName]
-                            .filter(Boolean)
-                            .join(' ')}
-                    </p>
-                    <p>
-                        <strong>Email:</strong> {selectedUser.email}
-                    </p>
-                    <p>
-                        <strong>Activo:</strong> {selectedUser.active ? 'Sí' : 'No'}
-                    </p>
-                    <p>
-                        <strong>Roles:</strong> {(selectedUser.roles ?? []).join(', ')}
-                    </p>
-                    <p>
-                        <strong>Instrumentos:</strong>{' '}
-                        {selectedUser.instruments && selectedUser.instruments.length > 0
-                            ? [...selectedUser.instruments]
-                                .sort((a: any, b: any) => {
-                                    const na = (a?.instrumentName ?? String(a)).toString().toLowerCase()
-                                    const nb = (b?.instrumentName ?? String(b)).toString().toLowerCase()
-                                    return na.localeCompare(nb)
-                                })
-                                .map((inst: any) =>
-                                    inst && inst.instrumentName
-                                        ? `${inst.instrumentName}${inst.voice ? ' ' + inst.voice : ''}`
-                                        : String(inst)
-                                ).join(', ') : '-'}
-                    </p>
-                    <p>
-                        <strong>Fecha nacimiento:</strong> {formatDate(selectedUser.birthDate)}
-                    </p>
-                    <p>
-                        <strong>Alta en banda:</strong>{' '}
-                        {formatDate(selectedUser.bandJoinDate)}
-                    </p>
-                    <p>
-                        <strong>Alta en sistema:</strong>{' '}
-                        {formatDate(selectedUser.systemSignupDate)}
-                    </p>
-                    <p>
-                        <strong>Teléfono:</strong> {selectedUser.phone || '-'}
-                    </p>
-                    <p>
-                        <strong>Notas:</strong> {selectedUser.notes || '-'}
-                    </p>
+                <div style={{ ...cardStyle, marginTop: '1rem' }}>
+                    <div style={sectionTitleStyle}>Detalle de usuario</div>
+                    <div style={detailGridStyle}>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Username</span>
+                            <span style={detailValueStyle}>{selectedUser.username}</span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Nombre</span>
+                            <span style={detailValueStyle}>{selectedUser.firstName}</span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Apellidos</span>
+                            <span style={detailValueStyle}>
+                                {[selectedUser.lastName, selectedUser.secondLastName]
+                                    .filter(Boolean)
+                                    .join(' ')}
+                            </span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Email</span>
+                            <span style={detailValueStyle}>{selectedUser.email}</span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Activo</span>
+                            <span style={detailValueStyle}>
+                                {selectedUser.active ? 'Sí' : 'No'}
+                            </span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Roles</span>
+                            <span style={detailValueStyle}>
+                                {(selectedUser.roles ?? []).join(', ') || '-'}
+                            </span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Instrumentos</span>
+                            <span style={detailValueStyle}>
+                                {selectedUser.instruments && selectedUser.instruments.length > 0
+                                    ? [...selectedUser.instruments]
+                                        .sort((a: any, b: any) => {
+                                            const na = (
+                                                a?.instrumentName ?? String(a)
+                                            ).toString().toLowerCase()
+                                            const nb = (
+                                                b?.instrumentName ?? String(b)
+                                            ).toString().toLowerCase()
+                                            return na.localeCompare(nb)
+                                        })
+                                        .map((inst: any) =>
+                                            inst && inst.instrumentName
+                                                ? `${inst.instrumentName}${inst.voice ? ' ' + inst.voice : ''
+                                                }`
+                                                : String(inst),
+                                        )
+                                        .join(', ')
+                                    : '-'}
+                            </span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Fecha nacimiento</span>
+                            <span style={detailValueStyle}>
+                                {formatDate(selectedUser.birthDate)}
+                            </span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Alta en banda</span>
+                            <span style={detailValueStyle}>
+                                {formatDate(selectedUser.bandJoinDate)}
+                            </span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Alta en sistema</span>
+                            <span style={detailValueStyle}>
+                                {formatDate(selectedUser.systemSignupDate)}
+                            </span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Teléfono</span>
+                            <span style={detailValueStyle}>
+                                {selectedUser.phone || '-'}
+                            </span>
+                        </div>
+                        <div style={detailItemStyle}>
+                            <span style={detailLabelStyle}>Notas</span>
+                            <span style={detailValueStyle}>
+                                {selectedUser.notes || '-'}
+                            </span>
+                        </div>
+                    </div>
 
-                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                        <button type="button" onClick={handleCancelDetailOrEdit}>
+                    <div
+                        style={{
+                            marginTop: '1rem',
+                            display: 'flex',
+                            gap: '0.5rem',
+                            justifyContent: 'flex-end',
+                        }}
+                    >
+                        <button
+                            type="button"
+                            style={subtleButton}
+                            onClick={handleCancelDetailOrEdit}
+                        >
                             Volver a la lista
                         </button>
-                        <button type="button" onClick={() => handleEditUser(selectedUser)}>
+                        <button
+                            type="button"
+                            style={secondaryButton}
+                            onClick={() => handleEditUser(selectedUser)}
+                        >
                             Editar
                         </button>
-                        <button type="button" onClick={() => openManageInstruments(selectedUser)}>
+                        <button
+                            type="button"
+                            style={primaryButton}
+                            onClick={() => openManageInstruments(selectedUser)}
+                        >
                             Gestionar instrumentos
                         </button>
                     </div>
@@ -668,130 +989,139 @@ function UsersPage() {
             {mode === 'EDIT' && selectedUser && (
                 <form
                     onSubmit={handleSaveEdit}
-                    style={{
-                        marginTop: '1rem',
-                        padding: '1rem',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #e5e7eb',
-                        background: '#ffffff',
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                        gap: '0.75rem',
-                    }}
+                    style={{ ...cardStyle, marginTop: '1rem' }}
                 >
-                    <h2 style={{ gridColumn: '1 / -1' }}>
+                    <div style={sectionTitleStyle}>
                         Editar usuario: {selectedUser.username}
-                    </h2>
+                    </div>
 
-                    <label>
-                        Email *
-                        <input
-                            type="email"
-                            value={editPayload.email}
-                            onChange={(e) => handleEditFieldChange('email', e.target.value)}
-                            required
-                        />
-                    </label>
+                    <div style={formGridStyle}>
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Email *</span>
+                            <input
+                                type="email"
+                                value={editPayload.email}
+                                onChange={(e) =>
+                                    handleEditFieldChange('email', e.target.value)
+                                }
+                                required
+                                style={inputBaseStyle}
+                            />
+                        </div>
 
-                    <label>
-                        Nombre *
-                        <input
-                            type="text"
-                            value={editPayload.firstName}
-                            onChange={(e) =>
-                                handleEditFieldChange('firstName', e.target.value)
-                            }
-                            required
-                        />
-                    </label>
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Nombre *</span>
+                            <input
+                                type="text"
+                                value={editPayload.firstName}
+                                onChange={(e) =>
+                                    handleEditFieldChange('firstName', e.target.value)
+                                }
+                                required
+                                style={inputBaseStyle}
+                            />
+                        </div>
 
-                    <label>
-                        1er apellido *
-                        <input
-                            type="text"
-                            value={editPayload.lastName}
-                            onChange={(e) =>
-                                handleEditFieldChange('lastName', e.target.value)
-                            }
-                            required
-                        />
-                    </label>
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>1er apellido *</span>
+                            <input
+                                type="text"
+                                value={editPayload.lastName}
+                                onChange={(e) =>
+                                    handleEditFieldChange('lastName', e.target.value)
+                                }
+                                required
+                                style={inputBaseStyle}
+                            />
+                        </div>
 
-                    <label>
-                        2º apellido
-                        <input
-                            type="text"
-                            value={editPayload.secondLastName ?? ''}
-                            onChange={(e) =>
-                                handleEditFieldChange('secondLastName', e.target.value)
-                            }
-                        />
-                    </label>
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>2º apellido</span>
+                            <input
+                                type="text"
+                                value={editPayload.secondLastName ?? ''}
+                                onChange={(e) =>
+                                    handleEditFieldChange('secondLastName', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
 
-                    <label>
-                        Fecha nacimiento
-                        <input
-                            type="date"
-                            value={editPayload.birthDate ?? ''}
-                            onChange={(e) =>
-                                handleEditFieldChange('birthDate', e.target.value)
-                            }
-                        />
-                    </label>
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Fecha nacimiento</span>
+                            <input
+                                type="date"
+                                value={editPayload.birthDate ?? ''}
+                                onChange={(e) =>
+                                    handleEditFieldChange('birthDate', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
 
-                    <label>
-                        Alta en banda
-                        <input
-                            type="date"
-                            value={editPayload.bandJoinDate ?? ''}
-                            onChange={(e) =>
-                                handleEditFieldChange('bandJoinDate', e.target.value)
-                            }
-                        />
-                    </label>
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Alta en banda</span>
+                            <input
+                                type="date"
+                                value={editPayload.bandJoinDate ?? ''}
+                                onChange={(e) =>
+                                    handleEditFieldChange('bandJoinDate', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
 
-                    <label>
-                        Teléfono
-                        <input
-                            type="text"
-                            value={editPayload.phone ?? ''}
-                            onChange={(e) => handleEditFieldChange('phone', e.target.value)}
-                        />
-                    </label>
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Teléfono</span>
+                            <input
+                                type="text"
+                                value={editPayload.phone ?? ''}
+                                onChange={(e) =>
+                                    handleEditFieldChange('phone', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
 
-                    <label style={{ gridColumn: '1 / -1' }}>
-                        Notas
-                        <textarea
-                            rows={3}
-                            value={editPayload.notes ?? ''}
-                            onChange={(e) => handleEditFieldChange('notes', e.target.value)}
-                        />
-                    </label>
+                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
+                            <span style={labelTextStyle}>Notas</span>
+                            <textarea
+                                rows={3}
+                                value={editPayload.notes ?? ''}
+                                onChange={(e) =>
+                                    handleEditFieldChange('notes', e.target.value)
+                                }
+                                style={textareaStyle}
+                            />
+                        </div>
 
-                    <label style={{ gridColumn: '1 / -1' }}>
-                        URL foto de perfil
-                        <input
-                            type="text"
-                            value={editPayload.profilePictureUrl ?? ''}
-                            onChange={(e) =>
-                                handleEditFieldChange('profilePictureUrl', e.target.value)
-                            }
-                        />
-                    </label>
+                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
+                            <span style={labelTextStyle}>URL foto de perfil</span>
+                            <input
+                                type="text"
+                                value={editPayload.profilePictureUrl ?? ''}
+                                onChange={(e) =>
+                                    handleEditFieldChange('profilePictureUrl', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
+                    </div>
 
                     <div
                         style={{
-                            gridColumn: '1 / -1',
+                            marginTop: '0.75rem',
                             display: 'flex',
                             gap: '0.5rem',
-                            marginTop: '0.5rem',
+                            justifyContent: 'flex-end',
                         }}
                     >
-                        <button type="submit" disabled={saving}>
+                        <button type="submit" style={primaryButton} disabled={saving}>
                             {saving ? 'Guardando...' : 'Guardar'}
                         </button>
                         <button
                             type="button"
+                            style={secondaryButton}
                             onClick={handleCancelDetailOrEdit}
                             disabled={saving}
                         >
@@ -800,19 +1130,226 @@ function UsersPage() {
                     </div>
                 </form>
             )}
+
+            {/* CREACIÓN */}
+            {mode === 'CREATE' && (
+                <form
+                    onSubmit={handleSubmitCreateUser}
+                    style={{ ...cardStyle, marginTop: '1rem' }}
+                >
+                    <div style={sectionTitleStyle}>Nuevo usuario</div>
+
+                    <div style={formGridStyle}>
+                        {/* CREDENCIALES */}
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Username *</span>
+                            <input
+                                type="text"
+                                value={createPayload.username}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('username', e.target.value)
+                                }
+                                required
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Email *</span>
+                            <input
+                                type="email"
+                                value={createPayload.email}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('email', e.target.value)
+                                }
+                                required
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Password *</span>
+                            <input
+                                type="password"
+                                value={createPayload.password}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('password', e.target.value)
+                                }
+                                required
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        {/* DATOS PERSONALES */}
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Nombre *</span>
+                            <input
+                                type="text"
+                                value={createPayload.firstName}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('firstName', e.target.value)
+                                }
+                                required
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>1er apellido *</span>
+                            <input
+                                type="text"
+                                value={createPayload.lastName}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('lastName', e.target.value)
+                                }
+                                required
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>2º apellido</span>
+                            <input
+                                type="text"
+                                value={createPayload.secondLastName ?? ''}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('secondLastName', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Fecha nacimiento</span>
+                            <input
+                                type="date"
+                                value={createPayload.birthDate ?? ''}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('birthDate', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Alta en banda</span>
+                            <input
+                                type="date"
+                                value={createPayload.bandJoinDate ?? ''}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('bandJoinDate', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
+{/* 
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Alta en sistema</span>
+                            <input
+                                type="date"
+                                value={createPayload.systemSignupDate ?? ''}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('systemSignupDate', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div> */}
+
+                        <div style={formFieldStyle}>
+                            <span style={labelTextStyle}>Teléfono</span>
+                            <input
+                                type="text"
+                                value={createPayload.phone ?? ''}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('phone', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
+                            <span style={labelTextStyle}>Notas</span>
+                            <textarea
+                                rows={3}
+                                value={createPayload.notes ?? ''}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('notes', e.target.value)
+                                }
+                                style={textareaStyle}
+                            />
+                        </div>
+
+                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
+                            <span style={labelTextStyle}>URL foto de perfil</span>
+                            <input
+                                type="text"
+                                value={createPayload.profilePictureUrl ?? ''}
+                                onChange={(e) =>
+                                    handleCreateFieldChange('profilePictureUrl', e.target.value)
+                                }
+                                style={inputBaseStyle}
+                            />
+                        </div>
+
+                        {/* ROLES */}
+                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
+                            <span style={labelTextStyle}>Roles</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                {roles.map((r) => (
+                                    <label
+                                        key={r.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.25rem',
+                                            fontSize: '0.85rem',
+                                        }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={createPayload.roles.includes(r.name)}
+                                            onChange={() => handleToggleCreateRole(r.name)}
+                                        />
+                                        <span>{r.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style={{
+                            marginTop: '0.75rem',
+                            display: 'flex',
+                            gap: '0.5rem',
+                            justifyContent: 'flex-end',
+                        }}
+                    >
+                        <button type="submit" style={primaryButton} disabled={saving}>
+                            {saving ? 'Guardando...' : 'Crear usuario'}
+                        </button>
+                        <button
+                            type="button"
+                            style={secondaryButton}
+                            onClick={handleCancelDetailOrEdit}
+                            disabled={saving}
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            )}
+
+
             {/* GESTIÓN DE INSTRUMENTOS */}
             {mode === 'DETAIL' && selectedUser && managingInstruments && (
                 <form
                     onSubmit={handleSaveUserInstruments}
-                    style={{
-                        marginTop: '1rem',
-                        padding: '1rem',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #e5e7eb',
-                        background: '#ffffff',
-                    }}
+                    style={{ ...cardStyle, marginTop: '1rem' }}
                 >
-                    <h3>Gestionar instrumentos de {selectedUser.username}</h3>
+                    <div style={sectionTitleStyle}>
+                        Gestionar instrumentos de {selectedUser.username}
+                    </div>
 
                     {instrumentsLoading ? (
                         <p>Cargando instrumentos...</p>
@@ -822,27 +1359,29 @@ function UsersPage() {
                                 maxHeight: '300px',
                                 overflowY: 'auto',
                                 padding: '0.5rem 1rem',
-                                columnCount: 5,          // nº de columnas
-                                columnGap: '0.5rem',     // separación entre columnas
+                                columnCount: 5,
+                                columnGap: '0.75rem',
                             }}
                         >
                             {allGroupedInstruments.map((group) => (
-                                <div key={group.letter} style={{
-                                    breakInside: 'avoid',           // evita que un grupo se parta entre columnas
-                                    WebkitColumnBreakInside: 'avoid',
-                                    marginBottom: '0.5rem',
-                                } as any}>
+                                <div
+                                    key={group.letter}
+                                    style={{
+                                        breakInside: 'avoid',
+                                        marginBottom: '0.5rem',
+                                    }}
+                                >
                                     <div
                                         style={{
-                                            fontWeight: 'bold',
-                                            fontSize: '0.95rem',
+                                            fontWeight: 600,
+                                            fontSize: '0.9rem',
                                             marginBottom: '0.15rem',
                                         }}
                                     >
                                         {group.letter}
                                     </div>
 
-                                    {group.items.map((inst) => (
+                                    {group.items.map((inst: InstrumentDTO) => (
                                         <label
                                             key={inst.id}
                                             style={{
@@ -860,7 +1399,8 @@ function UsersPage() {
                                                 onChange={() => toggleInstrumentForUser(inst.id)}
                                             />
                                             <span>
-                                                {inst.instrumentName} {inst.voice && `(${inst.voice})`}
+                                                {inst.instrumentName}{' '}
+                                                {inst.voice && `(${inst.voice})`}
                                             </span>
                                         </label>
                                     ))}
@@ -872,12 +1412,20 @@ function UsersPage() {
                         </div>
                     )}
 
-                    <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                        <button type="submit" disabled={saving}>
+                    <div
+                        style={{
+                            marginTop: '0.75rem',
+                            display: 'flex',
+                            gap: '0.5rem',
+                            justifyContent: 'flex-end',
+                        }}
+                    >
+                        <button type="submit" style={primaryButton} disabled={saving}>
                             {saving ? 'Guardando...' : 'Guardar instrumentos'}
                         </button>
                         <button
                             type="button"
+                            style={secondaryButton}
                             onClick={handleCancelManageInstruments}
                             disabled={saving}
                         >
@@ -886,7 +1434,6 @@ function UsersPage() {
                     </div>
                 </form>
             )}
-
         </div>
     )
 }

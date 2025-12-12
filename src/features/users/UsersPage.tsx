@@ -10,6 +10,7 @@ import {
     type UserUpdatePayload,
     createUser,
     type UserCreatePayload,
+    setUserRoles,
 } from '../../api/usersApi'
 import { getAllInstruments, setUserInstruments } from '../../api/instrumentsApi'
 import type { InstrumentDTO } from '../../types/instruments'
@@ -55,6 +56,10 @@ function UsersPage() {
     const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<number[]>(
         [],
     )
+
+    // Gestión de roles
+    const [managingRoles, setManagingRoles] = useState(false)
+    const [selectedRoleNames, setSelectedRoleNames] = useState<string[]>([])
 
     // filtros visibles
     const [filterUsername, setFilterUsername] = useState('')
@@ -337,12 +342,14 @@ function UsersPage() {
     const handleViewDetails = (user: UserDTO) => {
         setSelectedUser(user)
         setManagingInstruments(false)
+        setManagingRoles(false)
         setMode('DETAIL')
     }
 
     const handleOpenCreateUser = () => {
         setSelectedUser(null)
         setManagingInstruments(false)
+        setManagingRoles(false)
         setMode('CREATE')
         setCreatePayload({
             email: '',
@@ -420,6 +427,7 @@ function UsersPage() {
     const handleEditUser = (user: UserDTO) => {
         setSelectedUser(user)
         setManagingInstruments(false)
+        setManagingRoles(false)
         setEditPayload({
             email: user.email ?? '',
             firstName: user.firstName ?? '',
@@ -438,6 +446,7 @@ function UsersPage() {
         setMode('LIST')
         setSelectedUser(null)
         setManagingInstruments(false)
+        setManagingRoles(false)
     }
 
     const handleEditFieldChange = (
@@ -611,6 +620,60 @@ function UsersPage() {
         setSelectedInstrumentIds([])
     }
 
+    // roles
+
+    const openManageRoles = (user: UserDTO) => {
+        if (!token) return
+
+        setError(null)
+        setManagingRoles(true)
+        setSelectedUser(user)
+
+        const currentRoles = user.roles ?? []
+        setSelectedRoleNames(currentRoles)
+        setMode('DETAIL')
+    }
+
+    const toggleRoleForUser = (roleName: string) => {
+        setSelectedRoleNames((prev) =>
+            prev.includes(roleName)
+                ? prev.filter((name) => name !== roleName)
+                : [...prev, roleName],
+        )
+    }
+
+    const handleSaveUserRoles = async (e: FormEvent) => {
+        e.preventDefault()
+        if (!token || !selectedUser || !selectedUser.id) return
+
+        try {
+            setSaving(true)
+            setError(null)
+
+            const refreshed = await setUserRoles(
+                selectedUser.id,
+                selectedRoleNames,
+                selectedUser.version,
+                token,
+            )
+            setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
+
+            setSelectedUser(refreshed)
+            setManagingRoles(false)
+            setSearchTrigger((prev) => prev + 1)
+        } catch (e) {
+            console.error('Error guardando roles del usuario', e)
+            setError('Error guardando roles del usuario')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleCancelManageRoles = () => {
+        setManagingRoles(false)
+        setSelectedRoleNames([])
+    }
+
     // ===== render =====
 
     return (
@@ -727,7 +790,7 @@ function UsersPage() {
             )}
 
             {/* DETALLE */}
-            {mode === 'DETAIL' && selectedUser && !managingInstruments && (
+            {mode === 'DETAIL' && selectedUser && !managingInstruments && !managingRoles && (
                 <div className="card" style={{ marginTop: '1rem' }}>
                     <div className="section-title">Detalle de usuario</div>
                     <div className="detail-grid">
@@ -840,6 +903,13 @@ function UsersPage() {
                             onClick={() => openManageInstruments(selectedUser)}
                         >
                             Gestionar instrumentos
+                        </button>
+                        <button
+                            type="button"
+                            className="button-primary"
+                            onClick={() => openManageRoles(selectedUser)}
+                        >
+                            Gestionar roles
                         </button>
                     </div>
                 </div>
@@ -1180,6 +1250,49 @@ function UsersPage() {
                 </form>
             )}
 
+
+            {/* GESTIÓN DE ROLES */}
+            {mode === 'DETAIL' && selectedUser && managingRoles && (
+                <form
+                    onSubmit={handleSaveUserRoles}
+                    className="card"
+                    style={{ marginTop: '1rem' }}
+                >
+                    <div className="section-title">
+                        Gestionar roles de {selectedUser.username}
+                    </div>
+
+                    <div className="checkbox-group" style={{ marginTop: '1rem' }}>
+                        {roles.map((role) => (
+                            <label key={role.id} className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedRoleNames.includes(role.name)}
+                                    onChange={() => toggleRoleForUser(role.name)}
+                                />
+                                <span>{role.name}</span>
+                            </label>
+                        ))}
+                        {roles.length === 0 && (
+                            <p>No hay roles definidos en el sistema.</p>
+                        )}
+                    </div>
+
+                    <div className="button-row">
+                        <button type="submit" className="button-primary" disabled={saving}>
+                            {saving ? 'Guardando...' : 'Guardar roles'}
+                        </button>
+                        <button
+                            type="button"
+                            className="button-secondary"
+                            onClick={handleCancelManageRoles}
+                            disabled={saving}
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            )}
 
             {/* GESTIÓN DE INSTRUMENTOS */}
             {mode === 'DETAIL' && selectedUser && managingInstruments && (

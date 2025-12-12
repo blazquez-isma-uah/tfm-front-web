@@ -157,3 +157,23 @@ export async function disableUser(
         },
     )
 }
+
+// PUT /api/roles/user/{userId}
+export async function setUserRoles(
+    userId: number,
+    roleNames: string[],
+    version: number,
+    token?: string,
+): Promise<UserDTO> {
+    const response = await api.put<UserDTO>(
+        `/api/roles/user/${userId}`,
+        roleNames,
+        {
+            headers: {
+                ...authHeaders(token),
+                'If-Match': `W/"${version}"`,
+            },
+        },
+    )
+    return response.data
+}

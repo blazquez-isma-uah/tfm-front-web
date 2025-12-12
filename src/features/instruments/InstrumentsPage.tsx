@@ -12,105 +12,7 @@ import type {
 } from '../../types/instruments'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
-
-// ==== estilos compartidos con UsersPage (copiados) ====
-
-const pageContainerStyle: React.CSSProperties = {
-  maxWidth: '1200px',
-  margin: '0 auto',
-  padding: '1.5rem 1.75rem',
-}
-
-const pageTitleStyle: React.CSSProperties = {
-  fontSize: '1.8rem',
-  fontWeight: 700,
-  marginBottom: '1rem',
-}
-
-const cardStyle: React.CSSProperties = {
-  background: '#ffffff',
-  borderRadius: '0.75rem',
-  border: '1px solid #e5e7eb',
-  padding: '1rem 1.25rem',
-  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
-}
-
-const toolbarStyle: React.CSSProperties = {
-  ...cardStyle,
-  marginBottom: '1rem',
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.75rem',
-  alignItems: 'center',
-}
-
-const inputBaseStyle: React.CSSProperties = {
-  padding: '0.45rem 0.6rem',
-  borderRadius: '0.45rem',
-  border: '1px solid #d1d5db',
-  fontSize: '0.9rem',
-  boxSizing: 'border-box',
-}
-
-const buttonBase: React.CSSProperties = {
-  border: 'none',
-  borderRadius: '999px',
-  padding: '0.38rem 0.9rem',
-  fontSize: '0.85rem',
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '0.3rem',
-}
-
-const primaryButton: React.CSSProperties = {
-  ...buttonBase,
-  backgroundColor: '#2563eb',
-  color: '#ffffff',
-}
-
-const secondaryButton: React.CSSProperties = {
-  ...buttonBase,
-  backgroundColor: '#e5e7eb',
-  color: '#111827',
-}
-
-const subtleButton: React.CSSProperties = {
-  ...buttonBase,
-  backgroundColor: '#f3f4f6',
-  color: '#111827',
-}
-
-const dangerButton: React.CSSProperties = {
-  ...buttonBase,
-  backgroundColor: '#fee2e2',
-  color: '#b91c1c',
-}
-
-const formCardStyle: React.CSSProperties = {
-  ...cardStyle,
-  marginTop: '1.25rem',
-}
-
-const formGridStyle: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-  gap: '0.75rem 1rem',
-}
-
-const formFieldStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.25rem',
-  fontSize: '0.85rem',
-}
-
-const labelTextStyle: React.CSSProperties = {
-  fontWeight: 500,
-  color: '#374151',
-}
-
-// =====================================================
+import '../../styles/common.css'
 
 type ViewMode = 'LIST' | 'CREATE' | 'EDIT'
 
@@ -167,17 +69,17 @@ function InstrumentsPage() {
       sortable: false,
       width: 220,
       render: (i: InstrumentDTO) => (
-        <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+        <div className="actions-container-wide">
           <button
             type="button"
-            style={secondaryButton}
+            className="button-secondary"
             onClick={() => handleOpenEdit(i)}
           >
             Editar
           </button>
           <button
             type="button"
-            style={dangerButton}
+            className="button-danger"
             onClick={() => handleDelete(i)}
           >
             Eliminar
@@ -246,8 +148,8 @@ function InstrumentsPage() {
 
   if (!isAdmin) {
     return (
-      <div style={pageContainerStyle}>
-        <h1 style={pageTitleStyle}>Gestión de instrumentos</h1>
+      <div className="page-container">
+        <h1 className="page-title">Gestión de instrumentos</h1>
         <p>No tienes permisos para ver esta sección.</p>
       </div>
     )
@@ -332,6 +234,7 @@ function InstrumentsPage() {
         prev.map((i) => (i.id === updated.id ? updated : i)),
       )
       switchToList()
+      setSearchTrigger((prev) => prev + 1)
     } catch (e: any) {
       console.error('Error updating instrument', e)
       const status = e?.response?.status
@@ -359,6 +262,7 @@ function InstrumentsPage() {
       setError(null)
       await deleteInstrument(inst.id, inst.version, token)
       setInstruments((prev) => prev.filter((i) => i.id !== inst.id))
+      setSearchTrigger((prev) => prev + 1)
     } catch (e: any) {
       console.error('Error deleting instrument', e)
       const status = e?.response?.status
@@ -392,44 +296,46 @@ function InstrumentsPage() {
   // ---- render ----
 
   return (
-    <div style={pageContainerStyle}>
-      <h1 style={pageTitleStyle}>Gestión de instrumentos</h1>
+    <div className="page-container">
+      <h1 className="page-title">Gestión de instrumentos</h1>
 
       {/* Toolbar búsqueda + nuevo */}
-      <form onSubmit={handleSearchSubmit} style={toolbarStyle}>
+      <form onSubmit={handleSearchSubmit} className="toolbar">
         <input
           type="text"
           placeholder="Nombre"
           value={filterName}
           onChange={(e) => setFilterName(e.target.value)}
-          style={{ ...inputBaseStyle, minWidth: '180px' }}
+          className="input-base"
+          style={{ minWidth: '180px' }}
         />
         <input
           type="text"
           placeholder="Voz"
           value={filterVoice}
           onChange={(e) => setFilterVoice(e.target.value)}
-          style={{ ...inputBaseStyle, minWidth: '140px' }}
+          className="input-base"
+          style={{ minWidth: '140px' }}
         />
 
-        <button type="submit" style={primaryButton}>
+        <button type="submit" className="button-primary">
           Buscar
         </button>
 
-        <div style={{ marginLeft: 'auto' }}>
-          <button type="button" style={secondaryButton} onClick={handleOpenCreate}>
+        <div className="ml-auto">
+          <button type="button" className="button-secondary" onClick={handleOpenCreate}>
             + Nuevo instrumento
           </button>
         </div>
       </form>
 
       {loading && <p>Cargando instrumentos...</p>}
-      {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
 
       {/* LISTA */}
       {mode === 'LIST' && !loading && !error && (
         <>
-          <div style={cardStyle}>
+          <div className="card">
             <DataTable<InstrumentDTO, SortableField>
               columns={instrumentColumns}
               data={instruments}
@@ -451,20 +357,14 @@ function InstrumentsPage() {
 
       {/* NUEVO */}
       {mode === 'CREATE' && (
-        <form onSubmit={handleCreateSubmit} style={formCardStyle}>
-          <h2
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              marginBottom: '0.75rem',
-            }}
-          >
+        <form onSubmit={handleCreateSubmit} className="form-card">
+          <h2 className="section-title">
             Nuevo instrumento
           </h2>
 
-          <div style={formGridStyle}>
-            <div style={formFieldStyle}>
-              <span style={labelTextStyle}>Nombre</span>
+          <div className="form-grid">
+            <div className="form-field">
+              <span className="label-text">Nombre</span>
               <input
                 type="text"
                 value={newInstrument.instrumentName}
@@ -475,12 +375,12 @@ function InstrumentsPage() {
                   }))
                 }
                 required
-                style={inputBaseStyle}
+                className="input-base"
               />
             </div>
 
-            <div style={formFieldStyle}>
-              <span style={labelTextStyle}>Voz</span>
+            <div className="form-field">
+              <span className="label-text">Voz</span>
               <input
                 type="text"
                 value={newInstrument.voice}
@@ -491,25 +391,18 @@ function InstrumentsPage() {
                   }))
                 }
                 required
-                style={inputBaseStyle}
+                className="input-base"
               />
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: '0.75rem',
-              display: 'flex',
-              gap: '0.5rem',
-              justifyContent: 'flex-end',
-            }}
-          >
-            <button type="submit" style={primaryButton}>
+          <div className="button-row">
+            <button type="submit" className="button-primary">
               Guardar
             </button>
             <button
               type="button"
-              style={secondaryButton}
+              className="button-secondary"
               onClick={switchToList}
             >
               Cancelar
@@ -520,20 +413,14 @@ function InstrumentsPage() {
 
       {/* EDITAR */}
       {mode === 'EDIT' && editing && (
-        <form onSubmit={handleEditSubmit} style={formCardStyle}>
-          <h2
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              marginBottom: '0.75rem',
-            }}
-          >
+        <form onSubmit={handleEditSubmit} className="form-card">
+          <h2 className="section-title">
             Editar instrumento
           </h2>
 
-          <div style={formGridStyle}>
-            <div style={formFieldStyle}>
-              <span style={labelTextStyle}>Nombre</span>
+          <div className="form-grid">
+            <div className="form-field">
+              <span className="label-text">Nombre</span>
               <input
                 type="text"
                 value={editData.instrumentName}
@@ -544,12 +431,12 @@ function InstrumentsPage() {
                   }))
                 }
                 required
-                style={inputBaseStyle}
+                className="input-base"
               />
             </div>
 
-            <div style={formFieldStyle}>
-              <span style={labelTextStyle}>Voz</span>
+            <div className="form-field">
+              <span className="label-text">Voz</span>
               <input
                 type="text"
                 value={editData.voice}
@@ -560,25 +447,18 @@ function InstrumentsPage() {
                   }))
                 }
                 required
-                style={inputBaseStyle}
+                className="input-base"
               />
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: '0.75rem',
-              display: 'flex',
-              gap: '0.5rem',
-              justifyContent: 'flex-end',
-            }}
-          >
-            <button type="submit" style={primaryButton}>
+          <div className="button-row">
+            <button type="submit" className="button-primary">
               Guardar cambios
             </button>
             <button
               type="button"
-              style={secondaryButton}
+              className="button-secondary"
               onClick={switchToList}
             >
               Cancelar

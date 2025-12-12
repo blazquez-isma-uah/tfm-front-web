@@ -23,140 +23,7 @@ import {
     groupInstrumentsByInitial,
     type InstrumentGroup,
 } from '../../utils/instrumentUtils'
-
-// ==== estilos reutilizables ====
-
-const pageContainerStyle: React.CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '1.5rem 1.75rem',
-}
-
-const pageTitleStyle: React.CSSProperties = {
-    fontSize: '1.8rem',
-    fontWeight: 700,
-    marginBottom: '1rem',
-}
-
-const cardStyle: React.CSSProperties = {
-    background: '#ffffff',
-    borderRadius: '0.75rem',
-    border: '1px solid #e5e7eb',
-    padding: '1rem 1.25rem',
-    boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
-}
-
-const sectionTitleStyle: React.CSSProperties = {
-    fontSize: '1.05rem',
-    fontWeight: 600,
-    marginBottom: '0.75rem',
-}
-
-const searchGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-    gap: '0.75rem',
-}
-
-const searchActionsRowStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: '0.75rem',
-}
-
-const inputBaseStyle: React.CSSProperties = {
-    padding: '0.45rem 0.6rem',
-    borderRadius: '0.45rem',
-    border: '1px solid #d1d5db',
-    fontSize: '0.9rem',
-    width: '100%',
-    boxSizing: 'border-box',
-}
-
-const selectStyle = inputBaseStyle
-
-const buttonBase: React.CSSProperties = {
-    border: 'none',
-    borderRadius: '999px',
-    padding: '0.38rem 0.9rem',
-    fontSize: '0.85rem',
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.3rem',
-}
-
-const primaryButton: React.CSSProperties = {
-    ...buttonBase,
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
-}
-
-const secondaryButton: React.CSSProperties = {
-    ...buttonBase,
-    backgroundColor: '#e5e7eb',
-    color: '#111827',
-}
-
-const subtleButton: React.CSSProperties = {
-    ...buttonBase,
-    backgroundColor: '#f3f4f6',
-    color: '#111827',
-}
-
-const dangerButton: React.CSSProperties = {
-    ...buttonBase,
-    backgroundColor: '#fee2e2',
-    color: '#b91c1c',
-}
-
-const formGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '0.75rem 1rem',
-}
-
-const formFieldStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.25rem',
-    fontSize: '0.85rem',
-}
-
-const labelTextStyle: React.CSSProperties = {
-    fontWeight: 500,
-    color: '#374151',
-}
-
-const textareaStyle: React.CSSProperties = {
-    ...inputBaseStyle,
-    minHeight: '80px',
-    resize: 'vertical',
-}
-
-const detailGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-    gap: '0.75rem 1.5rem',
-}
-
-const detailItemStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.15rem',
-    fontSize: '0.9rem',
-}
-
-const detailLabelStyle: React.CSSProperties = {
-    fontWeight: 600,
-    color: '#4b5563',
-}
-
-const detailValueStyle: React.CSSProperties = {
-    color: '#111827',
-}
-
-// ====================================================
+import '../../styles/common.css'
 
 type ViewMode = 'LIST' | 'DETAIL' | 'EDIT' | 'CREATE'
 
@@ -306,31 +173,31 @@ function UsersPage() {
             header: 'Acciones',
             sortable: false,
             render: (u: UserDTO) => (
-                <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                <div className="actions-container">
                     <button
                         type="button"
-                        style={subtleButton}
+                        className="button-subtle"
                         onClick={() => handleViewDetails(u)}
                     >
                         Ver
                     </button>
                     <button
                         type="button"
-                        style={secondaryButton}
+                        className="button-secondary"
                         onClick={() => handleEditUser(u)}
                     >
                         Editar
                     </button>
                     <button
                         type="button"
-                        style={subtleButton}
+                        className="button-subtle"
                         onClick={() => handleToggleActive(u)}
                     >
                         {u.active ? 'Desactivar' : 'Activar'}
                     </button>
                     <button
                         type="button"
-                        style={dangerButton}
+                        className="button-danger"
                         onClick={() => handleDeleteUser(u)}
                     >
                         Eliminar
@@ -416,8 +283,8 @@ function UsersPage() {
 
     if (!isAdmin) {
         return (
-            <div style={pageContainerStyle}>
-                <h1 style={pageTitleStyle}>Gestión de usuarios</h1>
+            <div className="page-container">
+                <h1 className="page-title">Gestión de usuarios</h1>
                 <p>No tienes permisos para ver esta sección.</p>
             </div>
         )
@@ -609,6 +476,7 @@ function UsersPage() {
             setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
             setSelectedUser(updated)
             setMode('LIST')
+            setSearchTrigger((prev) => prev + 1)
         } catch (e: any) {
             console.error('Error actualizando usuario:', e)
             setError('Error actualizando usuario')
@@ -656,6 +524,7 @@ function UsersPage() {
 
             setPage(0)
             setMode('LIST')
+            setSearchTrigger((prev) => prev + 1)
             if (selectedUser && selectedUser.id === user.id) {
                 setSelectedUser(null)
             }
@@ -745,54 +614,54 @@ function UsersPage() {
     // ===== render =====
 
     return (
-        <div style={pageContainerStyle}>
-            <h1 style={pageTitleStyle}>Gestión de usuarios</h1>
+        <div className="page-container">
+            <h1 className="page-title">Gestión de usuarios</h1>
 
             {/* Buscador */}
-            <form onSubmit={handleSearchSubmit} style={{ ...cardStyle, marginBottom: '1rem' }}>
-                <div style={sectionTitleStyle}>Filtros de búsqueda</div>
-                <div style={searchGridStyle}>
+            <form onSubmit={handleSearchSubmit} className="card" style={{ marginBottom: '1rem' }}>
+                <div className="section-title">Filtros de búsqueda</div>
+                <div className="search-grid">
                     <input
                         type="text"
                         placeholder="Username"
                         value={filterUsername}
                         onChange={(e) => setFilterUsername(e.target.value)}
-                        style={inputBaseStyle}
+                        className="input-full-width"
                     />
                     <input
                         type="text"
                         placeholder="Nombre"
                         value={filterFirstName}
                         onChange={(e) => setFilterFirstName(e.target.value)}
-                        style={inputBaseStyle}
+                        className="input-full-width"
                     />
                     <input
                         type="text"
                         placeholder="1er apellido"
                         value={filterLastName}
                         onChange={(e) => setFilterLastName(e.target.value)}
-                        style={inputBaseStyle}
+                        className="input-full-width"
                     />
                     <input
                         type="text"
                         placeholder="2º apellido"
                         value={filterSecondLastName}
                         onChange={(e) => setFilterSecondLastName(e.target.value)}
-                        style={inputBaseStyle}
+                        className="input-full-width"
                     />
                     <input
                         type="text"
                         placeholder="Email"
                         value={filterEmail}
                         onChange={(e) => setFilterEmail(e.target.value)}
-                        style={inputBaseStyle}
+                        className="input-full-width"
                     />
                     <select
                         value={filterActive}
                         onChange={(e) =>
                             setFilterActive(e.target.value as 'all' | 'true' | 'false')
                         }
-                        style={selectStyle}
+                        className="select-base"
                     >
                         <option value="all">Todos</option>
                         <option value="true">Activos</option>
@@ -801,7 +670,7 @@ function UsersPage() {
                     <select
                         value={filterRole}
                         onChange={(e) => setFilterRole(e.target.value)}
-                        style={selectStyle}
+                        className="select-base"
                         disabled={rolesLoading}
                     >
                         <option value="">Rol (todos)</option>
@@ -813,18 +682,16 @@ function UsersPage() {
                     </select>
                 </div>
                 <div
-                    style={{
-                        ...searchActionsRowStyle,
-                        justifyContent: 'space-between',
-                    }}
+                    className="search-actions-row"
+                    style={{ justifyContent: 'space-between' }}
                 >
-                    <button type="submit" style={primaryButton}>
+                    <button type="submit" className="button-primary">
                         Buscar
                     </button>
 
                     <button
                         type="button"
-                        style={secondaryButton}
+                        className="button-secondary"
                         onClick={handleOpenCreateUser}
                     >
                         + Nuevo usuario
@@ -834,12 +701,12 @@ function UsersPage() {
             </form>
 
             {loading && <p>Cargando usuarios...</p>}
-            {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}
+            {error && <p className="error-message">{error}</p>}
 
             {/* LISTA */}
             {mode === 'LIST' && !loading && !error && (
                 <>
-                    <div style={cardStyle}>
+                    <div className="card">
                         <DataTable<UserDTO, SortableField>
                             columns={userColumns}
                             data={users}
@@ -861,44 +728,44 @@ function UsersPage() {
 
             {/* DETALLE */}
             {mode === 'DETAIL' && selectedUser && !managingInstruments && (
-                <div style={{ ...cardStyle, marginTop: '1rem' }}>
-                    <div style={sectionTitleStyle}>Detalle de usuario</div>
-                    <div style={detailGridStyle}>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Username</span>
-                            <span style={detailValueStyle}>{selectedUser.username}</span>
+                <div className="card" style={{ marginTop: '1rem' }}>
+                    <div className="section-title">Detalle de usuario</div>
+                    <div className="detail-grid">
+                        <div className="detail-item">
+                            <span className="detail-label">Username</span>
+                            <span className="detail-value">{selectedUser.username}</span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Nombre</span>
-                            <span style={detailValueStyle}>{selectedUser.firstName}</span>
+                        <div className="detail-item">
+                            <span className="detail-label">Nombre</span>
+                            <span className="detail-value">{selectedUser.firstName}</span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Apellidos</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Apellidos</span>
+                            <span className="detail-value">
                                 {[selectedUser.lastName, selectedUser.secondLastName]
                                     .filter(Boolean)
                                     .join(' ')}
                             </span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Email</span>
-                            <span style={detailValueStyle}>{selectedUser.email}</span>
+                        <div className="detail-item">
+                            <span className="detail-label">Email</span>
+                            <span className="detail-value">{selectedUser.email}</span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Activo</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Activo</span>
+                            <span className="detail-value">
                                 {selectedUser.active ? 'Sí' : 'No'}
                             </span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Roles</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Roles</span>
+                            <span className="detail-value">
                                 {(selectedUser.roles ?? []).join(', ') || '-'}
                             </span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Instrumentos</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Instrumentos</span>
+                            <span className="detail-value">
                                 {selectedUser.instruments && selectedUser.instruments.length > 0
                                     ? [...selectedUser.instruments]
                                         .sort((a: any, b: any) => {
@@ -920,63 +787,56 @@ function UsersPage() {
                                     : '-'}
                             </span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Fecha nacimiento</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Fecha nacimiento</span>
+                            <span className="detail-value">
                                 {formatDate(selectedUser.birthDate)}
                             </span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Alta en banda</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Alta en banda</span>
+                            <span className="detail-value">
                                 {formatDate(selectedUser.bandJoinDate)}
                             </span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Alta en sistema</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Alta en sistema</span>
+                            <span className="detail-value">
                                 {formatDate(selectedUser.systemSignupDate)}
                             </span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Teléfono</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Teléfono</span>
+                            <span className="detail-value">
                                 {selectedUser.phone || '-'}
                             </span>
                         </div>
-                        <div style={detailItemStyle}>
-                            <span style={detailLabelStyle}>Notas</span>
-                            <span style={detailValueStyle}>
+                        <div className="detail-item">
+                            <span className="detail-label">Notas</span>
+                            <span className="detail-value">
                                 {selectedUser.notes || '-'}
                             </span>
                         </div>
                     </div>
 
-                    <div
-                        style={{
-                            marginTop: '1rem',
-                            display: 'flex',
-                            gap: '0.5rem',
-                            justifyContent: 'flex-end',
-                        }}
-                    >
+                    <div className="button-row-1rem">
                         <button
                             type="button"
-                            style={subtleButton}
+                            className="button-subtle"
                             onClick={handleCancelDetailOrEdit}
                         >
                             Volver a la lista
                         </button>
                         <button
                             type="button"
-                            style={secondaryButton}
+                            className="button-secondary"
                             onClick={() => handleEditUser(selectedUser)}
                         >
                             Editar
                         </button>
                         <button
                             type="button"
-                            style={primaryButton}
+                            className="button-primary"
                             onClick={() => openManageInstruments(selectedUser)}
                         >
                             Gestionar instrumentos
@@ -989,15 +849,16 @@ function UsersPage() {
             {mode === 'EDIT' && selectedUser && (
                 <form
                     onSubmit={handleSaveEdit}
-                    style={{ ...cardStyle, marginTop: '1rem' }}
+                    className="card"
+                    style={{ marginTop: '1rem' }}
                 >
-                    <div style={sectionTitleStyle}>
+                    <div className="section-title">
                         Editar usuario: {selectedUser.username}
                     </div>
 
-                    <div style={formGridStyle}>
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Email *</span>
+                    <div className="form-grid">
+                        <div className="form-field">
+                            <span className="label-text">Email *</span>
                             <input
                                 type="email"
                                 value={editPayload.email}
@@ -1005,12 +866,12 @@ function UsersPage() {
                                     handleEditFieldChange('email', e.target.value)
                                 }
                                 required
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Nombre *</span>
+                        <div className="form-field">
+                            <span className="label-text">Nombre *</span>
                             <input
                                 type="text"
                                 value={editPayload.firstName}
@@ -1018,12 +879,12 @@ function UsersPage() {
                                     handleEditFieldChange('firstName', e.target.value)
                                 }
                                 required
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>1er apellido *</span>
+                        <div className="form-field">
+                            <span className="label-text">1er apellido *</span>
                             <input
                                 type="text"
                                 value={editPayload.lastName}
@@ -1031,97 +892,90 @@ function UsersPage() {
                                     handleEditFieldChange('lastName', e.target.value)
                                 }
                                 required
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>2º apellido</span>
+                        <div className="form-field">
+                            <span className="label-text">2º apellido</span>
                             <input
                                 type="text"
                                 value={editPayload.secondLastName ?? ''}
                                 onChange={(e) =>
                                     handleEditFieldChange('secondLastName', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Fecha nacimiento</span>
+                        <div className="form-field">
+                            <span className="label-text">Fecha nacimiento</span>
                             <input
                                 type="date"
                                 value={editPayload.birthDate ?? ''}
                                 onChange={(e) =>
                                     handleEditFieldChange('birthDate', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Alta en banda</span>
+                        <div className="form-field">
+                            <span className="label-text">Alta en banda</span>
                             <input
                                 type="date"
                                 value={editPayload.bandJoinDate ?? ''}
                                 onChange={(e) =>
                                     handleEditFieldChange('bandJoinDate', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Teléfono</span>
+                        <div className="form-field">
+                            <span className="label-text">Teléfono</span>
                             <input
                                 type="text"
                                 value={editPayload.phone ?? ''}
                                 onChange={(e) =>
                                     handleEditFieldChange('phone', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
-                            <span style={labelTextStyle}>Notas</span>
+                        <div className="form-field grid-full-width">
+                            <span className="label-text">Notas</span>
                             <textarea
                                 rows={3}
                                 value={editPayload.notes ?? ''}
                                 onChange={(e) =>
                                     handleEditFieldChange('notes', e.target.value)
                                 }
-                                style={textareaStyle}
+                                className="textarea-base"
                             />
                         </div>
 
-                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
-                            <span style={labelTextStyle}>URL foto de perfil</span>
+                        <div className="form-field grid-full-width">
+                            <span className="label-text">URL foto de perfil</span>
                             <input
                                 type="text"
                                 value={editPayload.profilePictureUrl ?? ''}
                                 onChange={(e) =>
                                     handleEditFieldChange('profilePictureUrl', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
                     </div>
 
-                    <div
-                        style={{
-                            marginTop: '0.75rem',
-                            display: 'flex',
-                            gap: '0.5rem',
-                            justifyContent: 'flex-end',
-                        }}
-                    >
-                        <button type="submit" style={primaryButton} disabled={saving}>
+                    <div className="button-row">
+                        <button type="submit" className="button-primary" disabled={saving}>
                             {saving ? 'Guardando...' : 'Guardar'}
                         </button>
                         <button
                             type="button"
-                            style={secondaryButton}
+                            className="button-secondary"
                             onClick={handleCancelDetailOrEdit}
                             disabled={saving}
                         >
@@ -1135,14 +989,15 @@ function UsersPage() {
             {mode === 'CREATE' && (
                 <form
                     onSubmit={handleSubmitCreateUser}
-                    style={{ ...cardStyle, marginTop: '1rem' }}
+                    className="card"
+                    style={{ marginTop: '1rem' }}
                 >
-                    <div style={sectionTitleStyle}>Nuevo usuario</div>
+                    <div className="section-title">Nuevo usuario</div>
 
-                    <div style={formGridStyle}>
+                    <div className="form-grid">
                         {/* CREDENCIALES */}
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Username *</span>
+                        <div className="form-field">
+                            <span className="label-text">Username *</span>
                             <input
                                 type="text"
                                 value={createPayload.username}
@@ -1150,12 +1005,12 @@ function UsersPage() {
                                     handleCreateFieldChange('username', e.target.value)
                                 }
                                 required
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Email *</span>
+                        <div className="form-field">
+                            <span className="label-text">Email *</span>
                             <input
                                 type="email"
                                 value={createPayload.email}
@@ -1163,12 +1018,12 @@ function UsersPage() {
                                     handleCreateFieldChange('email', e.target.value)
                                 }
                                 required
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Password *</span>
+                        <div className="form-field">
+                            <span className="label-text">Password *</span>
                             <input
                                 type="password"
                                 value={createPayload.password}
@@ -1176,13 +1031,13 @@ function UsersPage() {
                                     handleCreateFieldChange('password', e.target.value)
                                 }
                                 required
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
                         {/* DATOS PERSONALES */}
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Nombre *</span>
+                        <div className="form-field">
+                            <span className="label-text">Nombre *</span>
                             <input
                                 type="text"
                                 value={createPayload.firstName}
@@ -1190,12 +1045,12 @@ function UsersPage() {
                                     handleCreateFieldChange('firstName', e.target.value)
                                 }
                                 required
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>1er apellido *</span>
+                        <div className="form-field">
+                            <span className="label-text">1er apellido *</span>
                             <input
                                 type="text"
                                 value={createPayload.lastName}
@@ -1203,108 +1058,100 @@ function UsersPage() {
                                     handleCreateFieldChange('lastName', e.target.value)
                                 }
                                 required
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>2º apellido</span>
+                        <div className="form-field">
+                            <span className="label-text">2º apellido</span>
                             <input
                                 type="text"
                                 value={createPayload.secondLastName ?? ''}
                                 onChange={(e) =>
                                     handleCreateFieldChange('secondLastName', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Fecha nacimiento</span>
+                        <div className="form-field">
+                            <span className="label-text">Fecha nacimiento</span>
                             <input
                                 type="date"
                                 value={createPayload.birthDate ?? ''}
                                 onChange={(e) =>
                                     handleCreateFieldChange('birthDate', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Alta en banda</span>
+                        <div className="form-field">
+                            <span className="label-text">Alta en banda</span>
                             <input
                                 type="date"
                                 value={createPayload.bandJoinDate ?? ''}
                                 onChange={(e) =>
                                     handleCreateFieldChange('bandJoinDate', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 {/* 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Alta en sistema</span>
+                        <div className="form-field">
+                            <span className="label-text">Alta en sistema</span>
                             <input
                                 type="date"
                                 value={createPayload.systemSignupDate ?? ''}
                                 onChange={(e) =>
                                     handleCreateFieldChange('systemSignupDate', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div> */}
 
-                        <div style={formFieldStyle}>
-                            <span style={labelTextStyle}>Teléfono</span>
+                        <div className="form-field">
+                            <span className="label-text">Teléfono</span>
                             <input
                                 type="text"
                                 value={createPayload.phone ?? ''}
                                 onChange={(e) =>
                                     handleCreateFieldChange('phone', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
-                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
-                            <span style={labelTextStyle}>Notas</span>
+                        <div className="form-field grid-full-width">
+                            <span className="label-text">Notas</span>
                             <textarea
                                 rows={3}
                                 value={createPayload.notes ?? ''}
                                 onChange={(e) =>
                                     handleCreateFieldChange('notes', e.target.value)
                                 }
-                                style={textareaStyle}
+                                className="textarea-base"
                             />
                         </div>
 
-                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
-                            <span style={labelTextStyle}>URL foto de perfil</span>
+                        <div className="form-field grid-full-width">
+                            <span className="label-text">URL foto de perfil</span>
                             <input
                                 type="text"
                                 value={createPayload.profilePictureUrl ?? ''}
                                 onChange={(e) =>
                                     handleCreateFieldChange('profilePictureUrl', e.target.value)
                                 }
-                                style={inputBaseStyle}
+                                className="input-full-width"
                             />
                         </div>
 
                         {/* ROLES */}
-                        <div style={{ ...formFieldStyle, gridColumn: '1 / -1' }}>
-                            <span style={labelTextStyle}>Roles</span>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <div className="form-field grid-full-width">
+                            <span className="label-text">Roles</span>
+                            <div className="checkbox-group">
                                 {roles.map((r) => (
-                                    <label
-                                        key={r.id}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.25rem',
-                                            fontSize: '0.85rem',
-                                        }}
-                                    >
+                                    <label key={r.id} className="checkbox-label">
                                         <input
                                             type="checkbox"
                                             checked={createPayload.roles.includes(r.name)}
@@ -1317,20 +1164,13 @@ function UsersPage() {
                         </div>
                     </div>
 
-                    <div
-                        style={{
-                            marginTop: '0.75rem',
-                            display: 'flex',
-                            gap: '0.5rem',
-                            justifyContent: 'flex-end',
-                        }}
-                    >
-                        <button type="submit" style={primaryButton} disabled={saving}>
+                    <div className="button-row">
+                        <button type="submit" className="button-primary" disabled={saving}>
                             {saving ? 'Guardando...' : 'Crear usuario'}
                         </button>
                         <button
                             type="button"
-                            style={secondaryButton}
+                            className="button-secondary"
                             onClick={handleCancelDetailOrEdit}
                             disabled={saving}
                         >
@@ -1345,54 +1185,25 @@ function UsersPage() {
             {mode === 'DETAIL' && selectedUser && managingInstruments && (
                 <form
                     onSubmit={handleSaveUserInstruments}
-                    style={{ ...cardStyle, marginTop: '1rem' }}
+                    className="card"
+                    style={{ marginTop: '1rem' }}
                 >
-                    <div style={sectionTitleStyle}>
+                    <div className="section-title">
                         Gestionar instrumentos de {selectedUser.username}
                     </div>
 
                     {instrumentsLoading ? (
                         <p>Cargando instrumentos...</p>
                     ) : (
-                        <div
-                            style={{
-                                maxHeight: '300px',
-                                overflowY: 'auto',
-                                padding: '0.5rem 1rem',
-                                columnCount: 5,
-                                columnGap: '0.75rem',
-                            }}
-                        >
+                        <div className="instruments-grid">
                             {allGroupedInstruments.map((group) => (
-                                <div
-                                    key={group.letter}
-                                    style={{
-                                        breakInside: 'avoid',
-                                        marginBottom: '0.5rem',
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontWeight: 600,
-                                            fontSize: '0.9rem',
-                                            marginBottom: '0.15rem',
-                                        }}
-                                    >
+                                <div key={group.letter} className="instrument-group">
+                                    <div className="instrument-group-title">
                                         {group.letter}
                                     </div>
 
                                     {group.items.map((inst: InstrumentDTO) => (
-                                        <label
-                                            key={inst.id}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.35rem',
-                                                fontSize: '0.85rem',
-                                                padding: '1px 0',
-                                                marginLeft: '0.75rem',
-                                            }}
-                                        >
+                                        <label key={inst.id} className="instrument-item">
                                             <input
                                                 type="checkbox"
                                                 checked={selectedInstrumentIds.includes(inst.id)}
@@ -1412,20 +1223,13 @@ function UsersPage() {
                         </div>
                     )}
 
-                    <div
-                        style={{
-                            marginTop: '0.75rem',
-                            display: 'flex',
-                            gap: '0.5rem',
-                            justifyContent: 'flex-end',
-                        }}
-                    >
-                        <button type="submit" style={primaryButton} disabled={saving}>
+                    <div className="button-row">
+                        <button type="submit" className="button-primary" disabled={saving}>
                             {saving ? 'Guardando...' : 'Guardar instrumentos'}
                         </button>
                         <button
                             type="button"
-                            style={secondaryButton}
+                            className="button-secondary"
                             onClick={handleCancelManageInstruments}
                             disabled={saving}
                         >

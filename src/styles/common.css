@@ -1,0 +1,290 @@
+/* Contenedores de página */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1.75rem;
+}
+
+.page-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+/* Cards y secciones */
+.card {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.form-card {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  margin-top: 1.25rem;
+}
+
+.toolbar {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Grids */
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+/* Inputs y controles */
+.input-base {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.45rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.input-full-width {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.45rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.select-base {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.45rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.textarea-base {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.45rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Botones */
+.button-base {
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.button-primary {
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.button-secondary {
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.button-subtle {
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.button-danger {
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Campos de formulario */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.label-text {
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Detalles */
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.9rem;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.detail-value {
+  color: #111827;
+}
+
+/* Utilidades */
+.search-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+/* Contenedores de acciones y botones */
+.actions-container {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.actions-container-wide {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.button-row {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.button-row-1rem {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* Mensajes de error */
+.error-message {
+  color: red;
+  margin-top: 0.5rem;
+}
+
+/* Grid full width */
+.grid-full-width {
+  grid-column: 1 / -1;
+}
+
+/* Checkboxes en formularios */
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+/* Instrumentos en columnas */
+.instruments-grid {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem 1rem;
+  column-count: 5;
+  column-gap: 0.75rem;
+}
+
+.instrument-group {
+  break-inside: avoid;
+  margin-bottom: 0.5rem;
+}
+
+.instrument-group-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.15rem;
+}
+
+.instrument-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  padding: 1px 0;
+  margin-left: 0.75rem;
+}

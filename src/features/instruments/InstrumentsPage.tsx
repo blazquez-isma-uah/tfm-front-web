@@ -67,18 +67,20 @@ function InstrumentsPage() {
       header: 'Nombre',
       sortable: true,
       sortField: 'instrumentName' as SortableField,
+      width: '40%',
     },
     {
       key: 'voice',
       header: 'Voz',
       sortable: true,
       sortField: 'voice' as SortableField,
+      width: '20%',
     },
     {
       key: 'actions',
       header: 'Acciones',
       sortable: false,
-      width: 220,
+      width: '40%',
       render: (i: InstrumentDTO) => (
         <div className="actions-container-wide">
           <button

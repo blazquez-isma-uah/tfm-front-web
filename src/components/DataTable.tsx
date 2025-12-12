@@ -22,6 +22,7 @@ type DataTableProps<T, F extends string> = {
   data: T[]
   sortState?: SortState<F>
   onSortChange?: (field: F) => void
+  onRowClick?: (row: T) => void
 }
 
 export function DataTable<T, F extends string>({
@@ -29,6 +30,7 @@ export function DataTable<T, F extends string>({
   data,
   sortState,
   onSortChange,
+  onRowClick,
 }: DataTableProps<T, F>) {
   const renderSortMarker = (col: ColumnDef<T, F>) => {
     if (!sortState || !col.sortable || !col.sortField) return null
@@ -80,7 +82,23 @@ export function DataTable<T, F extends string>({
           </tr>
         )}
         {data.map((row: any, idx) => (
-          <tr key={row.id ?? idx}>
+          <tr
+            key={row.id ?? idx}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
+            style={{
+              cursor: onRowClick ? 'pointer' : 'default',
+            }}
+            onMouseEnter={(e) => {
+              if (onRowClick) {
+                e.currentTarget.style.backgroundColor = '#f9fafb'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (onRowClick) {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }
+            }}
+          >
             {columns.map((col) => (
               <td
                 key={col.key}

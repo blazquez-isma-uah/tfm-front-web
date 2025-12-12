@@ -140,18 +140,21 @@ function UsersPage() {
             header: 'Username',
             sortable: true,
             sortField: 'username' as SortableField,
+            width: '12%',
         },
         {
             key: 'firstName',
             header: 'Nombre',
             sortable: true,
             sortField: 'firstName' as SortableField,
+            width: '12%',
         },
         {
             key: 'lastName',
             header: 'Apellidos',
             sortable: true,
             sortField: 'lastName' as SortableField,
+            width: '18%',
             render: (u: UserDTO) =>
                 [u.lastName, u.secondLastName].filter(Boolean).join(' '),
         },
@@ -160,51 +163,57 @@ function UsersPage() {
             header: 'Email',
             sortable: true,
             sortField: 'email' as SortableField,
+            width: '20%',
         },
         {
             key: 'active',
             header: 'Activo',
             sortable: true,
             sortField: 'active' as SortableField,
+            width: '8%',
             render: (u: UserDTO) => (u.active ? 'Sí' : 'No'),
         },
         {
             key: 'roles',
             header: 'Roles',
             sortable: false,
+            width: '12%',
             render: (u: UserDTO) => (u.roles ?? []).join(', '),
         },
         {
             key: 'actions',
             header: 'Acciones',
             sortable: false,
+            width: '18%',
             render: (u: UserDTO) => (
                 <div className="actions-container">
-                    <button
-                        type="button"
-                        className="button-subtle"
-                        onClick={() => handleViewDetails(u)}
-                    >
-                        Ver
-                    </button>
-                    <button
+                    {/* <button
                         type="button"
                         className="button-secondary"
-                        onClick={() => handleEditUser(u)}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleEditUser(u)
+                        }}
                     >
                         Editar
-                    </button>
+                    </button> */}
                     <button
                         type="button"
                         className="button-subtle"
-                        onClick={() => handleToggleActive(u)}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleActive(u)
+                        }}
                     >
                         {u.active ? 'Desactivar' : 'Activar'}
                     </button>
                     <button
                         type="button"
                         className="button-danger"
-                        onClick={() => handleDeleteUser(u)}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteUser(u)
+                        }}
                     >
                         Eliminar
                     </button>
@@ -776,6 +785,7 @@ function UsersPage() {
                             data={users}
                             sortState={sortState}
                             onSortChange={handleSort}
+                            onRowClick={handleViewDetails}
                         />
                     </div>
                     <PaginationBar

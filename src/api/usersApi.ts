@@ -9,6 +9,7 @@ export interface UserSearchParams extends PageableRequest {
     secondLastName?: string
     email?: string
     active?: boolean
+    instrumentId?: number
     roleName?: string
 }
 
@@ -17,7 +18,7 @@ export async function searchUsersPage(
     token?: string,
 ): Promise<PaginatedResponseUserDTO> {
     const { page = 0, size = 10, sort, username, firstName, lastName, secondLastName,
-        email, active, roleName } = params
+        email, active, instrumentId, roleName } = params
 
     const queryParams: Record<string, any> = {
         page,
@@ -30,6 +31,7 @@ export async function searchUsersPage(
     if (secondLastName) queryParams.secondLastName = secondLastName
     if (email) queryParams.email = email
     if (active !== undefined) queryParams.active = active
+    if (instrumentId !== undefined) queryParams.instrumentId = instrumentId
     if (roleName) queryParams.role = roleName
 
     if (sort && sort.length > 0) {

@@ -10,11 +10,13 @@ import type {
   InstrumentDTO,
   InstrumentRequestDTO,
 } from '../../types/instruments'
+import { searchUsersPage } from '../../api/usersApi'
+import type { UserDTO } from '../../types/users'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
 import '../../styles/common.css'
 
-type ViewMode = 'LIST' | 'CREATE' | 'EDIT'
+type ViewMode = 'LIST' | 'CREATE' | 'EDIT' | 'USERS'
 
 type SortableField = 'instrumentName' | 'voice'
 
@@ -27,6 +29,11 @@ function InstrumentsPage() {
   const [instruments, setInstruments] = useState<InstrumentDTO[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Estados para ver usuarios por instrumento
+  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentDTO | null>(null)
+  const [usersWithInstrument, setUsersWithInstrument] = useState<UserDTO[]>([])
+  const [usersLoading, setUsersLoading] = useState(false)
 
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
@@ -70,6 +77,13 @@ function InstrumentsPage() {
       width: 220,
       render: (i: InstrumentDTO) => (
         <div className="actions-container-wide">
+          <button
+            type="button"
+            className="button-subtle"
+            onClick={() => handleViewUsers(i)}
+          >
+            Ver usuarios
+          </button>
           <button
             type="button"
             className="button-secondary"
@@ -196,6 +210,32 @@ function InstrumentsPage() {
       voice: inst.voice,
     })
     setNewInstrument({ instrumentName: '', voice: '' })
+  }
+
+  const handleViewUsers = async (inst: InstrumentDTO) => {
+    if (!token) return
+
+    setSelectedInstrument(inst)
+    setMode('USERS')
+    setUsersLoading(true)
+    setError(null)
+
+    try {
+      const data = await searchUsersPage(
+        {
+          instrumentId: inst.id,
+          page: 0,
+          size: 100, // Mostrar muchos usuarios
+        },
+        token,
+      )
+      setUsersWithInstrument(data.content ?? [])
+    } catch (e) {
+      console.error('Error cargando usuarios del instrumento', e)
+      setError('Error cargando usuarios del instrumento')
+    } finally {
+      setUsersLoading(false)
+    }
   }
 
   const handleCreateSubmit = async (e: FormEvent) => {
@@ -465,6 +505,60 @@ function InstrumentsPage() {
             </button>
           </div>
         </form>
+      )}
+
+      {/* VER USUARIOS */}
+      {mode === 'USERS' && selectedInstrument && (
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <h2 className="section-title">
+            Usuarios con {selectedInstrument.instrumentName} {selectedInstrument.voice}
+          </h2>
+
+          {usersLoading && <p>Cargando usuarios...</p>}
+
+          {!usersLoading && usersWithInstrument.length === 0 && (
+            <p>No hay usuarios asignados a este instrumento.</p>
+          )}
+
+          {!usersLoading && usersWithInstrument.length > 0 && (
+            <div style={{ marginTop: '1rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Username</th>
+                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Nombre</th>
+                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Apellidos</th>
+                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Email</th>
+                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Activo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usersWithInstrument.map((user) => (
+                    <tr key={user.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={{ padding: '0.5rem' }}>{user.username}</td>
+                      <td style={{ padding: '0.5rem' }}>{user.firstName}</td>
+                      <td style={{ padding: '0.5rem' }}>
+                        {[user.lastName, user.secondLastName].filter(Boolean).join(' ')}
+                      </td>
+                      <td style={{ padding: '0.5rem' }}>{user.email}</td>
+                      <td style={{ padding: '0.5rem' }}>{user.active ? 'Sí' : 'No'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="button-row-1rem">
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={switchToList}
+            >
+              Volver a la lista
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -21,6 +21,7 @@ import '../../styles/common.css'
 type ViewMode = 'LIST' | 'CREATE' | 'EDIT' | 'USERS'
 
 type SortableField = 'instrumentName' | 'voice'
+type UserSortableField = 'username' | 'firstName' | 'lastName' | 'email'
 
 function InstrumentsPage() {
   const { token, hasRole } = useAuth()
@@ -38,6 +39,8 @@ function InstrumentsPage() {
   const [usersLoading, setUsersLoading] = useState(false)
   const [selectedUserDetail, setSelectedUserDetail] = useState<UserDTO | null>(null)
   const [userDetailLoading, setUserDetailLoading] = useState(false)
+  const [userSortField, setUserSortField] = useState<UserSortableField | null>(null)
+  const [userSortDirection, setUserSortDirection] = useState<'asc' | 'desc'>('asc')
 
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
@@ -60,6 +63,51 @@ function InstrumentsPage() {
     field: sortField,
     direction: sortDirection,
   }
+
+  const userSortState: SortState<UserSortableField> = {
+    field: userSortField,
+    direction: userSortDirection,
+  }
+
+  const userColumns = [
+    {
+      key: 'username',
+      header: 'Username',
+      sortable: true,
+      sortField: 'username' as UserSortableField,
+      width: '20%',
+    },
+    {
+      key: 'firstName',
+      header: 'Nombre',
+      sortable: true,
+      sortField: 'firstName' as UserSortableField,
+      width: '20%',
+    },
+    {
+      key: 'lastName',
+      header: 'Apellidos',
+      sortable: true,
+      sortField: 'lastName' as UserSortableField,
+      width: '30%',
+      render: (u: UserDTO) =>
+        [u.lastName, u.secondLastName].filter(Boolean).join(' '),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      sortable: true,
+      sortField: 'email' as UserSortableField,
+      width: '20%',
+    },
+    {
+      key: 'active',
+      header: 'Activo',
+      sortable: false,
+      width: '10%',
+      render: (u: UserDTO) => (u.active ? 'Sí' : 'No'),
+    },
+  ]
 
   const instrumentColumns = [
     {
@@ -166,6 +214,30 @@ function InstrumentsPage() {
     searchTrigger,
   ])
 
+  // Ordenar usuarios localmente
+  useEffect(() => {
+    if (!userSortField) return
+
+    const sorted = [...usersWithInstrument].sort((a, b) => {
+      let aVal: any = a[userSortField]
+      let bVal: any = b[userSortField]
+
+      if (userSortField === 'lastName') {
+        aVal = [a.lastName, a.secondLastName].filter(Boolean).join(' ').toLowerCase()
+        bVal = [b.lastName, b.secondLastName].filter(Boolean).join(' ').toLowerCase()
+      } else if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase()
+        bVal = (bVal || '').toLowerCase()
+      }
+
+      if (aVal < bVal) return userSortDirection === 'asc' ? -1 : 1
+      if (aVal > bVal) return userSortDirection === 'asc' ? 1 : -1
+      return 0
+    })
+
+    setUsersWithInstrument(sorted)
+  }, [userSortField, userSortDirection])
+
   if (!isAdmin) {
     return (
       <div className="page-container">
@@ -258,6 +330,19 @@ function InstrumentsPage() {
     } finally {
       setUserDetailLoading(false)
     }
+  }
+
+  const handleUserSort = (field: UserSortableField) => {
+    if (userSortField === field) {
+      setUserSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setUserSortField(field)
+      setUserSortDirection('asc')
+    }
+  }
+
+  const handleBackToUsersList = () => {
+    setSelectedUserDetail(null)
   }
 
   const handleCreateSubmit = async (e: FormEvent) => {
@@ -542,51 +627,14 @@ function InstrumentsPage() {
             <p>No hay usuarios asignados a este instrumento.</p>
           )}
 
-          {!usersLoading && usersWithInstrument.length > 0 && (
-            <div style={{ marginTop: '1rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Username</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Nombre</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Apellidos</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Email</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Activo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usersWithInstrument.map((user) => (
-                    <tr
-                      key={user.id}
-                      onClick={() => handleUserRowClick(user)}
-                      style={{
-                        borderBottom: '1px solid #e5e7eb',
-                        cursor: 'pointer',
-                        backgroundColor: selectedUserDetail?.id === user.id ? '#f3f4f6' : 'transparent',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (selectedUserDetail?.id !== user.id) {
-                          e.currentTarget.style.backgroundColor = '#f9fafb'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selectedUserDetail?.id !== user.id) {
-                          e.currentTarget.style.backgroundColor = 'transparent'
-                        }
-                      }}
-                    >
-                      <td style={{ padding: '0.5rem' }}>{user.username}</td>
-                      <td style={{ padding: '0.5rem' }}>{user.firstName}</td>
-                      <td style={{ padding: '0.5rem' }}>
-                        {[user.lastName, user.secondLastName].filter(Boolean).join(' ')}
-                      </td>
-                      <td style={{ padding: '0.5rem' }}>{user.email}</td>
-                      <td style={{ padding: '0.5rem' }}>{user.active ? 'Sí' : 'No'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {!usersLoading && usersWithInstrument.length > 0 && !selectedUserDetail && (
+            <DataTable<UserDTO, UserSortableField>
+              columns={userColumns}
+              data={usersWithInstrument}
+              sortState={userSortState}
+              onSortChange={handleUserSort}
+              onRowClick={handleUserRowClick}
+            />
           )}
 
           {userDetailLoading && (
@@ -598,19 +646,22 @@ function InstrumentsPage() {
           {selectedUserDetail && !userDetailLoading && (
             <UserDetailCard
               user={selectedUserDetail}
-              showButtons={false}
+              onBack={handleBackToUsersList}
+              showButtons={true}
             />
           )}
 
-          <div className="button-row-1rem">
-            <button
-              type="button"
-              className="button-secondary"
-              onClick={switchToList}
-            >
-              Volver a la lista
-            </button>
-          </div>
+          {!selectedUserDetail && (
+            <div className="button-row-1rem">
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={switchToList}
+              >
+                Volver a la lista
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

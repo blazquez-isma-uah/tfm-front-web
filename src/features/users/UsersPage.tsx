@@ -19,6 +19,7 @@ import type { UserDTO } from '../../types/users'
 import type { KeycloakRoleResponse } from '../../types/roles'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
+import { UserDetailCard } from '../../components/UserDetailCard'
 import { formatDate } from '../../utils/date'
 import {
     groupInstrumentsByInitial,
@@ -791,128 +792,13 @@ function UsersPage() {
 
             {/* DETALLE */}
             {mode === 'DETAIL' && selectedUser && !managingInstruments && !managingRoles && (
-                <div className="card" style={{ marginTop: '1rem' }}>
-                    <div className="section-title">Detalle de usuario</div>
-                    <div className="detail-grid">
-                        <div className="detail-item">
-                            <span className="detail-label">Username</span>
-                            <span className="detail-value">{selectedUser.username}</span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Nombre</span>
-                            <span className="detail-value">{selectedUser.firstName}</span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Apellidos</span>
-                            <span className="detail-value">
-                                {[selectedUser.lastName, selectedUser.secondLastName]
-                                    .filter(Boolean)
-                                    .join(' ')}
-                            </span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Email</span>
-                            <span className="detail-value">{selectedUser.email}</span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Activo</span>
-                            <span className="detail-value">
-                                {selectedUser.active ? 'Sí' : 'No'}
-                            </span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Roles</span>
-                            <span className="detail-value">
-                                {(selectedUser.roles ?? []).join(', ') || '-'}
-                            </span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Instrumentos</span>
-                            <span className="detail-value">
-                                {selectedUser.instruments && selectedUser.instruments.length > 0
-                                    ? [...selectedUser.instruments]
-                                        .sort((a: any, b: any) => {
-                                            const na = (
-                                                a?.instrumentName ?? String(a)
-                                            ).toString().toLowerCase()
-                                            const nb = (
-                                                b?.instrumentName ?? String(b)
-                                            ).toString().toLowerCase()
-                                            return na.localeCompare(nb)
-                                        })
-                                        .map((inst: any) =>
-                                            inst && inst.instrumentName
-                                                ? `${inst.instrumentName}${inst.voice ? ' ' + inst.voice : ''
-                                                }`
-                                                : String(inst),
-                                        )
-                                        .join(', ')
-                                    : '-'}
-                            </span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Fecha nacimiento</span>
-                            <span className="detail-value">
-                                {formatDate(selectedUser.birthDate)}
-                            </span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Alta en banda</span>
-                            <span className="detail-value">
-                                {formatDate(selectedUser.bandJoinDate)}
-                            </span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Alta en sistema</span>
-                            <span className="detail-value">
-                                {formatDate(selectedUser.systemSignupDate)}
-                            </span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Teléfono</span>
-                            <span className="detail-value">
-                                {selectedUser.phone || '-'}
-                            </span>
-                        </div>
-                        <div className="detail-item">
-                            <span className="detail-label">Notas</span>
-                            <span className="detail-value">
-                                {selectedUser.notes || '-'}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="button-row-1rem">
-                        <button
-                            type="button"
-                            className="button-subtle"
-                            onClick={handleCancelDetailOrEdit}
-                        >
-                            Volver a la lista
-                        </button>
-                        <button
-                            type="button"
-                            className="button-secondary"
-                            onClick={() => handleEditUser(selectedUser)}
-                        >
-                            Editar
-                        </button>
-                        <button
-                            type="button"
-                            className="button-primary"
-                            onClick={() => openManageInstruments(selectedUser)}
-                        >
-                            Gestionar instrumentos
-                        </button>
-                        <button
-                            type="button"
-                            className="button-primary"
-                            onClick={() => openManageRoles(selectedUser)}
-                        >
-                            Gestionar roles
-                        </button>
-                    </div>
-                </div>
+                <UserDetailCard
+                    user={selectedUser}
+                    onBack={handleCancelDetailOrEdit}
+                    onEdit={handleEditUser}
+                    onManageInstruments={openManageInstruments}
+                    onManageRoles={openManageRoles}
+                />
             )}
 
             {/* EDICIÓN */}

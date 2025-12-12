@@ -10,10 +10,12 @@ import type {
   InstrumentDTO,
   InstrumentRequestDTO,
 } from '../../types/instruments'
-import { searchUsersPage } from '../../api/usersApi'
+import { searchUsersPage, getUserById } from '../../api/usersApi'
 import type { UserDTO } from '../../types/users'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
+import { UserDetailCard } from '../../components/UserDetailCard'
+import { formatDate } from '../../utils/date'
 import '../../styles/common.css'
 
 type ViewMode = 'LIST' | 'CREATE' | 'EDIT' | 'USERS'
@@ -34,6 +36,8 @@ function InstrumentsPage() {
   const [selectedInstrument, setSelectedInstrument] = useState<InstrumentDTO | null>(null)
   const [usersWithInstrument, setUsersWithInstrument] = useState<UserDTO[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
+  const [selectedUserDetail, setSelectedUserDetail] = useState<UserDTO | null>(null)
+  const [userDetailLoading, setUserDetailLoading] = useState(false)
 
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
@@ -82,7 +86,7 @@ function InstrumentsPage() {
             className="button-subtle"
             onClick={() => handleViewUsers(i)}
           >
-            Ver usuarios
+            Usuarios
           </button>
           <button
             type="button"
@@ -219,6 +223,7 @@ function InstrumentsPage() {
     setMode('USERS')
     setUsersLoading(true)
     setError(null)
+    setSelectedUserDetail(null)
 
     try {
       const data = await searchUsersPage(
@@ -235,6 +240,21 @@ function InstrumentsPage() {
       setError('Error cargando usuarios del instrumento')
     } finally {
       setUsersLoading(false)
+    }
+  }
+
+  const handleUserRowClick = async (user: UserDTO) => {
+    if (!token) return
+
+    setUserDetailLoading(true)
+    try {
+      const fullUser = await getUserById(user.id, token)
+      setSelectedUserDetail(fullUser)
+    } catch (e) {
+      console.error('Error cargando detalles del usuario', e)
+      setError('Error cargando detalles del usuario')
+    } finally {
+      setUserDetailLoading(false)
     }
   }
 
@@ -534,7 +554,25 @@ function InstrumentsPage() {
                 </thead>
                 <tbody>
                   {usersWithInstrument.map((user) => (
-                    <tr key={user.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <tr
+                      key={user.id}
+                      onClick={() => handleUserRowClick(user)}
+                      style={{
+                        borderBottom: '1px solid #e5e7eb',
+                        cursor: 'pointer',
+                        backgroundColor: selectedUserDetail?.id === user.id ? '#f3f4f6' : 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedUserDetail?.id !== user.id) {
+                          e.currentTarget.style.backgroundColor = '#f9fafb'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedUserDetail?.id !== user.id) {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                        }
+                      }}
+                    >
                       <td style={{ padding: '0.5rem' }}>{user.username}</td>
                       <td style={{ padding: '0.5rem' }}>{user.firstName}</td>
                       <td style={{ padding: '0.5rem' }}>
@@ -547,6 +585,19 @@ function InstrumentsPage() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {userDetailLoading && (
+            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
+              <p>Cargando detalles del usuario...</p>
+            </div>
+          )}
+
+          {selectedUserDetail && !userDetailLoading && (
+            <UserDetailCard
+              user={selectedUserDetail}
+              showButtons={false}
+            />
           )}
 
           <div className="button-row-1rem">

@@ -292,3 +292,49 @@
   padding: 1px 0;
   margin-left: 0.75rem;
 }
+
+/* Fila expandible en tablas */
+.expanded-row-content {
+  padding: 1rem;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  animation: expandRow 0.25s ease-in-out;
+  overflow: hidden;
+}
+
+.expanded-row-content.closing {
+  animation: collapseRow 0.25s ease-in-out forwards;
+}
+
+@keyframes expandRow {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+    max-height: 2000px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+
+@keyframes collapseRow {
+  from {
+    opacity: 1;
+    transform: scaleY(1);
+    max-height: 2000px;
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}

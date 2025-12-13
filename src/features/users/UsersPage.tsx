@@ -20,7 +20,6 @@ import type { KeycloakRoleResponse } from '../../types/roles'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
 import { UserDetailCard } from '../../components/UserDetailCard'
-import { formatDate } from '../../utils/date'
 import {
     groupInstrumentsByInitial,
     type InstrumentGroup,
@@ -47,6 +46,8 @@ function UsersPage() {
     const [mode, setMode] = useState<ViewMode>('LIST')
     const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null)
     const [saving, setSaving] = useState(false)
+    const [expandedUserId, setExpandedUserId] = useState<number | null>(null)
+    const [isClosing, setIsClosing] = useState(false)
 
     // Gestión de instrumentos
     const [allGroupedInstruments, setAllGroupedInstruments] = useState<
@@ -402,10 +403,20 @@ function UsersPage() {
     }
 
     const handleViewDetails = (user: UserDTO) => {
-        setSelectedUser(user)
+        if (expandedUserId === user.id) {
+            setIsClosing(true)
+            setTimeout(() => {
+                setExpandedUserId(null)
+                setSelectedUser(null)
+                setIsClosing(false)
+            }, 250)
+        } else {
+            setExpandedUserId(user.id ?? null)
+            setSelectedUser(user)
+            setIsClosing(false)
+        }
         setManagingInstruments(false)
         setManagingRoles(false)
-        setMode('DETAIL')
     }
 
     const handleOpenCreateUser = () => {
@@ -633,7 +644,10 @@ function UsersPage() {
                     .filter((id): id is number => id != null) ?? []
 
             setSelectedInstrumentIds(currentIds)
-            setMode('DETAIL')
+            // Solo cambiar a DETAIL si no estamos en LIST (es decir, si no viene del expandible)
+            if (mode !== 'LIST') {
+                setMode('DETAIL')
+            }
         } catch (e) {
             console.error('Error cargando instrumentos para gestión de usuario', e)
             setError('Error cargando instrumentos del usuario')
@@ -669,6 +683,10 @@ function UsersPage() {
 
             setSelectedUser(refreshed)
             setManagingInstruments(false)
+            // Mantener el usuario expandido si estábamos en LIST
+            if (mode === 'LIST') {
+                setExpandedUserId(refreshed.id ?? null)
+            }
         } catch (e) {
             console.error('Error guardando instrumentos del usuario', e)
             setError('Error guardando instrumentos del usuario')
@@ -693,7 +711,10 @@ function UsersPage() {
 
         const currentRoles = user.roles ?? []
         setSelectedRoleNames(currentRoles)
-        setMode('DETAIL')
+        // Solo cambiar a DETAIL si no estamos en LIST (es decir, si no viene del expandible)
+        if (mode !== 'LIST') {
+            setMode('DETAIL')
+        }
     }
 
     const toggleRoleForUser = (roleName: string) => {
@@ -723,6 +744,10 @@ function UsersPage() {
             setSelectedUser(refreshed)
             setManagingRoles(false)
             setSearchTrigger((prev) => prev + 1)
+            // Mantener el usuario expandido si estábamos en LIST
+            if (mode === 'LIST') {
+                setExpandedUserId(refreshed.id ?? null)
+            }
         } catch (e) {
             console.error('Error guardando roles del usuario', e)
             setError('Error guardando roles del usuario')
@@ -873,7 +898,7 @@ function UsersPage() {
             {error && <p className="error-message">{error}</p>}
 
             {/* LISTA */}
-            {mode === 'LIST' && !loading && !error && (
+            {mode === 'LIST' && !loading && !error && !managingInstruments && !managingRoles && (
                 <>
                     <div className="card">
                         <DataTable<UserDTO, SortableField>
@@ -882,6 +907,25 @@ function UsersPage() {
                             sortState={sortState}
                             onSortChange={handleSort}
                             onRowClick={handleViewDetails}
+                            expandedRowId={expandedUserId}
+                            isClosing={isClosing}
+                            renderExpandedContent={(user) => (
+                                <UserDetailCard
+                                    user={user}
+                                    onBack={() => {
+                                        setIsClosing(true)
+                                        setTimeout(() => {
+                                            setExpandedUserId(null)
+                                            setSelectedUser(null)
+                                            setIsClosing(false)
+                                        }, 250)
+                                    }}
+                                    onEdit={handleEditUser}
+                                    onManageInstruments={openManageInstruments}
+                                    onManageRoles={openManageRoles}
+                                    backButtonLabel="Ocultar"
+                                />
+                            )}
                         />
                     </div>
                     <PaginationBar
@@ -894,17 +938,6 @@ function UsersPage() {
                         onPageSizeChange={handlePageSizeChange}
                     />
                 </>
-            )}
-
-            {/* DETALLE */}
-            {mode === 'DETAIL' && selectedUser && !managingInstruments && !managingRoles && (
-                <UserDetailCard
-                    user={selectedUser}
-                    onBack={handleCancelDetailOrEdit}
-                    onEdit={handleEditUser}
-                    onManageInstruments={openManageInstruments}
-                    onManageRoles={openManageRoles}
-                />
             )}
 
             {/* EDICIÓN */}
@@ -1244,7 +1277,7 @@ function UsersPage() {
 
 
             {/* GESTIÓN DE ROLES */}
-            {mode === 'DETAIL' && selectedUser && managingRoles && (
+            {selectedUser && managingRoles && (
                 <form
                     onSubmit={handleSaveUserRoles}
                     className="card"
@@ -1287,7 +1320,7 @@ function UsersPage() {
             )}
 
             {/* GESTIÓN DE INSTRUMENTOS */}
-            {mode === 'DETAIL' && selectedUser && managingInstruments && (
+            {selectedUser && managingInstruments && (
                 <form
                     onSubmit={handleSaveUserInstruments}
                     className="card"

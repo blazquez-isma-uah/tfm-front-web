@@ -9,6 +9,7 @@ interface UserDetailCardProps {
   onManageInstruments?: (user: UserDTO) => void
   onManageRoles?: (user: UserDTO) => void
   showButtons?: boolean
+  backButtonLabel?: string
 }
 
 export function UserDetailCard({
@@ -18,6 +19,7 @@ export function UserDetailCard({
   onManageInstruments,
   onManageRoles,
   showButtons = true,
+  backButtonLabel = 'Volver a la lista',
 }: UserDetailCardProps) {
   return (
     <div className="card" style={{ marginTop: '1rem' }}>
@@ -106,7 +108,7 @@ export function UserDetailCard({
               className="button-subtle"
               onClick={onBack}
             >
-              Volver a la lista
+              {backButtonLabel}
             </button>
           )}
           {onEdit && (

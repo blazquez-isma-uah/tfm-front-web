@@ -15,7 +15,6 @@ import type { UserDTO } from '../../types/users'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
 import { UserDetailCard } from '../../components/UserDetailCard'
-import { formatDate } from '../../utils/date'
 import '../../styles/common.css'
 
 type ViewMode = 'LIST' | 'CREATE' | 'EDIT' | 'USERS'
@@ -41,6 +40,8 @@ function InstrumentsPage() {
   const [userDetailLoading, setUserDetailLoading] = useState(false)
   const [userSortField, setUserSortField] = useState<UserSortableField | null>(null)
   const [userSortDirection, setUserSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [expandedUserId, setExpandedUserId] = useState<number | null>(null)
+  const [isClosingUser, setIsClosingUser] = useState(false)
 
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
@@ -320,6 +321,17 @@ function InstrumentsPage() {
   const handleUserRowClick = async (user: UserDTO) => {
     if (!token) return
 
+    if (expandedUserId === user.id) {
+      setIsClosingUser(true)
+      setTimeout(() => {
+        setExpandedUserId(null)
+        setSelectedUserDetail(null)
+        setIsClosingUser(false)
+      }, 250)
+      return
+    }
+
+    setExpandedUserId(user.id ?? null)
     setUserDetailLoading(true)
     try {
       const fullUser = await getUserById(user.id, token)
@@ -342,7 +354,12 @@ function InstrumentsPage() {
   }
 
   const handleBackToUsersList = () => {
-    setSelectedUserDetail(null)
+    setIsClosingUser(true)
+    setTimeout(() => {
+      setSelectedUserDetail(null)
+      setExpandedUserId(null)
+      setIsClosingUser(false)
+    }, 250)
   }
 
   const handleCreateSubmit = async (e: FormEvent) => {
@@ -654,27 +671,35 @@ function InstrumentsPage() {
             <p>No hay usuarios asignados a este instrumento.</p>
           )}
 
-          {!usersLoading && usersWithInstrument.length > 0 && !selectedUserDetail && (
+          {!usersLoading && usersWithInstrument.length > 0 && (
             <DataTable<UserDTO, UserSortableField>
               columns={userColumns}
               data={usersWithInstrument}
               sortState={userSortState}
               onSortChange={handleUserSort}
               onRowClick={handleUserRowClick}
-            />
-          )}
-
-          {userDetailLoading && (
-            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
-              <p>Cargando detalles del usuario...</p>
-            </div>
-          )}
-
-          {selectedUserDetail && !userDetailLoading && (
-            <UserDetailCard
-              user={selectedUserDetail}
-              onBack={handleBackToUsersList}
-              showButtons={true}
+              expandedRowId={expandedUserId}
+              isClosing={isClosingUser}
+              renderExpandedContent={(user) => {
+                if (userDetailLoading) {
+                  return (
+                    <div style={{ padding: '1rem', textAlign: 'center' }}>
+                      <p>Cargando detalles del usuario...</p>
+                    </div>
+                  )
+                }
+                if (selectedUserDetail && selectedUserDetail.id === user.id) {
+                  return (
+                    <UserDetailCard
+                      user={selectedUserDetail}
+                      onBack={handleBackToUsersList}
+                      showButtons={true}
+                      backButtonLabel="Ocultar"
+                    />
+                  )
+                }
+                return null
+              }}
             />
           )}
 

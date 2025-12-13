@@ -23,6 +23,9 @@ type DataTableProps<T, F extends string> = {
   sortState?: SortState<F>
   onSortChange?: (field: F) => void
   onRowClick?: (row: T) => void
+  expandedRowId?: string | number | null
+  renderExpandedContent?: (row: T) => ReactNode
+  isClosing?: boolean
 }
 
 export function DataTable<T, F extends string>({
@@ -31,6 +34,9 @@ export function DataTable<T, F extends string>({
   sortState,
   onSortChange,
   onRowClick,
+  expandedRowId,
+  renderExpandedContent,
+  isClosing = false,
 }: DataTableProps<T, F>) {
   const renderSortMarker = (col: ColumnDef<T, F>) => {
     if (!sortState || !col.sortable || !col.sortField) return null
@@ -81,34 +87,49 @@ export function DataTable<T, F extends string>({
             </td>
           </tr>
         )}
-        {data.map((row: any, idx) => (
-          <tr
-            key={row.id ?? idx}
-            onClick={onRowClick ? () => onRowClick(row) : undefined}
-            style={{
-              cursor: onRowClick ? 'pointer' : 'default',
-            }}
-            onMouseEnter={(e) => {
-              if (onRowClick) {
-                e.currentTarget.style.backgroundColor = '#f9fafb'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (onRowClick) {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }
-            }}
-          >
-            {columns.map((col) => (
-              <td
-                key={col.key}
-                style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}
+        {data.map((row: any, idx) => {
+          const isExpanded = expandedRowId !== undefined && expandedRowId !== null && row.id === expandedRowId
+          return (
+            <>
+              <tr
+                key={row.id ?? idx}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                style={{
+                  cursor: onRowClick ? 'pointer' : 'default',
+                  backgroundColor: isExpanded ? '#f3f4f6' : 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  if (onRowClick && !isExpanded) {
+                    e.currentTarget.style.backgroundColor = '#f9fafb'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (onRowClick && !isExpanded) {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }
+                }}
               >
-                {col.render ? col.render(row) : row[col.key]}
-              </td>
-            ))}
-          </tr>
-        ))}
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    style={{ padding: '0.5rem', borderTop: '1px solid #e5e7eb' }}
+                  >
+                    {col.render ? col.render(row) : row[col.key]}
+                  </td>
+                ))}
+              </tr>
+              {isExpanded && renderExpandedContent && (
+                <tr key={`${row.id ?? idx}-expanded`}>
+                  <td colSpan={columns.length} style={{ padding: 0, border: 'none' }}>
+                    <div className={`expanded-row-content ${isClosing ? 'closing' : ''}`}>
+                      {renderExpandedContent(row)}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </>
+          )
+        })}
       </tbody>
     </table>
   )

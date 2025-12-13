@@ -780,100 +780,138 @@ function UsersPage() {
                         Resetear filtros
                     </button>
                 </div>
-                <div className="search-grid">
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        value={filterUsername}
-                        onChange={(e) => setFilterUsername(e.target.value)}
-                        className="input-full-width"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Nombre"
-                        value={filterFirstName}
-                        onChange={(e) => setFilterFirstName(e.target.value)}
-                        className="input-full-width"
-                    />
-                    <input
-                        type="text"
-                        placeholder="1er apellido"
-                        value={filterLastName}
-                        onChange={(e) => setFilterLastName(e.target.value)}
-                        className="input-full-width"
-                    />
-                    <input
-                        type="text"
-                        placeholder="2º apellido"
-                        value={filterSecondLastName}
-                        onChange={(e) => setFilterSecondLastName(e.target.value)}
-                        className="input-full-width"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Email"
-                        value={filterEmail}
-                        onChange={(e) => setFilterEmail(e.target.value)}
-                        className="input-full-width"
-                    />
-                    <select
-                        value={filterActive}
-                        onChange={(e) =>
-                            setFilterActive(e.target.value as 'all' | 'true' | 'false')
-                        }
-                        className="select-base"
-                    >
-                        <option value="all">Todos</option>
-                        <option value="true">Activos</option>
-                        <option value="false">Inactivos</option>
-                    </select>
-                    <select
-                        value={filterRole}
-                        onChange={(e) => setFilterRole(e.target.value)}
-                        className="select-base"
-                        disabled={rolesLoading}
-                    >
-                        <option value="">Rol (todos)</option>
-                        {roles.map((r) => (
-                            <option key={r.id} value={r.name}>
-                                {r.name}
-                            </option>
-                        ))}
-                    </select>
-                    
-                    <input
-                        type="date"
-                        placeholder="Fecha nacimiento desde"
-                        value={filterBirthDateFrom}
-                        onChange={(e) => setFilterBirthDateFrom(e.target.value)}
-                        className="input-full-width"
-                        title="Fecha nacimiento desde"
-                    />
-                    <input
-                        type="date"
-                        placeholder="Fecha nacimiento hasta"
-                        value={filterBirthDateTo}
-                        onChange={(e) => setFilterBirthDateTo(e.target.value)}
-                        className="input-full-width"
-                        title="Fecha nacimiento hasta"
-                    />
-                    
-                    <input
-                        type="date"
-                        placeholder="Alta en banda desde"
-                        value={filterBandJoinDateFrom}
-                        onChange={(e) => setFilterBandJoinDateFrom(e.target.value)}
-                        className="input-full-width"
-                        title="Alta en banda desde"
-                    />
-                    <input
-                        type="date"
-                        placeholder="Alta en banda hasta"
-                        value={filterBandJoinDateTo}
-                        onChange={(e) => setFilterBandJoinDateTo(e.target.value)}
-                        className="input-full-width"
-                        title="Alta en banda hasta"
-                    />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                    {/* Grupo 1: Username, Email, Estado, Rol */}
+                    <div className="search-grid">
+                        <div className="form-field">
+                            <span className="label-text">Username</span>
+                            <input
+                                type="text"
+                                placeholder="Buscar por username"
+                                value={filterUsername}
+                                onChange={(e) => setFilterUsername(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">Email</span>
+                            <input
+                                type="text"
+                                placeholder="Buscar por email"
+                                value={filterEmail}
+                                onChange={(e) => setFilterEmail(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">Estado</span>
+                            <select
+                                value={filterActive}
+                                onChange={(e) =>
+                                    setFilterActive(e.target.value as 'all' | 'true' | 'false')
+                                }
+                                className="select-base"
+                            >
+                                <option value="all">Todos</option>
+                                <option value="true">Activos</option>
+                                <option value="false">Inactivos</option>
+                            </select>
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">Rol</span>
+                            <select
+                                value={filterRole}
+                                onChange={(e) => setFilterRole(e.target.value)}
+                                className="select-base"
+                                disabled={rolesLoading}
+                            >
+                                <option value="">Todos</option>
+                                {roles.map((r) => (
+                                    <option key={r.id} value={r.name}>
+                                        {r.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Grupo 2: Nombre, 1er apellido, 2º Apellido */}
+                    <div className="search-grid">
+                        <div className="form-field">
+                            <span className="label-text">Nombre</span>
+                            <input
+                                type="text"
+                                placeholder="Buscar por nombre"
+                                value={filterFirstName}
+                                onChange={(e) => setFilterFirstName(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">1er apellido</span>
+                            <input
+                                type="text"
+                                placeholder="Buscar por 1er apellido"
+                                value={filterLastName}
+                                onChange={(e) => setFilterLastName(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">2º apellido</span>
+                            <input
+                                type="text"
+                                placeholder="Buscar por 2º apellido"
+                                value={filterSecondLastName}
+                                onChange={(e) => setFilterSecondLastName(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Grupo 3: Fechas */}
+                    <div className="search-grid">
+                        <div className="form-field">
+                            <span className="label-text">Fecha de Nacimiento</span>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <input
+                                    type="date"
+                                    value={filterBirthDateFrom}
+                                    onChange={(e) => setFilterBirthDateFrom(e.target.value)}
+                                    className="input-full-width"
+                                    title="Desde"
+                                />
+                                <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>-</span>
+                                <input
+                                    type="date"
+                                    value={filterBirthDateTo}
+                                    onChange={(e) => setFilterBirthDateTo(e.target.value)}
+                                    className="input-full-width"
+                                    title="Hasta"
+                                />
+                            </div>
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">Fecha de Alta en la Banda</span>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <input
+                                    type="date"
+                                    value={filterBandJoinDateFrom}
+                                    onChange={(e) => setFilterBandJoinDateFrom(e.target.value)}
+                                    className="input-full-width"
+                                    title="Desde"
+                                />
+                                <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>-</span>
+                                <input
+                                    type="date"
+                                    value={filterBandJoinDateTo}
+                                    onChange={(e) => setFilterBandJoinDateTo(e.target.value)}
+                                    className="input-full-width"
+                                    title="Hasta"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div
                     className="search-actions-row"

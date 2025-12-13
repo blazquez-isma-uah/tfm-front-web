@@ -72,6 +72,10 @@ function UsersPage() {
         'all',
     )
     const [filterRole, setFilterRole] = useState('')
+    const [filterBirthDateFrom, setFilterBirthDateFrom] = useState('')
+    const [filterBirthDateTo, setFilterBirthDateTo] = useState('')
+    const [filterBandJoinDateFrom, setFilterBandJoinDateFrom] = useState('')
+    const [filterBandJoinDateTo, setFilterBandJoinDateTo] = useState('')
 
     // filtros efectivos
     const [searchUsername, setSearchUsername] = useState('')
@@ -85,6 +89,10 @@ function UsersPage() {
     const [searchRoleName, setSearchRoleName] = useState<string | undefined>(
         undefined,
     )
+    const [searchBirthDateFrom, setSearchBirthDateFrom] = useState<string | undefined>(undefined)
+    const [searchBirthDateTo, setSearchBirthDateTo] = useState<string | undefined>(undefined)
+    const [searchBandJoinDateFrom, setSearchBandJoinDateFrom] = useState<string | undefined>(undefined)
+    const [searchBandJoinDateTo, setSearchBandJoinDateTo] = useState<string | undefined>(undefined)
 
     const [searchTrigger, setSearchTrigger] = useState(0)
 
@@ -263,6 +271,10 @@ function UsersPage() {
                         email: searchEmail || undefined,
                         active: searchActive,
                         roleName: searchRoleName,
+                        birthDateFrom: searchBirthDateFrom,
+                        birthDateTo: searchBirthDateTo,
+                        bandJoinDateFrom: searchBandJoinDateFrom,
+                        bandJoinDateTo: searchBandJoinDateTo,
                         sort,
                     },
                     token,
@@ -291,6 +303,10 @@ function UsersPage() {
         searchEmail,
         searchActive,
         searchRoleName,
+        searchBirthDateFrom,
+        searchBirthDateTo,
+        searchBandJoinDateFrom,
+        searchBandJoinDateTo,
         sortField,
         sortDirection,
         searchTrigger,
@@ -306,6 +322,37 @@ function UsersPage() {
     }
 
     // ===== helpers UI =====
+
+    const handleResetFilters = () => {
+        setFilterUsername('')
+        setFilterFirstName('')
+        setFilterLastName('')
+        setFilterSecondLastName('')
+        setFilterEmail('')
+        setFilterActive('all')
+        setFilterRole('')
+        setFilterBirthDateFrom('')
+        setFilterBirthDateTo('')
+        setFilterBandJoinDateFrom('')
+        setFilterBandJoinDateTo('')
+        
+        setSearchUsername('')
+        setSearchFirstName('')
+        setSearchLastName('')
+        setSearchSecondLastName('')
+        setSearchEmail('')
+        setSearchActive(undefined)
+        setSearchRoleName(undefined)
+        setSearchBirthDateFrom(undefined)
+        setSearchBirthDateTo(undefined)
+        setSearchBandJoinDateFrom(undefined)
+        setSearchBandJoinDateTo(undefined)
+        
+        setPage(0)
+        setMode('LIST')
+        setSelectedUser(null)
+        setSearchTrigger((prev) => prev + 1)
+    }
 
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault()
@@ -327,6 +374,11 @@ function UsersPage() {
 
         const roleTrim = filterRole.trim()
         setSearchRoleName(roleTrim === '' ? undefined : roleTrim)
+
+        setSearchBirthDateFrom(filterBirthDateFrom || undefined)
+        setSearchBirthDateTo(filterBirthDateTo || undefined)
+        setSearchBandJoinDateFrom(filterBandJoinDateFrom || undefined)
+        setSearchBandJoinDateTo(filterBandJoinDateTo || undefined)
 
         setMode('LIST')
         setSelectedUser(null)
@@ -692,7 +744,17 @@ function UsersPage() {
 
             {/* Buscador */}
             <form onSubmit={handleSearchSubmit} className="card" style={{ marginBottom: '1rem' }}>
-                <div className="section-title">Filtros de búsqueda</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <div className="section-title" style={{ marginBottom: 0 }}>Filtros de búsqueda</div>
+                    <button
+                        type="button"
+                        className="button-subtle"
+                        onClick={handleResetFilters}
+                        style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
+                    >
+                        Resetear filtros
+                    </button>
+                </div>
                 <div className="search-grid">
                     <input
                         type="text"
@@ -753,6 +815,40 @@ function UsersPage() {
                             </option>
                         ))}
                     </select>
+                    
+                    <input
+                        type="date"
+                        placeholder="Fecha nacimiento desde"
+                        value={filterBirthDateFrom}
+                        onChange={(e) => setFilterBirthDateFrom(e.target.value)}
+                        className="input-full-width"
+                        title="Fecha nacimiento desde"
+                    />
+                    <input
+                        type="date"
+                        placeholder="Fecha nacimiento hasta"
+                        value={filterBirthDateTo}
+                        onChange={(e) => setFilterBirthDateTo(e.target.value)}
+                        className="input-full-width"
+                        title="Fecha nacimiento hasta"
+                    />
+                    
+                    <input
+                        type="date"
+                        placeholder="Alta en banda desde"
+                        value={filterBandJoinDateFrom}
+                        onChange={(e) => setFilterBandJoinDateFrom(e.target.value)}
+                        className="input-full-width"
+                        title="Alta en banda desde"
+                    />
+                    <input
+                        type="date"
+                        placeholder="Alta en banda hasta"
+                        value={filterBandJoinDateTo}
+                        onChange={(e) => setFilterBandJoinDateTo(e.target.value)}
+                        className="input-full-width"
+                        title="Alta en banda hasta"
+                    />
                 </div>
                 <div
                     className="search-actions-row"

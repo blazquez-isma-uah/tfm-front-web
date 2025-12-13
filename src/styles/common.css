@@ -18,6 +18,8 @@
   border: 1px solid #e5e7eb;
   padding: 1rem 1.25rem;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .section-title {
@@ -33,6 +35,8 @@
   padding: 1rem 1.25rem;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
   margin-top: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .toolbar {

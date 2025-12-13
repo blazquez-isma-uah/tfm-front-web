@@ -433,6 +433,16 @@ function InstrumentsPage() {
     }
   }
 
+  const handleResetFilters = () => {
+    setFilterName('')
+    setFilterVoice('')
+    setSearchName('')
+    setSearchVoice('')
+    setPage(0)
+    switchToList()
+    setSearchTrigger((prev) => prev + 1)
+  }
+
   const handlePageChange = (newPage: number) => setPage(newPage)
 
   const handlePageSizeChange = (newSize: number) => {
@@ -446,31 +456,48 @@ function InstrumentsPage() {
     <div className="page-container">
       <h1 className="page-title">Gestión de instrumentos</h1>
 
-      {/* Toolbar búsqueda + nuevo */}
-      <form onSubmit={handleSearchSubmit} className="toolbar">
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={filterName}
-          onChange={(e) => setFilterName(e.target.value)}
-          className="input-base"
-          style={{ minWidth: '180px' }}
-        />
-        <input
-          type="text"
-          placeholder="Voz"
-          value={filterVoice}
-          onChange={(e) => setFilterVoice(e.target.value)}
-          className="input-base"
-          style={{ minWidth: '140px' }}
-        />
+      {/* Buscador */}
+      <form onSubmit={handleSearchSubmit} className="card" style={{ marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <div className="section-title" style={{ marginBottom: 0 }}>Filtros de búsqueda</div>
+          <button
+            type="button"
+            className="button-subtle"
+            onClick={handleResetFilters}
+            style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
+          >
+            Resetear filtros
+          </button>
+        </div>
+        <div className="search-grid">
+          <input
+            type="text"
+            placeholder="Nombre"
+            value={filterName}
+            onChange={(e) => setFilterName(e.target.value)}
+            className="input-full-width"
+          />
+          <input
+            type="text"
+            placeholder="Voz"
+            value={filterVoice}
+            onChange={(e) => setFilterVoice(e.target.value)}
+            className="input-full-width"
+          />
+        </div>
+        <div
+          className="search-actions-row"
+          style={{ justifyContent: 'space-between' }}
+        >
+          <button type="submit" className="button-primary">
+            Buscar
+          </button>
 
-        <button type="submit" className="button-primary">
-          Buscar
-        </button>
-
-        <div className="ml-auto">
-          <button type="button" className="button-secondary" onClick={handleOpenCreate}>
+          <button
+            type="button"
+            className="button-secondary"
+            onClick={handleOpenCreate}
+          >
             + Nuevo instrumento
           </button>
         </div>

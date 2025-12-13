@@ -14,10 +14,9 @@ function MainLayout() {
             <header className="layout-header">
                 <div className="layout-header-left">
                     <span className="layout-logo">TFM Bandas</span>
-                    <span className="layout-title">Panel de gestión</span>
                 </div>
                 <div className="layout-header-right">
-                    {userName && <span style={{ fontSize: '0.85rem' }}>{userName}</span>}
+                    {userName && <span style={{fontWeight: 'bold', fontSize: '1rem' }}>{userName}</span>}
                     <button className="layout-logout-btn" onClick={handleLogout}>
                         Logout
                     </button>

@@ -15,6 +15,7 @@ import type { UserDTO } from '../../types/users'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
 import { UserDetailCard } from '../../components/UserDetailCard'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import '../../styles/common.css'
 
 type ViewMode = 'LIST' | 'CREATE' | 'EDIT' | 'USERS'
@@ -42,6 +43,21 @@ function InstrumentsPage() {
   const [userSortDirection, setUserSortDirection] = useState<'asc' | 'desc'>('asc')
   const [expandedUserId, setExpandedUserId] = useState<number | null>(null)
   const [isClosingUser, setIsClosingUser] = useState(false)
+
+  // Modal de confirmación
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    variant: 'danger' | 'warning' | 'info'
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    variant: 'danger',
+    onConfirm: () => {},
+  })
 
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
@@ -416,28 +432,33 @@ function InstrumentsPage() {
 
   const handleDelete = async (inst: InstrumentDTO) => {
     if (!token) return
-    const ok = window.confirm(
-      `¿Seguro que quieres borrar el instrumento "${inst.instrumentName}" (${inst.voice})?`,
-    )
-    if (!ok) return
-
-    try {
-      setLoading(true)
-      setError(null)
-      await deleteInstrument(inst.id, inst.version, token)
-      setInstruments((prev) => prev.filter((i) => i.id !== inst.id))
-      setSearchTrigger((prev) => prev + 1)
-    } catch (e: any) {
-      console.error('Error deleting instrument', e)
-      const status = e?.response?.status
-      if (status === 412 || status === 428) {
-        setError('El instrumento ha cambiado. Recarga la lista antes de borrar.')
-      } else {
-        setError('Error borrando instrumento')
-      }
-    } finally {
-      setLoading(false)
-    }
+    const name = inst.instrumentName + (inst.voice ? ` ${inst.voice}` : '')
+    setConfirmDialog({
+      isOpen: true,
+      title: `Eliminar instrumento "${name}"`,
+      message: `¿Seguro que quieres borrar el instrumento "${name}"?\nEsta acción no se puede deshacer.`,
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+        try {
+          setLoading(true)
+          setError(null)
+          await deleteInstrument(inst.id, inst.version, token)
+          setInstruments((prev) => prev.filter((i) => i.id !== inst.id))
+          setSearchTrigger((prev) => prev + 1)
+        } catch (e: any) {
+          console.error('Error deleting instrument', e)
+          const status = e?.response?.status
+          if (status === 412 || status === 428) {
+            setError('El instrumento ha cambiado. Recarga la lista antes de borrar.')
+          } else {
+            setError('Error borrando instrumento')
+          }
+        } finally {
+          setLoading(false)
+        }
+      },
+    })
   }
 
   const handleSort = (field: SortableField) => {
@@ -716,6 +737,15 @@ function InstrumentsPage() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

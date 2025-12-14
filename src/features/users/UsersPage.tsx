@@ -20,6 +20,7 @@ import type { KeycloakRoleResponse } from '../../types/roles'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable, type SortState } from '../../components/DataTable'
 import { UserDetailCard } from '../../components/UserDetailCard'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import {
     groupInstrumentsByInitial,
     type InstrumentGroup,
@@ -63,6 +64,21 @@ function UsersPage() {
     // Gestión de roles
     const [managingRoles, setManagingRoles] = useState(false)
     const [selectedRoleNames, setSelectedRoleNames] = useState<string[]>([])
+
+    // Modal de confirmación
+    const [confirmDialog, setConfirmDialog] = useState<{
+        isOpen: boolean
+        title: string
+        message: string
+        variant: 'danger' | 'warning' | 'info'
+        onConfirm: () => void
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        variant: 'danger',
+        onConfirm: () => {},
+    })
 
     // filtros visibles
     const [filterUsername, setFilterUsername] = useState('')
@@ -545,51 +561,63 @@ function UsersPage() {
 
     const handleToggleActive = async (user: UserDTO) => {
         if (!user.id || user.version == null || !token) return
-
+        const name = user.username
         const action = user.active ? 'desactivar' : 'activar'
-        const confirmMsg = `¿Seguro que quieres ${action} al usuario "${user.username}"?`
-        if (!window.confirm(confirmMsg)) return
+        setConfirmDialog({
+            isOpen: true,
+            title: user.active ? `Desactivar usuario "${name}"` : `Activar usuario "${name}"`,
+            message: `¿Seguro que quieres ${action} al usuario "${name}"?`,
+            variant: 'warning',
+            onConfirm: async () => {
+                setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+                try {
+                    setError(null)
+                    if (user.active) {
+                        await disableUser(user.id, user.version, token)
+                    } else {
+                        await enableUser(user.id, user.version, token)
+                    }
 
-        try {
-            setError(null)
-            if (user.active) {
-                await disableUser(user.id, user.version, token)
-            } else {
-                await enableUser(user.id, user.version, token)
-            }
+                    const refreshed = await getUserById(user.id, token)
+                    setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
 
-            const refreshed = await getUserById(user.id, token)
-            setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
-
-            if (selectedUser && selectedUser.id === refreshed.id) {
-                setSelectedUser(refreshed)
-            }
-        } catch (e: any) {
-            console.error('Error cambiando activo/inactivo:', e)
-            setError('Error al cambiar el estado activo del usuario')
-        }
+                    if (selectedUser && selectedUser.id === refreshed.id) {
+                        setSelectedUser(refreshed)
+                    }
+                } catch (e: any) {
+                    console.error('Error cambiando activo/inactivo:', e)
+                    setError('Error al cambiar el estado activo del usuario')
+                }
+            },
+        })
     }
 
     const handleDeleteUser = async (user: UserDTO) => {
         if (!user.id || user.version == null || !token) return
+        const name = user.username
+        setConfirmDialog({
+            isOpen: true,
+            title: `Eliminar usuario "${name}"`,
+            message: `¿Seguro que quieres eliminar al usuario "${name}"?\nEsta acción no se puede deshacer.`,
+            variant: 'danger',
+            onConfirm: async () => {
+                setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+                try {
+                    setError(null)
+                    await deleteUser(user.id, user.version, token)
 
-        const confirmMsg = `¿Seguro que quieres eliminar al usuario "${user.username}"? Esta acción no se puede deshacer.`
-        if (!window.confirm(confirmMsg)) return
-
-        try {
-            setError(null)
-            await deleteUser(user.id, user.version, token)
-
-            setPage(0)
-            setMode('LIST')
-            setSearchTrigger((prev) => prev + 1)
-            if (selectedUser && selectedUser.id === user.id) {
-                setSelectedUser(null)
-            }
-        } catch (e: any) {
-            console.error('Error eliminando usuario:', e)
-            setError('Error eliminando usuario')
-        }
+                    setPage(0)
+                    setMode('LIST')
+                    setSearchTrigger((prev) => prev + 1)
+                    if (selectedUser && selectedUser.id === user.id) {
+                        setSelectedUser(null)
+                    }
+                } catch (e: any) {
+                    console.error('Error eliminando usuario:', e)
+                    setError('Error eliminando usuario')
+                }
+            },
+        })
     }
 
     // instrumentos
@@ -1390,6 +1418,15 @@ function UsersPage() {
                     </div>
                 </form>
             )}
+
+            <ConfirmDialog
+                isOpen={confirmDialog.isOpen}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                variant={confirmDialog.variant}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+            />
         </div>
     )
 }

@@ -182,7 +182,7 @@ function UsersPage() {
             width: '25%',
             render: (u: UserDTO) => (
                 <div className="actions-container">
-                    {/* <button
+                    <button
                         type="button"
                         className="button-secondary"
                         onClick={(e) => {
@@ -191,16 +191,6 @@ function UsersPage() {
                         }}
                     >
                         Editar
-                    </button> */}
-                    <button
-                        type="button"
-                        className="button-subtle"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleToggleActive(u)
-                        }}
-                    >
-                        {u.active ? 'Desactivar' : 'Activar'}
                     </button>
                     <button
                         type="button"
@@ -759,11 +749,10 @@ function UsersPage() {
                     <div className="section-title" style={{ marginBottom: 0 }}>Filtros de búsqueda</div>
                     <button
                         type="button"
-                        className="button-subtle"
-                        onClick={handleResetFilters}
-                        style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
+                        className="button-secondary"
+                        onClick={handleOpenCreateUser}
                     >
-                        Resetear filtros
+                        + Nuevo usuario
                     </button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
@@ -909,10 +898,11 @@ function UsersPage() {
 
                     <button
                         type="button"
-                        className="button-secondary"
-                        onClick={handleOpenCreateUser}
+                        className="button-subtle"
+                        onClick={handleResetFilters}
+                        style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
                     >
-                        + Nuevo usuario
+                        Resetear filtros
                     </button>
                 </div>
 
@@ -944,7 +934,7 @@ function UsersPage() {
                                             setIsClosing(false)
                                         }, 250)
                                     }}
-                                    onEdit={handleEditUser}
+                                    onToggleActive={handleToggleActive}
                                     onManageInstruments={openManageInstruments}
                                     onManageRoles={openManageRoles}
                                     backButtonLabel="Ocultar"

@@ -479,11 +479,10 @@ function InstrumentsPage() {
           <div className="section-title" style={{ marginBottom: 0 }}>Filtros de búsqueda</div>
           <button
             type="button"
-            className="button-subtle"
-            onClick={handleResetFilters}
-            style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
+            className="button-secondary"
+            onClick={handleOpenCreate}
           >
-            Resetear filtros
+            + Nuevo instrumento
           </button>
         </div>
         <div className="search-grid">
@@ -512,10 +511,11 @@ function InstrumentsPage() {
 
           <button
             type="button"
-            className="button-secondary"
-            onClick={handleOpenCreate}
+            className="button-subtle"
+            onClick={handleResetFilters}
+            style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
           >
-            + Nuevo instrumento
+            Resetear filtros
           </button>
         </div>
       </form>

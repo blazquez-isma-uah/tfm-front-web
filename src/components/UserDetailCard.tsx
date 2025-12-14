@@ -6,6 +6,7 @@ interface UserDetailCardProps {
   user: UserDTO
   onBack?: () => void
   onEdit?: (user: UserDTO) => void
+  onToggleActive?: (user: UserDTO) => void
   onManageInstruments?: (user: UserDTO) => void
   onManageRoles?: (user: UserDTO) => void
   showButtons?: boolean
@@ -16,6 +17,7 @@ export function UserDetailCard({
   user,
   onBack,
   onEdit,
+  onToggleActive,
   onManageInstruments,
   onManageRoles,
   showButtons = true,
@@ -23,7 +25,19 @@ export function UserDetailCard({
 }: UserDetailCardProps) {
   return (
     <div className="card" style={{ marginTop: '1rem' }}>
-      <div className="section-title">Detalle de usuario</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <div className="section-title" style={{ marginBottom: 0 }}>Detalle de usuario</div>
+        {showButtons && onBack && (
+          <button
+            type="button"
+            className="button-subtle"
+            onClick={onBack}
+            style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
+          >
+            {backButtonLabel}
+          </button>
+        )}
+      </div>
       <div className="detail-grid">
         <div className="detail-item">
           <span className="detail-label">Username</span>
@@ -102,22 +116,13 @@ export function UserDetailCard({
 
       {showButtons && (
         <div className="button-row-1rem">
-          {onBack && (
+          {onToggleActive && (
             <button
               type="button"
               className="button-subtle"
-              onClick={onBack}
+              onClick={() => onToggleActive(user)}
             >
-              {backButtonLabel}
-            </button>
-          )}
-          {onEdit && (
-            <button
-              type="button"
-              className="button-secondary"
-              onClick={() => onEdit(user)}
-            >
-              Editar
+              {user.active ? 'Desactivar' : 'Activar'}
             </button>
           )}
           {onManageInstruments && (

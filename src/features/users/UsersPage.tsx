@@ -24,11 +24,12 @@ import {
     groupInstrumentsByInitial,
     type InstrumentGroup,
 } from '../../utils/instrumentUtils'
+import { formatDate } from '../../utils/date'
 import '../../styles/common.css'
 
 type ViewMode = 'LIST' | 'DETAIL' | 'EDIT' | 'CREATE'
 
-type SortableField = 'username' | 'firstName' | 'lastName' | 'email' | 'active'
+type SortableField = 'username' | 'email' | 'active' | 'bandJoinDate'
 
 function UsersPage() {
     const { token, hasRole } = useAuth()
@@ -149,51 +150,36 @@ function UsersPage() {
             header: 'Username',
             sortable: true,
             sortField: 'username' as SortableField,
-            width: '12%',
-        },
-        {
-            key: 'firstName',
-            header: 'Nombre',
-            sortable: true,
-            sortField: 'firstName' as SortableField,
-            width: '12%',
-        },
-        {
-            key: 'lastName',
-            header: 'Apellidos',
-            sortable: true,
-            sortField: 'lastName' as SortableField,
-            width: '18%',
-            render: (u: UserDTO) =>
-                [u.lastName, u.secondLastName].filter(Boolean).join(' '),
+            width: '20%',
         },
         {
             key: 'email',
             header: 'Email',
             sortable: true,
             sortField: 'email' as SortableField,
-            width: '20%',
+            width: '30%',
         },
         {
             key: 'active',
             header: 'Activo',
             sortable: true,
             sortField: 'active' as SortableField,
-            width: '8%',
+            width: '10%',
             render: (u: UserDTO) => (u.active ? 'Sí' : 'No'),
         },
         {
-            key: 'roles',
-            header: 'Roles',
-            sortable: false,
-            width: '12%',
-            render: (u: UserDTO) => (u.roles ?? []).join(', '),
+            key: 'bandJoinDate',
+            header: 'Fecha entrada',
+            sortable: true,
+            sortField: 'bandJoinDate' as SortableField,
+            width: '15%',
+            render: (u: UserDTO) => formatDate(u.bandJoinDate),
         },
         {
             key: 'actions',
             header: 'Acciones',
             sortable: false,
-            width: '18%',
+            width: '25%',
             render: (u: UserDTO) => (
                 <div className="actions-container">
                     {/* <button

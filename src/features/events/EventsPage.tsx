@@ -456,8 +456,8 @@ function EventsPage() {
 
         setConfirmDialog({
             isOpen: true,
-            title: `Eliminar evento "${event.title}"`,
-            message: `¿Seguro que quieres eliminar el evento "${event.title}"?\n\nEsta acción no se puede deshacer.`,
+            title: `Eliminar evento`,
+            message: `¿Seguro que quieres eliminar el evento: "${event.title}"?\nEsta acción no se puede deshacer.`,
             variant: 'danger',
             onConfirm: async () => {
                 setConfirmDialog((prev) => ({ ...prev, isOpen: false }))

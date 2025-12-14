@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
+import { extractErrorMessage } from '../../utils/errorHandler'
 import {
     searchUsersPage,
     getUserById,
@@ -236,6 +237,7 @@ function UsersPage() {
                 setRoles(data)
             } catch (e) {
                 console.error('Error loading roles', e)
+                setError(extractErrorMessage(e, 'Error cargando roles'))
             } finally {
                 setRolesLoading(false)
             }
@@ -277,7 +279,7 @@ function UsersPage() {
                 setTotalElements(data.totalElements ?? 0)
             } catch (e: any) {
                 console.error('Error en getUsersPage (detallado):', e)
-                setError('Error cargando usuarios')
+                setError(extractErrorMessage(e, 'Error cargando usuarios'))
             } finally {
                 setLoading(false)
             }
@@ -482,7 +484,7 @@ function UsersPage() {
             setSearchTrigger((prev) => prev + 1)
         } catch (e) {
             console.error('Error creando usuario', e)
-            setError('Error creando usuario')
+            setError(extractErrorMessage(e, 'Error creando usuario'))
         } finally {
             setSaving(false)
         }
@@ -553,7 +555,7 @@ function UsersPage() {
             setSearchTrigger((prev) => prev + 1)
         } catch (e: any) {
             console.error('Error actualizando usuario:', e)
-            setError('Error actualizando usuario')
+            setError(extractErrorMessage(e, 'Error actualizando usuario'))
         } finally {
             setSaving(false)
         }
@@ -586,7 +588,7 @@ function UsersPage() {
                     }
                 } catch (e: any) {
                     console.error('Error cambiando activo/inactivo:', e)
-                    setError('Error al cambiar el estado activo del usuario')
+                    setError(extractErrorMessage(e, 'Error al cambiar el estado activo del usuario'))
                 }
             },
         })
@@ -614,7 +616,7 @@ function UsersPage() {
                     }
                 } catch (e: any) {
                     console.error('Error eliminando usuario:', e)
-                    setError('Error eliminando usuario')
+                    setError(extractErrorMessage(e, 'Error eliminando usuario'))
                 }
             },
         })
@@ -654,7 +656,7 @@ function UsersPage() {
             }
         } catch (e) {
             console.error('Error cargando instrumentos para gestión de usuario', e)
-            setError('Error cargando instrumentos del usuario')
+            setError(extractErrorMessage(e, 'Error cargando instrumentos del usuario'))
             setManagingInstruments(false)
         } finally {
             setInstrumentsLoading(false)
@@ -693,7 +695,7 @@ function UsersPage() {
             }
         } catch (e) {
             console.error('Error guardando instrumentos del usuario', e)
-            setError('Error guardando instrumentos del usuario')
+            setError(extractErrorMessage(e, 'Error guardando instrumentos del usuario'))
         } finally {
             setSaving(false)
         }
@@ -754,7 +756,7 @@ function UsersPage() {
             }
         } catch (e) {
             console.error('Error guardando roles del usuario', e)
-            setError('Error guardando roles del usuario')
+            setError(extractErrorMessage(e, 'Error guardando roles del usuario'))
         } finally {
             setSaving(false)
         }

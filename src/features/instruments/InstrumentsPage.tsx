@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
+import { extractErrorMessage } from '../../utils/errorHandler'
 import {
   searchInstrumentsPage,
   createInstrument,
@@ -212,7 +213,7 @@ function InstrumentsPage() {
         setTotalElements(data.totalElements ?? 0)
       } catch (e: any) {
         console.error('Error loading instruments', e)
-        setError('Error cargando instrumentos')
+        setError(extractErrorMessage(e, 'Error cargando instrumentos'))
       } finally {
         setLoading(false)
       }
@@ -328,7 +329,7 @@ function InstrumentsPage() {
       setUsersWithInstrument(data.content ?? [])
     } catch (e) {
       console.error('Error cargando usuarios del instrumento', e)
-      setError('Error cargando usuarios del instrumento')
+      setError(extractErrorMessage(e, 'Error cargando usuarios del instrumento'))
     } finally {
       setUsersLoading(false)
     }
@@ -354,7 +355,7 @@ function InstrumentsPage() {
       setSelectedUserDetail(fullUser)
     } catch (e) {
       console.error('Error cargando detalles del usuario', e)
-      setError('Error cargando detalles del usuario')
+      setError(extractErrorMessage(e, 'Error cargando detalles del usuario'))
     } finally {
       setUserDetailLoading(false)
     }
@@ -391,7 +392,7 @@ function InstrumentsPage() {
       setSearchTrigger((prev) => prev + 1)
     } catch (err) {
       console.error('Error creando instrumento', err)
-      setError('Error creando instrumento')
+      setError(extractErrorMessage(err, 'Error creando instrumento'))
     } finally {
       setLoading(false)
     }
@@ -423,7 +424,7 @@ function InstrumentsPage() {
           'El instrumento ha sido modificado por otro usuario. Recarga datos.',
         )
       } else {
-        setError('Error actualizando instrumento')
+        setError(extractErrorMessage(e, 'Error actualizando instrumento'))
       }
     } finally {
       setLoading(false)
@@ -452,7 +453,7 @@ function InstrumentsPage() {
           if (status === 412 || status === 428) {
             setError('El instrumento ha cambiado. Recarga la lista antes de borrar.')
           } else {
-            setError('Error borrando instrumento')
+            setError(extractErrorMessage(e, 'Error borrando instrumento'))
           }
         } finally {
           setLoading(false)

@@ -1,5 +1,6 @@
 import type { PageResponse } from './pagination'
 
+// Enums cargados dinámicamente desde el backend
 export type EventType = string
 export type EventStatus = string
 export type EventVisibility = string

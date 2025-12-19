@@ -62,6 +62,14 @@ export async function getUserById(userId: number, token?: string): Promise<UserD
     return response.data
 }
 
+// GET /api/users/iam/{iamId}
+export async function getUserByIamId(iamId: string, token?: string): Promise<UserDTO> {
+    const response = await api.get<UserDTO>(`/api/users/iam/${iamId}`, {
+        headers: authHeaders(token),
+    })
+    return response.data
+}
+
 export interface UserCreatePayload {
   email: string
   username: string

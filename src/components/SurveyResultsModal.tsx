@@ -49,6 +49,11 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
   // Ordenamiento local
   const [sortField, setSortField] = useState<'username' | 'answerYesNoMaybe' | 'instrument' | 'answeredAt' | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  
+  // Mostrar respuestas detalladas
+  const [showDetailedResponses, setShowDetailedResponses] = useState(false)
+  // Mostrar resumen de instrumentos
+  const [showInstrumentSummary, setShowInstrumentSummary] = useState(false)
 
   const hasInstrument = survey.responseType === 'YES_NO_MAYBE_WITH_INSTRUMENT'
 
@@ -60,6 +65,46 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
       setSortField(field)
       setSortDirection('asc')
     }
+  }
+
+  // Calcular resumen por instrumentos (solo YES y MAYBE)
+  const instrumentSummary = () => {
+    if (!hasInstrument) return { yes: {}, maybe: {} }
+    
+    const yesSummary: Record<string, number> = {}
+    const maybeSummary: Record<string, number> = {}
+    
+    responses.forEach(response => {
+      if (response.instrument) {
+        const instrumentKey = `${response.instrument.instrumentName} ${response.instrument.voice}`
+        
+        if (response.answerYesNoMaybe === 'YES') {
+          yesSummary[instrumentKey] = (yesSummary[instrumentKey] || 0) + 1
+        } else if (response.answerYesNoMaybe === 'MAYBE') {
+          maybeSummary[instrumentKey] = (maybeSummary[instrumentKey] || 0) + 1
+        }
+      }
+    })
+    
+    // Obtener todos los instrumentos únicos
+    const allInstruments = new Set([
+      ...Object.keys(yesSummary),
+      ...Object.keys(maybeSummary)
+    ])
+    
+    // Ordenar por nombre de instrumento
+    const sortedInstruments = Array.from(allInstruments).sort((a, b) => a.localeCompare(b))
+    
+    // Crear objetos ordenados
+    const sortedYes: Record<string, number> = {}
+    const sortedMaybe: Record<string, number> = {}
+    
+    sortedInstruments.forEach(instrument => {
+      sortedYes[instrument] = yesSummary[instrument] || 0
+      sortedMaybe[instrument] = maybeSummary[instrument] || 0
+    })
+    
+    return { yes: sortedYes, maybe: sortedMaybe }
   }
 
   // Ordenar respuestas localmente
@@ -247,28 +292,110 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
             )}
           </div>
 
+          {/* Botón para mostrar resumen de instrumentos */}
+          {hasInstrument && !loadingResponses && !responsesError && responses.length > 0 && (() => {
+            const summary = instrumentSummary()
+            const hasData = Object.keys(summary.yes).length > 0 || Object.keys(summary.maybe).length > 0
+            
+            return hasData ? (
+              <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  className="button-secondary"
+                  onClick={() => setShowInstrumentSummary(!showInstrumentSummary)}
+                >
+                  {showInstrumentSummary ? 'Ocultar' : 'Mostrar'} resumen por instrumentos
+                </button>
+              </div>
+            ) : null
+          })()}
+
+          {/* Resumen por instrumentos (solo para encuestas con instrumento) */}
+          {showInstrumentSummary && hasInstrument && !loadingResponses && !responsesError && responses.length > 0 && (() => {
+            const summary = instrumentSummary()
+            const hasData = Object.keys(summary.yes).length > 0 || Object.keys(summary.maybe).length > 0
+            
+            return hasData ? (
+              <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <h3 className="section-title">Resumen por instrumentos</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                  {Array.from(new Set([...Object.keys(summary.yes), ...Object.keys(summary.maybe)]))
+                    .sort((a, b) => a.localeCompare(b))
+                    .map(instrument => (
+                      <div
+                        key={instrument}
+                        style={{
+                          padding: '1rem',
+                          backgroundColor: '#f9fafb',
+                          borderRadius: '0.5rem',
+                          border: '1px solid #e5e7eb',
+                        }}
+                      >
+                        <div style={{ 
+                          fontSize: '0.95rem', 
+                          fontWeight: '600', 
+                          marginBottom: '0.75rem',
+                          color: '#111827',
+                          borderBottom: '2px solid #e5e7eb',
+                          paddingBottom: '0.5rem'
+                        }}>
+                          {instrument}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-around', gap: '1rem' }}>
+                          <div style={{ textAlign: 'center', flex: 1 }}>
+                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem', textTransform: 'uppercase', fontWeight: '500' }}>
+                              Sí
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#059669' }}>
+                              {summary.yes[instrument] || 0}
+                            </div>
+                          </div>
+                          <div style={{ width: '1px', backgroundColor: '#e5e7eb' }}></div>
+                          <div style={{ textAlign: 'center', flex: 1 }}>
+                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem', textTransform: 'uppercase', fontWeight: '500' }}>
+                              Quizás
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>
+                              {summary.maybe[instrument] || 0}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : null
+          })()}
+
+          {/* Botón para mostrar respuestas detalladas */}
+          {!loadingResponses && !responsesError && responses.length > 0 && (
+            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={() => setShowDetailedResponses(!showDetailedResponses)}
+              >
+                {showDetailedResponses ? 'Ocultar' : 'Mostrar'} respuestas detalladas
+              </button>
+            </div>
+          )}
+
           {/* Resultados completos */}
+          {showDetailedResponses && (
           <div className="card">
             <h3 className="section-title">Respuestas detalladas</h3>
             
-            {loadingResponses && <p>Cargando respuestas...</p>}
-            {responsesError && <p className="error-message">{responsesError}</p>}
-            
-            {!loadingResponses && !responsesError && responses.length === 0 && (
-              <p>No hay respuestas aún.</p>
-            )}
-
-            {!loadingResponses && !responsesError && responses.length > 0 && (
-              <>
-                <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto' }}>
                   <table className="data-table">
                     <thead>
                       <tr>
                         <th 
                           style={{ 
-                            width: hasInstrument ? '20%' : '25%', 
+                            width: hasInstrument ? '15%' : '20%', 
                             cursor: 'pointer',
-                            userSelect: 'none'
+                            userSelect: 'none',
+                            textAlign: 'center'
                           }}
                           onClick={() => handleSort('username')}
                         >
@@ -276,9 +403,10 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
                         </th>
                         <th 
                           style={{ 
-                            width: hasInstrument ? '15%' : '15%', 
+                            width: hasInstrument ? '10%' : '12%', 
                             cursor: 'pointer',
-                            userSelect: 'none'
+                            userSelect: 'none',
+                            textAlign: 'center'
                           }}
                           onClick={() => handleSort('answerYesNoMaybe')}
                         >
@@ -287,23 +415,25 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
                         {hasInstrument && (
                           <th 
                             style={{ 
-                              width: '15%', 
+                              width: '18%', 
                               cursor: 'pointer',
-                              userSelect: 'none'
+                              userSelect: 'none',
+                              textAlign: 'center'
                             }}
                             onClick={() => handleSort('instrument')}
                           >
                             Instrumento {sortField === 'instrument' && (sortDirection === 'asc' ? '▲' : '▼')}
                           </th>
                         )}
-                        <th style={{ width: hasInstrument ? '30%' : '35%' }}>
+                        <th style={{ width: hasInstrument ? '38%' : '48%', textAlign: 'center' }}>
                           Comentario
                         </th>
                         <th 
                           style={{ 
-                            width: hasInstrument ? '20%' : '25%', 
+                            width: hasInstrument ? '19%' : '20%', 
                             cursor: 'pointer',
-                            userSelect: 'none'
+                            userSelect: 'none',
+                            textAlign: 'center'
                           }}
                           onClick={() => handleSort('answeredAt')}
                         >
@@ -314,16 +444,16 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
                     <tbody>
                       {sortedResponses.map((response) => (
                         <tr key={response.id}>
-                          <td>
+                          <td style={{ textAlign: 'center', padding: '0.5rem' }}>
                             {response.loadingUsername
                               ? 'Cargando...'
                               : response.username || response.userIamId}
                           </td>
-                          <td>
+                          <td style={{ textAlign: 'center', padding: '0.5rem' }}>
                             {translateYesNoMaybeAnswer(response.answerYesNoMaybe)}
                           </td>
                           {hasInstrument && (
-                            <td>
+                            <td style={{ textAlign: 'center', padding: '0.5rem' }}>
                               {response.instrumentId ? (
                                 response.loadingInstrument
                                   ? 'Cargando...'
@@ -335,10 +465,10 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
                               )}
                             </td>
                           )}
-                          <td style={{ whiteSpace: 'pre-wrap' }}>
+                          <td style={{ whiteSpace: 'pre-wrap', textAlign: 'center', padding: '0.5rem' }}>
                             {response.comment || '-'}
                           </td>
-                          <td>
+                          <td style={{ textAlign: 'center', padding: '0.5rem' }}>
                             {formatSurveyDateTime(response.answeredAt)}
                           </td>
                         </tr>
@@ -377,9 +507,8 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
                     </button>
                   </div>
                 )}
-              </>
-            )}
           </div>
+          )}
         </div>
       </div>
     </div>

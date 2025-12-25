@@ -19,6 +19,7 @@ interface SurveyDetailCardProps {
   onOpen?: (survey: SurveyDTO) => void
   onClose?: (survey: SurveyDTO) => void
   onCancel?: (survey: SurveyDTO) => void
+  onViewResults?: (survey: SurveyDTO) => void
   showButtons?: boolean
   backButtonLabel?: string
 }
@@ -30,6 +31,7 @@ export function SurveyDetailCard({
   onOpen,
   onClose,
   onCancel,
+  onViewResults,
   showButtons = true,
   backButtonLabel = 'Volver a la lista',
 }: SurveyDetailCardProps) {
@@ -203,7 +205,16 @@ export function SurveyDetailCard({
               Editar
             </button>
           )}
-          {onOpen && survey.status === 'DRAFT' && (
+          {onViewResults && (
+            <button
+              type="button"
+              className="button-primary"
+              onClick={() => onViewResults(survey)}
+            >
+              Ver resultados
+            </button>
+          )}
+          {onOpen && (survey.status === 'DRAFT' || survey.status === 'CLOSED' || survey.status === 'CANCELLED') && (
             <button
               type="button"
               className="button-primary"

@@ -36,6 +36,17 @@ export async function searchInstrumentsPage(
     return response.data
 }
 
+// GET /api/instruments/{id}
+export async function getInstrumentById(
+    id: number,
+    token?: string,
+): Promise<InstrumentDTO> {
+    const response = await api.get<InstrumentDTO>(`/api/instruments/${id}`, {
+        headers: authHeaders(token),
+    })
+    return response.data
+}
+
 // POST /api/instruments
 export async function createInstrument(
     body: InstrumentRequestDTO,

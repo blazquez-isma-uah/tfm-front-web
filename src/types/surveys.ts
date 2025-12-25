@@ -26,6 +26,7 @@ export interface SurveyResponseDTO {
   surveyId: string
   userIamId: string
   answerYesNoMaybe: YesNoMaybeAnswer
+  instrumentId?: string
   comment?: string
   answeredAt: string // ISO Instant
 }
@@ -34,6 +35,7 @@ export interface CreateSurveyRequestDTO {
   eventId: string
   title: string
   description?: string
+  responseType: ResponseType
   opensAt: string // ISO Instant
   closesAt: string // ISO Instant
 }
@@ -47,11 +49,13 @@ export interface UpdateSurveyRequestDTO {
 
 export interface RespondYesNoMaybeRequestDTO {
   answer: YesNoMaybeAnswer
+  instrumentId?: string
   comment?: string
 }
 
 export interface UpdateSurveyResponseRequestDTO {
   answer: YesNoMaybeAnswer
+  instrumentId?: string
   comment?: string
 }
 

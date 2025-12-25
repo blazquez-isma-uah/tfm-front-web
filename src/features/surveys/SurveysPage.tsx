@@ -11,7 +11,10 @@ import {
   closeSurvey,
   cancelSurvey,
   getAvailableSurveyStatuses,
+  getAvailableResponseTypes,
 } from '../../api/surveysApi'
+import { searchEventsPage } from '../../api/eventsApi'
+import type { EventDTO } from '../../types/events'
 import type {
   SurveyDTO,
   CreateSurveyRequestDTO,
@@ -23,9 +26,11 @@ import type { SortState } from '../../types/pagination'
 import { DataTable } from '../../components/DataTable'
 import { PaginationBar } from '../../components/PaginationBar'
 import { SurveyDetailCard } from '../../components/SurveyDetailCard'
+import { SurveyResultsModal } from '../../components/SurveyResultsModal'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import {
   translateSurveyStatus,
+  translateResponseType,
   formatSurveyDateTime,
 } from '../../utils/surveyTranslations'
 import '../../styles/common.css'
@@ -63,9 +68,13 @@ function SurveysPage() {
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyDTO | null>(null)
   const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null)
   const [isClosing, setIsClosing] = useState(false)
+  const [showResultsModal, setShowResultsModal] = useState(false)
+  const [resultsModalSurvey, setResultsModalSurvey] = useState<SurveyDTO | null>(null)
 
   // Estados disponibles
   const [surveyStatuses, setSurveyStatuses] = useState<SurveyStatus[]>([])
+  const [responseTypes, setResponseTypes] = useState<ResponseType[]>([])
+  const [availableEvents, setAvailableEvents] = useState<EventDTO[]>([])
   const [loadingOptions, setLoadingOptions] = useState(false)
 
   // Filtros visibles
@@ -102,6 +111,7 @@ function SurveysPage() {
     eventId: '',
     title: '',
     description: '',
+    responseType: '',
     opensAt: '',
     closesAt: '',
   })
@@ -190,17 +200,21 @@ function SurveysPage() {
 
   // ==================== Effects ====================
 
-  // Cargar estados disponibles
+  // Cargar estados disponibles y eventos
   useEffect(() => {
     if (!token || !isAdmin) return
 
     const loadOptions = async () => {
       try {
         setLoadingOptions(true)
-        const [statuses] = await Promise.all([
+        const [statuses, responseTypesData, eventsData] = await Promise.all([
           getAvailableSurveyStatuses(token),
+          getAvailableResponseTypes(token),
+          searchEventsPage({ page: 0, size: 1000 }, token),
         ])
         setSurveyStatuses(statuses)
+        setResponseTypes(responseTypesData)
+        setAvailableEvents(eventsData.content ?? [])
       } catch (e) {
         console.error('Error loading survey options:', e)
       } finally {
@@ -356,6 +370,7 @@ function SurveysPage() {
       eventId: '',
       title: '',
       description: '',
+      responseType: '',
       opensAt: '',
       closesAt: '',
     })
@@ -396,11 +411,17 @@ function SurveysPage() {
       eventId: survey.eventId,
       title: survey.title,
       description: survey.description || '',
+      responseType: survey.responseType,
       opensAt: survey.opensAt,
       closesAt: survey.closesAt,
     })
     setFormOpensAt(toDateTimeLocal(survey.opensAt))
     setFormClosesAt(toDateTimeLocal(survey.closesAt))
+  }
+
+  const handleViewResults = (survey: SurveyDTO) => {
+    setResultsModalSurvey(survey)
+    setShowResultsModal(true)
   }
 
   const handleUpdateSurvey = async () => {
@@ -588,14 +609,20 @@ function SurveysPage() {
               />
             </div>
             <div className="form-field">
-              <span className="label-text">ID Evento</span>
-              <input
-                type="text"
-                placeholder="Buscar por ID evento"
+              <span className="label-text">Evento</span>
+              <select
                 value={filterEventId}
                 onChange={(e) => setFilterEventId(e.target.value)}
-                className="input-full-width"
-              />
+                className="select-base"
+                disabled={loadingOptions}
+              >
+                <option value="">Todos</option>
+                {availableEvents.map((evt) => (
+                  <option key={evt.id} value={evt.id}>
+                    {evt.title}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-field">
               <span className="label-text">Estado</span>
@@ -698,6 +725,7 @@ function SurveysPage() {
                     }, 250)
                   }}
                   onEdit={handleEditSurvey}
+                  onViewResults={handleViewResults}
                   onOpen={handleOpenSurvey}
                   onClose={handleCloseSurvey}
                   onCancel={handleCancelSurvey}
@@ -738,10 +766,10 @@ function SurveysPage() {
             {mode === 'CREATE' ? 'Crear encuesta' : 'Editar encuesta'}
           </h2>
 
-          {/* Línea 1: Título, ID Evento (2 columnas) */}
+          {/* Línea 1: Título, Evento, Tipo de respuesta (3 columnas) */}
           <div
             className="form-grid"
-            style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}
+            style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '0.75rem' }}
           >
             <div className="form-field">
               <label className="label-text">Título *</label>
@@ -757,17 +785,42 @@ function SurveysPage() {
               />
             </div>
             <div className="form-field">
-              <label className="label-text">ID Evento *</label>
-              <input
-                type="text"
+              <label className="label-text">Evento *</label>
+              <select
                 value={formPayload.eventId}
                 onChange={(e) =>
                   setFormPayload({ ...formPayload, eventId: e.target.value })
                 }
                 required
-                disabled={mode === 'EDIT'}
-                className="input-full-width"
-              />
+                disabled={mode === 'EDIT' || loadingOptions}
+                className="select-base"
+              >
+                <option value="">Selecciona un evento</option>
+                {availableEvents.map((evt) => (
+                  <option key={evt.id} value={evt.id}>
+                    {evt.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-field">
+              <label className="label-text">Tipo de respuesta *</label>
+              <select
+                value={formPayload.responseType}
+                onChange={(e) =>
+                  setFormPayload({ ...formPayload, responseType: e.target.value })
+                }
+                required
+                disabled={mode === 'EDIT' || loadingOptions}
+                className="select-base"
+              >
+                <option value="">Selecciona tipo</option>
+                {responseTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {translateResponseType(type)}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -841,6 +894,16 @@ function SurveysPage() {
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
       />
+
+      {showResultsModal && resultsModalSurvey && (
+        <SurveyResultsModal
+          survey={resultsModalSurvey}
+          onClose={() => {
+            setShowResultsModal(false)
+            setResultsModalSurvey(null)
+          }}
+        />
+      )}
     </div>
   )
 }

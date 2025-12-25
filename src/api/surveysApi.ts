@@ -165,13 +165,17 @@ export async function cancelSurvey(
 export async function respondToSurvey(
   surveyId: string,
   payload: RespondYesNoMaybeRequestDTO,
+  version: number,
   token: string,
 ): Promise<SurveyResponseDTO> {
   const response = await api.post<SurveyResponseDTO>(
     `/api/surveys/responses/${surveyId}`,
     payload,
     {
-      headers: authHeaders(token),
+      headers: {
+            ...authHeaders(token),
+            'If-Match': `"${version}"`,
+        },
     },
   )
   return response.data

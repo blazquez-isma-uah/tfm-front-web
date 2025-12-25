@@ -17,6 +17,7 @@ export function translateSurveyStatus(status: SurveyStatus): string {
 export function translateResponseType(type: ResponseType): string {
   const translations: Record<string, string> = {
     YES_NO_MAYBE: 'Sí/No/Quizás',
+    YES_NO_MAYBE_WITH_INSTRUMENT: 'Sí/No/Quizás (con instrumento)',
   }
   return translations[type] || type
 }

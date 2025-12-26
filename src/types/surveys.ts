@@ -4,6 +4,7 @@ import type { PageResponse } from './pagination'
 export type SurveyStatus = string
 export type ResponseType = string
 export type YesNoMaybeAnswer = string
+export type SurveyType = string
 
 export interface SurveyDTO {
   id: string
@@ -13,6 +14,7 @@ export interface SurveyDTO {
   description?: string
   status: SurveyStatus
   responseType: ResponseType
+  surveyType: SurveyType
   opensAt: string // ISO Instant
   closesAt: string // ISO Instant
   createdBy?: string
@@ -36,6 +38,7 @@ export interface CreateSurveyRequestDTO {
   title: string
   description?: string
   responseType: ResponseType
+  surveyType: SurveyType
   opensAt: string // ISO Instant
   closesAt: string // ISO Instant
 }
@@ -43,6 +46,7 @@ export interface CreateSurveyRequestDTO {
 export interface UpdateSurveyRequestDTO {
   title: string
   description?: string
+  surveyType: SurveyType
   opensAt: string // ISO Instant
   closesAt: string // ISO Instant
 }

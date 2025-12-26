@@ -1,4 +1,4 @@
-import type { SurveyStatus, ResponseType, YesNoMaybeAnswer } from '../types/surveys'
+import type { SurveyStatus, ResponseType, YesNoMaybeAnswer, SurveyType } from '../types/surveys'
 
 // ==================== Survey Status ====================
 
@@ -18,6 +18,16 @@ export function translateResponseType(type: ResponseType): string {
   const translations: Record<string, string> = {
     YES_NO_MAYBE: 'Sí/No/Quizás',
     YES_NO_MAYBE_WITH_INSTRUMENT: 'Sí/No/Quizás (con instrumento)',
+  }
+  return translations[type] || type
+}
+
+// ==================== Survey Type ====================
+
+export function translateSurveyType(type: SurveyType): string {
+  const translations: Record<string, string> = {
+    ATTENDANCE: 'Asistencia',
+    OTHER: 'Otro',
   }
   return translations[type] || type
 }

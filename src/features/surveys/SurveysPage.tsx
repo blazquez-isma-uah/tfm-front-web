@@ -12,6 +12,7 @@ import {
   cancelSurvey,
   getAvailableSurveyStatuses,
   getAvailableResponseTypes,
+  getAvailableSurveyTypes,
 } from '../../api/surveysApi'
 import { searchEventsPage } from '../../api/eventsApi'
 import type { EventDTO } from '../../types/events'
@@ -21,9 +22,9 @@ import type {
   UpdateSurveyRequestDTO,
   SurveySortableField,
   SurveyStatus,
+  SurveyType,
 } from '../../types/surveys'
-import type { SortState } from '../../types/pagination'
-import { DataTable } from '../../components/DataTable'
+import { DataTable, type SortState } from '../../components/DataTable'
 import { PaginationBar } from '../../components/PaginationBar'
 import { SurveyDetailCard } from '../../components/SurveyDetailCard'
 import { SurveyResultsModal } from '../../components/SurveyResultsModal'
@@ -31,6 +32,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import {
   translateSurveyStatus,
   translateResponseType,
+  translateSurveyType,
   formatSurveyDateTime,
 } from '../../utils/surveyTranslations'
 import '../../styles/common.css'
@@ -74,6 +76,7 @@ function SurveysPage() {
   // Estados disponibles
   const [surveyStatuses, setSurveyStatuses] = useState<SurveyStatus[]>([])
   const [responseTypes, setResponseTypes] = useState<ResponseType[]>([])
+  const [surveyTypes, setSurveyTypes] = useState<SurveyType[]>([])
   const [availableEvents, setAvailableEvents] = useState<EventDTO[]>([])
   const [loadingOptions, setLoadingOptions] = useState(false)
 
@@ -112,6 +115,7 @@ function SurveysPage() {
     title: '',
     description: '',
     responseType: '',
+    surveyType: '',
     opensAt: '',
     closesAt: '',
   })
@@ -207,13 +211,15 @@ function SurveysPage() {
     const loadOptions = async () => {
       try {
         setLoadingOptions(true)
-        const [statuses, responseTypesData, eventsData] = await Promise.all([
+        const [statuses, responseTypesData, surveyTypesData, eventsData] = await Promise.all([
           getAvailableSurveyStatuses(token),
           getAvailableResponseTypes(token),
+          getAvailableSurveyTypes(token),
           searchEventsPage({ page: 0, size: 1000 }, token),
         ])
-        setSurveyStatuses(statuses)
-        setResponseTypes(responseTypesData)
+        setSurveyStatuses(statuses as SurveyStatus[])
+        setResponseTypes(responseTypesData as ResponseType[])
+        setSurveyTypes(surveyTypesData as SurveyType[])
         setAvailableEvents(eventsData.content ?? [])
       } catch (e) {
         console.error('Error loading survey options:', e)
@@ -371,6 +377,7 @@ function SurveysPage() {
       title: '',
       description: '',
       responseType: '',
+      surveyType: '',
       opensAt: '',
       closesAt: '',
     })
@@ -412,6 +419,7 @@ function SurveysPage() {
       title: survey.title,
       description: survey.description || '',
       responseType: survey.responseType,
+      surveyType: survey.surveyType,
       opensAt: survey.opensAt,
       closesAt: survey.closesAt,
     })
@@ -434,6 +442,7 @@ function SurveysPage() {
       const payload: UpdateSurveyRequestDTO = {
         title: formPayload.title,
         description: formPayload.description || undefined,
+        surveyType: formPayload.surveyType,
         opensAt: datetimeLocalToISOInstant(formOpensAt),
         closesAt: datetimeLocalToISOInstant(formClosesAt),
       }
@@ -766,10 +775,10 @@ function SurveysPage() {
             {mode === 'CREATE' ? 'Crear encuesta' : 'Editar encuesta'}
           </h2>
 
-          {/* Línea 1: Título, Evento, Tipo de respuesta (3 columnas) */}
+          {/* Línea 1: Título, Evento, Tipo de respuesta, Tipo de encuesta (4 columnas) */}
           <div
             className="form-grid"
-            style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '0.75rem' }}
+            style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '0.75rem' }}
           >
             <div className="form-field">
               <label className="label-text">Título *</label>
@@ -818,6 +827,25 @@ function SurveysPage() {
                 {responseTypes.map((type) => (
                   <option key={type} value={type}>
                     {translateResponseType(type)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-field">
+              <label className="label-text">Tipo de encuesta *</label>
+              <select
+                value={formPayload.surveyType}
+                onChange={(e) =>
+                  setFormPayload({ ...formPayload, surveyType: e.target.value })
+                }
+                required
+                disabled={loadingOptions}
+                className="select-base"
+              >
+                <option value="">Selecciona tipo</option>
+                {surveyTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {translateSurveyType(type)}
                   </option>
                 ))}
               </select>

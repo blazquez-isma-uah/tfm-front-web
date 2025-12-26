@@ -10,6 +10,7 @@ import type {
   SurveyStatus,
   ResponseType,
   YesNoMaybeAnswer,
+  SurveyType,
   PaginatedResponseSurveyDTO,
   PaginatedResponseSurveyResponseDTO,
 } from '../types/surveys'
@@ -285,6 +286,18 @@ export async function getAvailableYesNoMaybeAnswers(
 ): Promise<YesNoMaybeAnswer[]> {
   const response = await api.get<YesNoMaybeAnswer[]>(
     '/api/surveys/available-yesNoMaybeAnswers',
+    {
+      headers: authHeaders(token),
+    },
+  )
+  return response.data
+}
+
+export async function getAvailableSurveyTypes(
+  token: string,
+): Promise<SurveyType[]> {
+  const response = await api.get<SurveyType[]>(
+    '/api/surveys/available-surveyTypes',
     {
       headers: authHeaders(token),
     },

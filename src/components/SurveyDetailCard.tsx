@@ -5,6 +5,7 @@ import type { UserDTO } from '../types/users'
 import {
   translateSurveyStatus,
   translateResponseType,
+  translateSurveyType,
   formatSurveyDateTime,
 } from '../utils/surveyTranslations'
 import { getEventById } from '../api/eventsApi'
@@ -118,10 +119,10 @@ export function SurveyDetailCard({
         </div>
       </div>
 
-      {/* Línea 2: Estado, Tipo de respuesta (2 columnas) */}
+      {/* Línea 2: Estado, Tipo de respuesta, Tipo de encuesta (3 columnas) */}
       <div
         className="detail-grid"
-        style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}
+        style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '0.75rem' }}
       >
         <div className="detail-item">
           <span className="detail-label">Estado</span>
@@ -131,6 +132,12 @@ export function SurveyDetailCard({
           <span className="detail-label">Tipo de respuesta</span>
           <span className="detail-value">
             {translateResponseType(survey.responseType)}
+          </span>
+        </div>
+        <div className="detail-item">
+          <span className="detail-label">Tipo de encuesta</span>
+          <span className="detail-value">
+            {translateSurveyType(survey.surveyType)}
           </span>
         </div>
       </div>

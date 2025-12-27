@@ -3,6 +3,8 @@ import type {
     EventDTO,
     EventCreateRequestDTO,
     PaginatedResponseEventDTO,
+    PaginatedResponseCalendarEventItemDTO,
+    CalendarEventItemDTO,
     EventType,
     EventStatus,
     EventVisibility,
@@ -151,4 +153,49 @@ export async function getAvailableEventVisibilities(
         },
     )
     return data
+}
+
+export async function getCalendar(
+    from: string,
+    to: string,
+    page = 0,
+    size = 10,
+    sort?: string,
+    token?: string,
+): Promise<PaginatedResponseCalendarEventItemDTO> {
+    const queryParams: Record<string, any> = {
+        from,
+        to,
+        page,
+        size,
+    }
+
+    if (sort) queryParams.sort = sort
+
+    const { data } = await api.get<PaginatedResponseCalendarEventItemDTO>(
+        '/api/events/calendar',
+        {
+            params: queryParams,
+            headers: authHeaders(token),
+        },
+    )
+    return data
+}
+
+/**
+ * Obtiene los próximos eventos usando el endpoint /calendar
+ * @param limit - Número de eventos a obtener (por defecto 5)
+ * @param daysAhead - Días hacia adelante para buscar eventos (por defecto 90)
+ * @param token - Token de autenticación
+ */
+export async function getUpcomingEvents(
+    limit = 5,
+    daysAhead = 90,
+    token?: string,
+): Promise<CalendarEventItemDTO[]> {
+    const now = new Date().toISOString()
+    const future = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000).toISOString()
+    
+    const response = await getCalendar(now, future, 0, limit, 'startAt,asc', token)
+    return response.content
 }

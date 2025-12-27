@@ -71,6 +71,7 @@ export interface SurveySearchParams {
   description?: string
   eventId?: string
   status?: SurveyStatus
+  surveyType?: SurveyType
   opensFrom?: string // ISO Instant
   opensTo?: string // ISO Instant
   closesFrom?: string // ISO Instant

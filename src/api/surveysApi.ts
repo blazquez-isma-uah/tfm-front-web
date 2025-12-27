@@ -30,6 +30,7 @@ export async function searchSurveysPage(
   if (params.description) queryParams.append('description', params.description)
   if (params.eventId) queryParams.append('eventId', params.eventId)
   if (params.status) queryParams.append('status', params.status)
+  if (params.surveyType) queryParams.append('surveyType', params.surveyType)
   if (params.opensFrom) queryParams.append('opensFrom', params.opensFrom)
   if (params.opensTo) queryParams.append('opensTo', params.opensTo)
   if (params.closesFrom) queryParams.append('closesFrom', params.closesFrom)
@@ -298,6 +299,82 @@ export async function getAvailableSurveyTypes(
 ): Promise<SurveyType[]> {
   const response = await api.get<SurveyType[]>(
     '/api/surveys/available-surveyTypes',
+    {
+      headers: authHeaders(token),
+    },
+  )
+  return response.data
+}
+
+// ==================== My Surveys ====================
+
+export interface MySurveysParams {
+  page?: number
+  size?: number
+  status?: SurveyStatus
+  surveyType?: SurveyType
+  opensFrom?: string // ISO Instant
+  opensTo?: string // ISO Instant
+  closesFrom?: string // ISO Instant
+  closesTo?: string // ISO Instant
+  sort?: string[]
+}
+
+/**
+ * Obtiene las encuestas que el usuario actual ha respondido
+ */
+export async function getMyAnsweredSurveys(
+  params: MySurveysParams,
+  token: string,
+): Promise<PaginatedResponseSurveyDTO> {
+  const queryParams = new URLSearchParams()
+  
+  if (params.page !== undefined) queryParams.append('page', params.page.toString())
+  if (params.size !== undefined) queryParams.append('size', params.size.toString())
+  if (params.status) queryParams.append('status', params.status)
+  if (params.surveyType) queryParams.append('surveyType', params.surveyType)
+  if (params.opensFrom) queryParams.append('opensFrom', params.opensFrom)
+  if (params.opensTo) queryParams.append('opensTo', params.opensTo)
+  if (params.closesFrom) queryParams.append('closesFrom', params.closesFrom)
+  if (params.closesTo) queryParams.append('closesTo', params.closesTo)
+  
+  if (params.sort) {
+    params.sort.forEach((s) => queryParams.append('sort', s))
+  }
+
+  const response = await api.get<PaginatedResponseSurveyDTO>(
+    `/api/surveys/answered/me?${queryParams.toString()}`,
+    {
+      headers: authHeaders(token),
+    },
+  )
+  return response.data
+}
+
+/**
+ * Obtiene las encuestas que el usuario actual NO ha respondido
+ */
+export async function getMyNotAnsweredSurveys(
+  params: MySurveysParams,
+  token: string,
+): Promise<PaginatedResponseSurveyDTO> {
+  const queryParams = new URLSearchParams()
+  
+  if (params.page !== undefined) queryParams.append('page', params.page.toString())
+  if (params.size !== undefined) queryParams.append('size', params.size.toString())
+  if (params.status) queryParams.append('status', params.status)
+  if (params.surveyType) queryParams.append('surveyType', params.surveyType)
+  if (params.opensFrom) queryParams.append('opensFrom', params.opensFrom)
+  if (params.opensTo) queryParams.append('opensTo', params.opensTo)
+  if (params.closesFrom) queryParams.append('closesFrom', params.closesFrom)
+  if (params.closesTo) queryParams.append('closesTo', params.closesTo)
+  
+  if (params.sort) {
+    params.sort.forEach((s) => queryParams.append('sort', s))
+  }
+
+  const response = await api.get<PaginatedResponseSurveyDTO>(
+    `/api/surveys/notAnswered/me?${queryParams.toString()}`,
     {
       headers: authHeaders(token),
     },

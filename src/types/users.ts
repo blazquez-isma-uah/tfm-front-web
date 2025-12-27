@@ -21,4 +21,18 @@ export interface UserDTO {
     instruments?: InstrumentDTO[]
 }
 
+export interface MyProfileUpdateRequestDTO {
+    firstName?: string
+    lastName?: string
+    secondLastName?: string
+    phone?: string
+    notes?: string
+    profilePictureUrl?: string
+    birthDate?: string // YYYY-MM-DD
+}
+
+export interface PasswordUpdateRequestDTO {
+    newPassword: string
+}
+
 export type PaginatedResponseUserDTO = PageResponse<UserDTO>

@@ -1,5 +1,5 @@
 import { api, authHeaders } from './httpClient'
-import type { PaginatedResponseUserDTO, UserDTO } from '../types/users'
+import type { PaginatedResponseUserDTO, UserDTO, MyProfileUpdateRequestDTO, PasswordUpdateRequestDTO } from '../types/users'
 import type { PageableRequest } from '../types/pagination'
 
 export interface UserSearchParams extends PageableRequest {
@@ -58,8 +58,40 @@ export async function searchUsersPage(
 export async function getUserById(userId: number, token?: string): Promise<UserDTO> {
     const response = await api.get<UserDTO>(`/api/users/${userId}`, {
         headers: authHeaders(token),
+    }
+    )
+    return response.data
+}
+
+// ==================== My Profile ====================
+
+// GET /api/users/me
+export async function getMyProfile(token?: string): Promise<UserDTO> {
+    const response = await api.get<UserDTO>('/api/users/me', {
+        headers: authHeaders(token),
     })
     return response.data
+}
+
+// PUT /api/users/me
+export async function updateMyProfile(
+    payload: MyProfileUpdateRequestDTO,
+    token?: string,
+): Promise<UserDTO> {
+    const response = await api.put<UserDTO>('/api/users/me', payload, {
+        headers: authHeaders(token),
+    })
+    return response.data
+}
+
+// PUT /api/users/me/password
+export async function updateMyPassword(
+    payload: PasswordUpdateRequestDTO,
+    token?: string,
+): Promise<void> {
+    await api.put('/api/users/me/password', payload, {
+        headers: authHeaders(token),
+    })
 }
 
 // GET /api/users/iam/{iamId}

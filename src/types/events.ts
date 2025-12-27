@@ -32,8 +32,8 @@ export interface EventCreateRequestDTO {
 export interface CalendarEventItemDTO {
     id: string
     title: string
-    start: string // ISO-8601 Instant (UTC)
-    end: string // ISO-8601 Instant (UTC)
+    startAt: string // ISO-8601 Instant (UTC)
+    endAt: string // ISO-8601 Instant (UTC)
     allDay: boolean
     type: EventType
     status: EventStatus
@@ -41,3 +41,5 @@ export interface CalendarEventItemDTO {
 }
 
 export type PaginatedResponseEventDTO = PageResponse<EventDTO>
+export type PaginatedResponseCalendarEventItemDTO =
+    PageResponse<CalendarEventItemDTO>

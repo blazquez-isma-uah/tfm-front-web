@@ -3,7 +3,9 @@ import './MainLayout.css'
 import { useAuth } from '../auth/AuthContext'
 
 function MainLayout() {
-    const { logout, userName } = useAuth()
+    const { logout, userName, hasRole } = useAuth()
+
+    const isAdmin = hasRole('ADMIN')
 
     const handleLogout = () => {
         logout()
@@ -25,6 +27,7 @@ function MainLayout() {
 
             <div className="layout-body">
                 <nav className="layout-sidebar">
+                    {/* Zona común - todos los usuarios autenticados */}
                     <div className="menu-section">
                         <div className="menu-section-title">General</div>
                         <NavLink
@@ -35,28 +38,8 @@ function MainLayout() {
                         >
                             Dashboard
                         </NavLink>
-                    </div>
-
-                    <div className="menu-section">
-                        <div className="menu-section-title">Administración</div>
                         <NavLink
-                            to="/admin/users"
-                            className={({ isActive }) =>
-                                'menu-link' + (isActive ? ' menu-link-active' : '')
-                            }
-                        >
-                            Usuarios
-                        </NavLink>
-                        <NavLink
-                            to="/admin/instruments"
-                            className={({ isActive }) =>
-                                'menu-link' + (isActive ? ' menu-link-active' : '')
-                            }
-                        >
-                            Instrumentos
-                        </NavLink>
-                        <NavLink
-                            to="/admin/events"
+                            to="/events"
                             className={({ isActive }) =>
                                 'menu-link' + (isActive ? ' menu-link-active' : '')
                             }
@@ -64,34 +47,69 @@ function MainLayout() {
                             Eventos
                         </NavLink>
                         <NavLink
-                            to="/admin/surveys"
+                            to="/surveys"
                             className={({ isActive }) =>
                                 'menu-link' + (isActive ? ' menu-link-active' : '')
                             }
                         >
                             Encuestas
                         </NavLink>
+                        <NavLink
+                            to="/scores"
+                            className={({ isActive }) =>
+                                'menu-link' + (isActive ? ' menu-link-active' : '')
+                            }
+                        >
+                            Partituras
+                        </NavLink>
+                        <NavLink
+                            to="/profile"
+                            className={({ isActive }) =>
+                                'menu-link' + (isActive ? ' menu-link-active' : '')
+                            }
+                        >
+                            Mi perfil
+                        </NavLink>
                     </div>
 
-                    <div className="menu-section">
-                        <div className="menu-section-title">Músico</div>
-                        <NavLink
-                            to="/me/events"
-                            className={({ isActive }) =>
-                                'menu-link' + (isActive ? ' menu-link-active' : '')
-                            }
-                        >
-                            Mis eventos
-                        </NavLink>
-                        <NavLink
-                            to="/me/surveys"
-                            className={({ isActive }) =>
-                                'menu-link' + (isActive ? ' menu-link-active' : '')
-                            }
-                        >
-                            Mis encuestas
-                        </NavLink>
-                    </div>
+                    {/* Zona administrador - solo usuarios con rol ADMIN */}
+                    {isAdmin && (
+                        <div className="menu-section">
+                            <div className="menu-section-title">Administración</div>
+                            <NavLink
+                                to="/admin/users"
+                                className={({ isActive }) =>
+                                    'menu-link' + (isActive ? ' menu-link-active' : '')
+                                }
+                            >
+                                Usuarios
+                            </NavLink>
+                            <NavLink
+                                to="/admin/instruments"
+                                className={({ isActive }) =>
+                                    'menu-link' + (isActive ? ' menu-link-active' : '')
+                                }
+                            >
+                                Instrumentos
+                            </NavLink>
+                            <NavLink
+                                to="/admin/events"
+                                className={({ isActive }) =>
+                                    'menu-link' + (isActive ? ' menu-link-active' : '')
+                                }
+                            >
+                                Eventos
+                            </NavLink>
+                            <NavLink
+                                to="/admin/surveys"
+                                className={({ isActive }) =>
+                                    'menu-link' + (isActive ? ' menu-link-active' : '')
+                                }
+                            >
+                                Encuestas
+                            </NavLink>
+                        </div>
+                    )}
                 </nav>
 
                 <main className="layout-content">

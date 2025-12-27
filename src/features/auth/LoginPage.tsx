@@ -23,9 +23,9 @@ function LoginPage() {
 
         // Redirección por rol
         if (hasRole('ADMIN')) {
-            navigate('/admin/events', { replace: true })
+            navigate('/dashboard', { replace: true })
         } else if (hasRole('MUSICIAN')) {
-            navigate('/me/events', { replace: true })
+            navigate('/dashboard', { replace: true })
         } else {
             // fallback: dashboard
             navigate('/dashboard', { replace: true })

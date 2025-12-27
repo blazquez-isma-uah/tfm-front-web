@@ -23,6 +23,7 @@ interface SurveyDetailCardProps {
   onViewResults?: (survey: SurveyDTO) => void
   showButtons?: boolean
   backButtonLabel?: string
+  compact?: boolean // Modo compacto para mostrar dentro de otros componentes
 }
 
 export function SurveyDetailCard({
@@ -35,6 +36,7 @@ export function SurveyDetailCard({
   onViewResults,
   showButtons = true,
   backButtonLabel = 'Volver a la lista',
+  compact = false,
 }: SurveyDetailCardProps) {
   const { token } = useAuth()
   const [event, setEvent] = useState<EventDTO | null>(null)
@@ -75,8 +77,46 @@ export function SurveyDetailCard({
         setLoadingCreator(false)
       }
     }
-    loadCreator()
   }, [survey.createdBy, token])
+  
+  // Modo compacto: versión simplificada sin cargar evento/creador
+  if (compact) {
+    return (
+      <div 
+        style={{ 
+          padding: '0.75rem', 
+          border: '1px solid #e0e0e0', 
+          borderRadius: '6px',
+          backgroundColor: '#fafafa'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+          <strong style={{ fontSize: '0.95rem' }}>{survey.title}</strong>
+          <span 
+            style={{ 
+              fontSize: '0.85rem', 
+              padding: '0.15rem 0.5rem', 
+              borderRadius: '4px',
+              backgroundColor: survey.status === 'OPEN' ? '#e8f5e9' : '#f5f5f5',
+              color: survey.status === 'OPEN' ? '#2e7d32' : '#666'
+            }}
+          >
+            {translateSurveyStatus(survey.status)}
+          </span>
+        </div>
+        <div style={{ fontSize: '0.9rem', color: '#666', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          {survey.description && (
+            <div style={{ marginTop: '0.25rem', fontStyle: 'italic' }}>{survey.description}</div>
+          )}
+          <div><strong>Tipo:</strong> {translateSurveyType(survey.surveyType)}</div>
+          <div><strong>Abre:</strong> {formatSurveyDateTime(survey.opensAt)}</div>
+          <div><strong>Cierra:</strong> {formatSurveyDateTime(survey.closesAt)}</div>
+        </div>
+      </div>
+    )
+  }
+  
+  // Modo completo: versión detallada original
   return (
     <div className="card" style={{ marginTop: '1rem' }}>
       <div

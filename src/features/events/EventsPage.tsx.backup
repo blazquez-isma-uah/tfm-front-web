@@ -11,20 +11,14 @@ import {
     getAvailableEventTypes,
     getAvailableEventStatuses,
     getAvailableEventVisibilities,
-    getCalendar,
     type EventSearchParams,
 } from '../../api/eventsApi'
-import {
-    getMyAnsweredSurveys,
-    getMyNotAnsweredSurveys,
-} from '../../api/surveysApi'
 import type {
     EventDTO,
     EventCreateRequestDTO,
     EventType,
     EventStatus,
     EventVisibility,
-    CalendarEventItemDTO,
 } from '../../types/events'
 import {
     translateEventType,
@@ -40,22 +34,22 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import '../../styles/common.css'
 
 type ViewMode = 'LIST' | 'DETAIL' | 'EDIT' | 'CREATE'
-type TabType = 'MIS_EVENTOS' | 'PENDIENTES' | 'CALENDARIO' | 'BUSQUEDA'
+type TabType = 'CONFIRMADOS' | 'PENDIENTES' | 'CALENDARIO' | 'BUSQUEDA'
 
 type SortableField = 'title' | 'type' | 'status' | 'startAt' | 'location'
 
 function EventsPage() {
     const location = useLocation()
     const { token, hasRole } = useAuth()
+    const isAdmin = hasRole('ADMIN')
     
     // Determinar si estamos en la zona de administración
     const isAdminView = location.pathname.startsWith('/admin/events')
 
-    // Tab activo: admin solo ve BUSQUEDA, usuarios generales ven las 4 tabs
-    const [activeTab, setActiveTab] = useState<TabType>(isAdminView ? 'BUSQUEDA' : 'MIS_EVENTOS')
+    // Tab activo: admin solo ve BUSQUEDA, músicos ven las 4 tabs
+    const [activeTab, setActiveTab] = useState<TabType>(isAdminView ? 'BUSQUEDA' : 'CONFIRMADOS')
 
     const [events, setEvents] = useState<EventDTO[]>([])
-    const [calendarEvents, setCalendarEvents] = useState<CalendarEventItemDTO[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -135,9 +129,6 @@ function EventsPage() {
         status: '',
         visibility: '',
     })
-
-    // Estado para calendario
-    const [currentMonth, setCurrentMonth] = useState(new Date())
 
     // Columnas base (comunes para todas las vistas)
     const baseColumns = [
@@ -244,21 +235,49 @@ function EventsPage() {
         loadOptions()
     }, [token])
 
-    // Cargar eventos según el tab activo
+    // Buscar eventos
     useEffect(() => {
         if (!token) return
-        if (isAdminView || activeTab === 'BUSQUEDA') {
-            loadSearchEvents()
-        } else if (activeTab === 'MIS_EVENTOS') {
-            loadMyEvents()
-        } else if (activeTab === 'PENDIENTES') {
-            loadPendingEvents()
-        } else if (activeTab === 'CALENDARIO') {
-            loadCalendarEvents()
+
+        const loadEvents = async () => {
+            try {
+                setLoading(true)
+                setError(null)
+
+                const sortParam = sortField
+                    ? [`${sortField},${sortDirection}`]
+                    : ['startAt,asc']
+
+                const params: EventSearchParams = {
+                    page,
+                    size,
+                    sort: sortParam,
+                    title: searchTitle || undefined,
+                    location: searchLocation || undefined,
+                    type: searchType,
+                    status: searchStatus,
+                    visibility: searchVisibility,
+                    startAtFrom: searchStartAtFrom,
+                    startAtTo: searchStartAtTo,
+                    endAtFrom: searchEndAtFrom,
+                    endAtTo: searchEndAtTo,
+                }
+
+                const data = await searchEventsPage(params, token)
+                setEvents(data.content)
+                setTotalPages(data.totalPages)
+                setTotalElements(data.totalElements)
+            } catch (e: any) {
+                console.error('Error loading events:', e)
+                setError('Error cargando eventos')
+            } finally {
+                setLoading(false)
+            }
         }
+
+        loadEvents()
     }, [
         token,
-        activeTab,
         page,
         size,
         sortField,
@@ -273,169 +292,7 @@ function EventsPage() {
         searchEndAtFrom,
         searchEndAtTo,
         searchTrigger,
-        currentMonth,
     ])
-
-    const loadSearchEvents = async () => {
-        if (!token) return
-
-        try {
-            setLoading(true)
-            setError(null)
-
-            const sortParam = sortField
-                ? [`${sortField},${sortDirection}`]
-                : ['startAt,asc']
-
-            const params: EventSearchParams = {
-                page,
-                size,
-                sort: sortParam,
-                title: searchTitle || undefined,
-                location: searchLocation || undefined,
-                type: searchType,
-                status: searchStatus,
-                visibility: searchVisibility,
-                startAtFrom: searchStartAtFrom,
-                startAtTo: searchStartAtTo,
-                endAtFrom: searchEndAtFrom,
-                endAtTo: searchEndAtTo,
-            }
-
-            const data = await searchEventsPage(params, token)
-            setEvents(data.content)
-            setTotalPages(data.totalPages)
-            setTotalElements(data.totalElements)
-        } catch (e: any) {
-            console.error('Error loading events:', e)
-            setError('Error cargando eventos')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const loadMyEvents = async () => {
-        if (!token) return
-
-        try {
-            setLoading(true)
-            setError(null)
-
-            const now = new Date().toISOString()
-            
-            // Mapear campos de eventos a campos de surveys
-            const surveySortField = sortField === 'startAt' ? 'opensAt' : sortField === 'title' ? 'title' : 'opensAt'
-            const sortParam = [`${surveySortField},${sortDirection}`]
-
-            // Obtener encuestas ATTENDANCE respondidas
-            const surveysResponse = await getMyAnsweredSurveys(
-                {
-                    surveyType: 'ATTENDANCE',
-                    page,
-                    size,
-                    sort: sortParam,
-                },
-                token
-            )
-
-            // Obtener los eventos asociados
-            if (surveysResponse.content.length > 0) {
-                const eventIds = [...new Set(surveysResponse.content.map(s => s.eventId))]
-                const eventsPromises = eventIds.map(id => getEventById(id, token))
-                const eventsData = await Promise.all(eventsPromises)
-                
-                // Filtrar solo eventos futuros
-                const futureEvents = eventsData.filter(e => new Date(e.startAt) >= new Date(now))
-                setEvents(futureEvents)
-                setTotalPages(Math.ceil(futureEvents.length / size))
-                setTotalElements(futureEvents.length)
-            } else {
-                setEvents([])
-                setTotalPages(0)
-                setTotalElements(0)
-            }
-        } catch (e: any) {
-            console.error('Error loading my events:', e)
-            setError('Error cargando mis eventos')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const loadPendingEvents = async () => {
-        if (!token) return
-
-        try {
-            setLoading(true)
-            setError(null)
-
-            const now = new Date().toISOString()
-            
-            // Mapear campos de eventos a campos de surveys
-            const surveySortField = sortField === 'startAt' ? 'opensAt' : sortField === 'title' ? 'title' : 'opensAt'
-            const sortParam = [`${surveySortField},${sortDirection}`]
-
-            // Obtener encuestas ATTENDANCE no respondidas
-            const surveysResponse = await getMyNotAnsweredSurveys(
-                {
-                    surveyType: 'ATTENDANCE',
-                    status: 'OPEN',
-                    opensTo: now,
-                    closesFrom: now,
-                    page,
-                    size,
-                    sort: sortParam,
-                },
-                token
-            )
-
-            // Obtener los eventos asociados
-            if (surveysResponse.content.length > 0) {
-                const eventIds = [...new Set(surveysResponse.content.map(s => s.eventId))]
-                const eventsPromises = eventIds.map(id => getEventById(id, token))
-                const eventsData = await Promise.all(eventsPromises)
-                
-                // Filtrar solo eventos futuros
-                const futureEvents = eventsData.filter(e => new Date(e.startAt) >= new Date(now))
-                setEvents(futureEvents)
-                setTotalPages(Math.ceil(futureEvents.length / size))
-                setTotalElements(futureEvents.length)
-            } else {
-                setEvents([])
-                setTotalPages(0)
-                setTotalElements(0)
-            }
-        } catch (e: any) {
-            console.error('Error loading pending events:', e)
-            setError('Error cargando eventos pendientes')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const loadCalendarEvents = async () => {
-        if (!token) return
-
-        try {
-            setLoading(true)
-            setError(null)
-
-            // Calcular primer y último día del mes actual
-            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59)
-
-            const from = firstDay.toISOString()
-            const to = lastDay.toISOString()
-
-            const response = await getCalendar(from, to, 0, 100, 'startAt,asc', token)
-            setCalendarEvents(response.content)
-        } catch (e: any) {
-            console.error('Error loading calendar events:', e)
-            setError('Error cargando calendario')
-        } finally {
-            setLoading(false)
-        }
-    }
 
     // ===== HANDLERS =====
 
@@ -643,229 +500,13 @@ function EventsPage() {
         setSelectedEvent(null)
     }
 
-    const handleTabChange = (tab: TabType) => {
-        setActiveTab(tab)
-        setPage(0)
-        setExpandedEventId(null)
-        setSelectedEvent(null)
-    }
-
-    const handlePreviousMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
-    }
-
-    const handleNextMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
-    }
-
     // ===== RENDER =====
 
-    const renderTabs = () => {
-        if (isAdminView) return null
+    return (
+        <div className="page-container">
+            <h1 className="page-title">Gestión de eventos</h1>
 
-        return (
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '2px solid #e0e0e0' }}>
-                <button
-                    type="button"
-                    onClick={() => handleTabChange('MIS_EVENTOS')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        borderBottom: activeTab === 'MIS_EVENTOS' ? '3px solid #1976d2' : 'none',
-                        color: activeTab === 'MIS_EVENTOS' ? '#1976d2' : '#666',
-                        fontWeight: activeTab === 'MIS_EVENTOS' ? 600 : 400,
-                        cursor: 'pointer',
-                    }}
-                >
-                    ✅ Mis Eventos
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleTabChange('PENDIENTES')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        borderBottom: activeTab === 'PENDIENTES' ? '3px solid #1976d2' : 'none',
-                        color: activeTab === 'PENDIENTES' ? '#1976d2' : '#666',
-                        fontWeight: activeTab === 'PENDIENTES' ? 600 : 400,
-                        cursor: 'pointer',
-                    }}
-                >
-                    🕓 Eventos Pendientes
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleTabChange('CALENDARIO')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        borderBottom: activeTab === 'CALENDARIO' ? '3px solid #1976d2' : 'none',
-                        color: activeTab === 'CALENDARIO' ? '#1976d2' : '#666',
-                        fontWeight: activeTab === 'CALENDARIO' ? 600 : 400,
-                        cursor: 'pointer',
-                    }}
-                >
-                    📅 Calendario
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleTabChange('BUSQUEDA')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        borderBottom: activeTab === 'BUSQUEDA' ? '3px solid #1976d2' : 'none',
-                        color: activeTab === 'BUSQUEDA' ? '#1976d2' : '#666',
-                        fontWeight: activeTab === 'BUSQUEDA' ? 600 : 400,
-                        cursor: 'pointer',
-                    }}
-                >
-                    🔍 Búsqueda
-                </button>
-            </div>
-        )
-    }
-
-    const renderTabDescription = () => {
-        if (isAdminView) return null
-
-        return (
-            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-                {activeTab === 'MIS_EVENTOS' && (
-                    <p style={{ margin: 0, color: '#666' }}>
-                        Eventos futuros donde has respondido a su encuesta de asistencia
-                    </p>
-                )}
-                {activeTab === 'PENDIENTES' && (
-                    <p style={{ margin: 0, color: '#666' }}>
-                        Eventos futuros con encuesta de asistencia abierta que aún no has respondido
-                    </p>
-                )}
-                {activeTab === 'CALENDARIO' && (
-                    <p style={{ margin: 0, color: '#666' }}>
-                        Vista mensual de eventos
-                    </p>
-                )}
-                {activeTab === 'BUSQUEDA' && (
-                    <p style={{ margin: 0, color: '#666' }}>
-                        Buscar eventos con filtros avanzados
-                    </p>
-                )}
-            </div>
-        )
-    }
-
-    const renderCalendarView = () => {
-        const monthName = currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })
-        
-        // Obtener días del mes
-        const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-        const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
-        const daysInMonth = lastDay.getDate()
-        const startDayOfWeek = firstDay.getDay() // 0 = domingo
-        
-        // Ajustar para que lunes sea el primer día (0)
-        const adjustedStartDay = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1
-        
-        const days = []
-        for (let i = 0; i < adjustedStartDay; i++) {
-            days.push(null) // Días vacíos antes del primer día del mes
-        }
-        for (let day = 1; day <= daysInMonth; day++) {
-            days.push(day)
-        }
-
-        // Agrupar eventos por día
-        const eventsByDay: Record<number, CalendarEventItemDTO[]> = {}
-        calendarEvents.forEach(event => {
-            const eventDate = new Date(event.startAt)
-            if (eventDate.getMonth() === currentMonth.getMonth() && 
-                eventDate.getFullYear() === currentMonth.getFullYear()) {
-                const day = eventDate.getDate()
-                if (!eventsByDay[day]) {
-                    eventsByDay[day] = []
-                }
-                eventsByDay[day].push(event)
-            }
-        })
-
-        return (
-            <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <button type="button" className="button-secondary" onClick={handlePreviousMonth}>
-                        ← Anterior
-                    </button>
-                    <h2 style={{ textTransform: 'capitalize', margin: 0 }}>{monthName}</h2>
-                    <button type="button" className="button-secondary" onClick={handleNextMonth}>
-                        Siguiente →
-                    </button>
-                </div>
-                
-                <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(7, 1fr)', 
-                    gap: '1px', 
-                    backgroundColor: '#e0e0e0',
-                    border: '1px solid #e0e0e0'
-                }}>
-                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                        <div key={day} style={{ 
-                            backgroundColor: '#f5f5f5', 
-                            padding: '0.5rem', 
-                            textAlign: 'center', 
-                            fontWeight: 600 
-                        }}>
-                            {day}
-                        </div>
-                    ))}
-                    {days.map((day, index) => (
-                        <div key={index} style={{ 
-                            backgroundColor: 'white', 
-                            minHeight: '80px', 
-                            padding: '0.5rem',
-                            position: 'relative'
-                        }}>
-                            {day && (
-                                <>
-                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{day}</div>
-                                    {eventsByDay[day] && eventsByDay[day].length > 0 && (
-                                        <div style={{ fontSize: '0.75rem' }}>
-                                            {eventsByDay[day].slice(0, 3).map(event => (
-                                                <div key={event.id} style={{ 
-                                                    backgroundColor: '#e3f2fd', 
-                                                    padding: '0.15rem 0.25rem', 
-                                                    marginBottom: '0.15rem',
-                                                    borderRadius: '3px',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap'
-                                                }}>
-                                                    {event.title}
-                                                </div>
-                                            ))}
-                                            {eventsByDay[day].length > 3 && (
-                                                <div style={{ fontSize: '0.7rem', color: '#666' }}>
-                                                    +{eventsByDay[day].length - 3} más
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )
-    }
-
-    const renderSearchFilters = () => {
-        if (!isAdminView && activeTab !== 'BUSQUEDA') return null
-
-        return (
+            {/* Buscador */}
             <form
                 onSubmit={handleSearchSubmit}
                 className="card"
@@ -1036,88 +677,65 @@ function EventsPage() {
                     </button>
                 </div>
             </form>
-        )
-    }
-
-    const renderEventsList = () => {
-        if (activeTab === 'CALENDARIO') return null
-
-        return (
-            <>
-                <div className="card">
-                    <DataTable<EventDTO, SortableField>
-                        columns={eventColumns}
-                        data={events}
-                        sortState={sortState}
-                        onSortChange={handleSort}
-                        onRowClick={handleViewDetails}
-                        expandedRowId={expandedEventId}
-                        isClosing={isClosing}
-                        renderExpandedContent={(event) =>
-                            isAdminView ? (
-                                <EventDetailCard
-                                    event={event}
-                                    onBack={() => {
-                                        setIsClosing(true)
-                                        setTimeout(() => {
-                                            setExpandedEventId(null)
-                                            setSelectedEvent(null)
-                                            setIsClosing(false)
-                                        }, 250)
-                                    }}
-                                    backButtonLabel="Ocultar"
-                                />
-                            ) : (
-                                <EventDetailCardComplete
-                                    event={event}
-                                    onBack={() => {
-                                        setIsClosing(true)
-                                        setTimeout(() => {
-                                            setExpandedEventId(null)
-                                            setSelectedEvent(null)
-                                            setIsClosing(false)
-                                        }, 250)
-                                    }}
-                                    backButtonLabel="Ocultar"
-                                />
-                            )
-                        }
-                    />
-                </div>
-                <PaginationBar
-                    page={page}
-                    totalPages={totalPages}
-                    pageSize={size}
-                    currentCount={events.length}
-                    totalElements={totalElements}
-                    onPageChange={setPage}
-                    onPageSizeChange={(newSize) => {
-                        setSize(newSize)
-                        setPage(0)
-                    }}
-                />
-            </>
-        )
-    }
-
-    return (
-        <div className="page-container">
-            <h1 className="page-title">{isAdminView ? 'Administración de eventos' : 'Eventos'}</h1>
-
-            {renderTabs()}
-            {renderTabDescription()}
 
             {loading && <p>Cargando eventos...</p>}
             {error && <p className="error-message">{error}</p>}
 
-            {!loading && !error && (
+            {/* LISTA */}
+            {mode === 'LIST' && !loading && !error && (
                 <>
-                    {activeTab === 'CALENDARIO' ? renderCalendarView() : (
-                        <>
-                            {renderSearchFilters()}
-                            {mode === 'LIST' && renderEventsList()}
-                        </>
-                    )}
+                    <div className="card">
+                        <DataTable<EventDTO, SortableField>
+                            columns={eventColumns}
+                            data={events}
+                            sortState={sortState}
+                            onSortChange={handleSort}
+                            onRowClick={handleViewDetails}
+                            expandedRowId={expandedEventId}
+                            isClosing={isClosing}
+                            renderExpandedContent={(event) =>
+                                isAdminView ? (
+                                    <EventDetailCard
+                                        event={event}
+                                        onBack={() => {
+                                            setIsClosing(true)
+                                            setTimeout(() => {
+                                                setExpandedEventId(null)
+                                                setSelectedEvent(null)
+                                                setIsClosing(false)
+                                            }, 250)
+                                        }}
+                                        backButtonLabel="Ocultar"
+                                    />
+                                ) : (
+                                    <EventDetailCardComplete
+                                        event={event}
+                                        onBack={() => {
+                                            setIsClosing(true)
+                                            setTimeout(() => {
+                                                setExpandedEventId(null)
+                                                setSelectedEvent(null)
+                                                setIsClosing(false)
+                                            }, 250)
+                                        }}
+                                        backButtonLabel="Ocultar"
+                                    />
+                                )
+                            }
+                        />
+                    </div>
+                    <PaginationBar
+                        page={page}
+                        totalPages={totalPages}
+                        pageSize={size}
+                        currentCount={events.length}
+                        totalElements={totalElements}
+                        onPageChange={setPage}
+                        onPageSizeChange={(newSize) => {
+                            setSize(newSize)
+                            setPage(0)
+                        }}
+                    />
                 </>
             )}
 

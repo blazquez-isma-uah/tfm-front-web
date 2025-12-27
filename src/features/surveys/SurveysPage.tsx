@@ -230,6 +230,19 @@ function SurveysPage() {
     loadOptions()
   }, [token, isAdmin])
 
+  // Auto-completar título cuando surveyType es ATTENDANCE
+  useEffect(() => {
+    if (mode === 'CREATE' && formPayload.surveyType === 'ATTENDANCE' && formPayload.eventId) {
+      const selectedEvent = availableEvents.find(e => e.id === formPayload.eventId)
+      if (selectedEvent) {
+        setFormPayload(prev => ({
+          ...prev,
+          title: `Encuesta de asistencia a "${selectedEvent.title}"`
+        }))
+      }
+    }
+  }, [formPayload.surveyType, formPayload.eventId, availableEvents, mode])
+
   // Cargar encuestas
   useEffect(() => {
     if (!token || !isAdmin) return
@@ -775,43 +788,11 @@ function SurveysPage() {
             {mode === 'CREATE' ? 'Crear encuesta' : 'Editar encuesta'}
           </h2>
 
-          {/* Línea 1: Título, Evento, Tipo de respuesta, Tipo de encuesta (4 columnas) */}
+          {/* Línea 1: Tipo de respuesta, Tipo de encuesta, Evento (3 columnas) */}
           <div
             className="form-grid"
-            style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '0.75rem' }}
+            style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '0.75rem' }}
           >
-            <div className="form-field">
-              <label className="label-text">Título *</label>
-              <input
-                type="text"
-                value={formPayload.title}
-                onChange={(e) =>
-                  setFormPayload({ ...formPayload, title: e.target.value })
-                }
-                required
-                maxLength={200}
-                className="input-full-width"
-              />
-            </div>
-            <div className="form-field">
-              <label className="label-text">Evento *</label>
-              <select
-                value={formPayload.eventId}
-                onChange={(e) =>
-                  setFormPayload({ ...formPayload, eventId: e.target.value })
-                }
-                required
-                disabled={mode === 'EDIT' || loadingOptions}
-                className="select-base"
-              >
-                <option value="">Selecciona un evento</option>
-                {availableEvents.map((evt) => (
-                  <option key={evt.id} value={evt.id}>
-                    {evt.title}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div className="form-field">
               <label className="label-text">Tipo de respuesta *</label>
               <select
@@ -850,13 +831,45 @@ function SurveysPage() {
                 ))}
               </select>
             </div>
+            <div className="form-field">
+              <label className="label-text">Evento *</label>
+              <select
+                value={formPayload.eventId}
+                onChange={(e) =>
+                  setFormPayload({ ...formPayload, eventId: e.target.value })
+                }
+                required
+                disabled={mode === 'EDIT' || loadingOptions}
+                className="select-base"
+              >
+                <option value="">Selecciona un evento</option>
+                {availableEvents.map((evt) => (
+                  <option key={evt.id} value={evt.id}>
+                    {evt.title}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Línea 2: Fecha apertura, Fecha cierre (2 columnas) */}
+          {/* Línea 2: Título (2 cols), Fecha apertura (1 col), Fecha cierre (1 col) */}
           <div
             className="form-grid"
-            style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}
+            style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '0.75rem' }}
           >
+            <div className="form-field" style={{ gridColumn: 'span 2' }}>
+              <label className="label-text">Título *</label>
+              <input
+                type="text"
+                value={formPayload.title}
+                onChange={(e) =>
+                  setFormPayload({ ...formPayload, title: e.target.value })
+                }
+                required
+                maxLength={200}
+                className="input-full-width"
+              />
+            </div>
             <div className="form-field">
               <label className="label-text">Fecha apertura *</label>
               <input

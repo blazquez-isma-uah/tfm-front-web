@@ -11,6 +11,7 @@ import {
 import { getEventById } from '../api/eventsApi'
 import { getUserByIamId, getUserById } from '../api/usersApi'
 import { useAuth } from '../features/auth/AuthContext'
+import { SurveyResponseForm } from './SurveyResponseForm'
 import '../styles/common.css'
 
 interface SurveyDetailCardProps {
@@ -24,6 +25,8 @@ interface SurveyDetailCardProps {
   showButtons?: boolean
   backButtonLabel?: string
   compact?: boolean // Modo compacto para mostrar dentro de otros componentes
+  showResponseForm?: boolean // Mostrar formulario para responder encuesta
+  onResponseSubmitted?: () => void // Callback cuando se envía una respuesta
 }
 
 export function SurveyDetailCard({
@@ -37,12 +40,16 @@ export function SurveyDetailCard({
   showButtons = true,
   backButtonLabel = 'Volver a la lista',
   compact = false,
+  showResponseForm = false,
+  onResponseSubmitted,
 }: SurveyDetailCardProps) {
-  const { token } = useAuth()
+  const { token, hasRole } = useAuth()
   const [event, setEvent] = useState<EventDTO | null>(null)
   const [creator, setCreator] = useState<UserDTO | null>(null)
   const [loadingEvent, setLoadingEvent] = useState(false)
   const [loadingCreator, setLoadingCreator] = useState(false)
+  
+  const isMusician = hasRole('MUSICIAN')
 
   useEffect(() => {
     if (!token || !survey.eventId) return
@@ -288,6 +295,16 @@ export function SurveyDetailCard({
               Cancelar encuesta
             </button>
           )}
+        </div>
+      )}
+
+      {/* Formulario para responder encuesta (usuarios con rol MUSICIAN) */}
+      {showResponseForm && isMusician && (
+        <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '2px solid #e0e0e0' }}>
+          <SurveyResponseForm 
+            survey={survey} 
+            onResponseSubmitted={onResponseSubmitted}
+          />
         </div>
       )}
     </div>

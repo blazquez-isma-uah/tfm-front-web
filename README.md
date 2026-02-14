@@ -71,3 +71,5 @@ export default defineConfig([
   },
 ])
 ```
+
+Como lanzar el proyecto: npm run dev

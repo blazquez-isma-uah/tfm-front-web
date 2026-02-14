@@ -26,6 +26,8 @@ export function EventDetailCardComplete({
     const [surveys, setSurveys] = useState<SurveyDTO[]>([])
     const [loadingSurveys, setLoadingSurveys] = useState(false)
     const [errorSurveys, setErrorSurveys] = useState<string | null>(null)
+    const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
     useEffect(() => {
         if (!token || !event.id) return
@@ -52,7 +54,16 @@ export function EventDetailCardComplete({
         }
 
         loadSurveys()
-    }, [event.id, token])
+    }, [event.id, token, refreshTrigger])
+
+    const handleResponseSubmitted = () => {
+        // Refrescar la lista de encuestas después de responder
+        setRefreshTrigger(prev => prev + 1)
+    }
+
+    const handleSurveyClick = (surveyId: string) => {
+        setExpandedSurveyId(expandedSurveyId === surveyId ? null : surveyId)
+    }
 
     return (
         <div className="card" style={{ marginTop: '1rem' }}>
@@ -95,11 +106,24 @@ export function EventDetailCardComplete({
                 {!loadingSurveys && !errorSurveys && surveys.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {surveys.map((survey) => (
-                            <SurveyDetailCard 
-                                key={survey.id} 
-                                survey={survey}
-                                compact={true}
-                            />
+                            <div key={survey.id} style={{ cursor: 'pointer' }}>
+                                <div onClick={() => handleSurveyClick(survey.id)}>
+                                    <SurveyDetailCard 
+                                        survey={survey}
+                                        compact={true}
+                                    />
+                                </div>
+                                {expandedSurveyId === survey.id && (
+                                    <div style={{ marginTop: '0.75rem', marginLeft: '1rem' }}>
+                                        <SurveyDetailCard
+                                            survey={survey}
+                                            showResponseForm={true}
+                                            onResponseSubmitted={handleResponseSubmitted}
+                                            showButtons={false}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         ))}
                     </div>
                 )}

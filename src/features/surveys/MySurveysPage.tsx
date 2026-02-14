@@ -25,6 +25,7 @@ function MySurveysPage() {
 
     const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null)
     const [isClosing, setIsClosing] = useState(false)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
     const [sortField, setSortField] = useState<SortableField | null>('closesAt')
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -144,7 +145,7 @@ function MySurveysPage() {
         }
 
         loadSurveys()
-    }, [token, activeTab, page, size, sortField, sortDirection])
+    }, [token, activeTab, page, size, sortField, sortDirection, refreshTrigger])
 
     const handleSort = (field: SortableField) => {
         if (sortField === field) {
@@ -158,6 +159,11 @@ function MySurveysPage() {
 
     const handleViewDetails = (survey: SurveyDTO) => {
         setExpandedSurveyId(expandedSurveyId === survey.id ? null : survey.id)
+    }
+
+    const handleResponseSubmitted = () => {
+        // Refrescar la lista de encuestas después de responder
+        setRefreshTrigger(prev => prev + 1)
     }
 
     return (
@@ -266,6 +272,8 @@ function MySurveysPage() {
                                         }, 250)
                                     }}
                                     backButtonLabel="Ocultar"
+                                    showResponseForm={true}
+                                    onResponseSubmitted={handleResponseSubmitted}
                                     showButtons={false}
                                 />
                             )}

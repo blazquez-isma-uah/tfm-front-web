@@ -3,7 +3,6 @@ import { useAuth } from '../auth/AuthContext'
 import { extractErrorMessage } from '../../utils/errorHandler'
 import {
     searchSurveysPage,
-    getSurveyById,
     createSurvey,
     updateSurvey,
     deleteSurvey,
@@ -24,15 +23,16 @@ import type {
     SurveyStatus,
     SurveyType,
 } from '../../types/surveys'
-import { DataTable, type SortState } from '../../components/DataTable'
+import { DataTable } from '../../components/DataTable'
 import { PaginationBar } from '../../components/PaginationBar'
 import { SurveyDetailCard } from '../../components/SurveyDetailCard'
 import { SurveyResultsModal } from '../../components/SurveyResultsModal'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { SurveyFiltersPanel } from '../../components/SurveyFiltersPanel'
+import { SurveyForm } from '../../components/SurveyForm'
+import { EditIcon, TrashIcon } from '../../components/Icons'
 import {
     translateSurveyStatus,
-    translateResponseType,
-    translateSurveyType,
     formatSurveyDateTime,
 } from '../../utils/surveyTranslations'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
@@ -138,8 +138,20 @@ function SurveysPage() {
             key: 'actions', header: 'Acciones', sortable: false, width: '20%',
             render: (s: SurveyDTO) => (
                 <div className="actions-container">
-                    <button type="button" className="button-secondary" onClick={e => { e.stopPropagation(); handleEditSurvey(s) }}>Editar</button>
-                    <button type="button" className="button-danger"    onClick={e => { e.stopPropagation(); handleDeleteSurvey(s) }}>Eliminar</button>
+                    <span className="tooltip-wrap" data-tooltip="Editar">
+                        <button
+                            type="button"
+                            className="btn-icon btn-icon-edit"
+                            onClick={e => { e.stopPropagation(); handleEditSurvey(s) }}
+                        ><EditIcon /></button>
+                    </span>
+                    <span className="tooltip-wrap" data-tooltip="Eliminar">
+                        <button
+                            type="button"
+                            className="btn-icon btn-icon-danger"
+                            onClick={e => { e.stopPropagation(); handleDeleteSurvey(s) }}
+                        ><TrashIcon /></button>
+                    </span>
                 </div>
             ),
         },
@@ -472,65 +484,30 @@ function SurveysPage() {
             <h1 className="page-title">Gestión de encuestas</h1>
 
             {/* ── Buscador ── */}
-            <form onSubmit={handleSearchSubmit} className="card" style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <div className="section-title" style={{ marginBottom: 0 }}>Filtros de búsqueda</div>
+            <SurveyFiltersPanel
+                filterTitle={filterTitle}               setFilterTitle={setFilterTitle}
+                filterEventId={filterEventId}           setFilterEventId={setFilterEventId}
+                filterStatus={filterStatus}             setFilterStatus={setFilterStatus}
+                filterOpensAtFrom={filterOpensAtFrom}   setFilterOpensAtFrom={setFilterOpensAtFrom}
+                filterOpensAtTo={filterOpensAtTo}       setFilterOpensAtTo={setFilterOpensAtTo}
+                filterClosesAtFrom={filterClosesAtFrom} setFilterClosesAtFrom={setFilterClosesAtFrom}
+                filterClosesAtTo={filterClosesAtTo}     setFilterClosesAtTo={setFilterClosesAtTo}
+                surveyStatuses={surveyStatuses}
+                availableEvents={availableEvents}
+                loadingOptions={loadingOptions}
+                activeFiltersCount={[
+                    searchTitle, searchEventId, searchStatus,
+                    searchOpensAtFrom, searchOpensAtTo,
+                    searchClosesAtFrom, searchClosesAtTo,
+                ].filter(v => v !== '' && v !== undefined).length}
+                onSubmit={handleSearchSubmit}
+                onReset={handleResetFilters}
+                actionButton={
                     <button type="button" className="button-secondary" onClick={handleOpenCreateSurvey}>
                         + Nueva encuesta
                     </button>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-                    {/* Grupo 1: Título, Evento, Estado */}
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Título</span>
-                            <input type="text" placeholder="Buscar por título" value={filterTitle} onChange={e => setFilterTitle(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Evento</span>
-                            <select value={filterEventId} onChange={e => setFilterEventId(e.target.value)} className="select-base" disabled={loadingOptions}>
-                                <option value="">Todos</option>
-                                {availableEvents.map(evt => <option key={evt.id} value={evt.id}>{evt.title}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Estado</span>
-                            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as SurveyStatus | '')} className="select-base" disabled={loadingOptions}>
-                                <option value="">Todos</option>
-                                {surveyStatuses.map(s => <option key={s} value={s}>{translateSurveyStatus(s)}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Grupo 2: Fechas de apertura y cierre */}
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Fecha apertura (desde)</span>
-                            <input type="datetime-local" value={filterOpensAtFrom} onChange={e => setFilterOpensAtFrom(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha apertura (hasta)</span>
-                            <input type="datetime-local" value={filterOpensAtTo} onChange={e => setFilterOpensAtTo(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha cierre (desde)</span>
-                            <input type="datetime-local" value={filterClosesAtFrom} onChange={e => setFilterClosesAtFrom(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha cierre (hasta)</span>
-                            <input type="datetime-local" value={filterClosesAtTo} onChange={e => setFilterClosesAtTo(e.target.value)} className="input-full-width" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="search-actions-row" style={{ justifyContent: 'space-between' }}>
-                    <button type="submit" className="button-primary">Buscar</button>
-                    <button type="button" className="button-subtle" onClick={handleResetFilters} style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}>
-                        Resetear filtros
-                    </button>
-                </div>
-            </form>
+                }
+            />
 
             {loading && <p>Cargando encuestas...</p>}
             {error   && <p className="error-message">{error}</p>}
@@ -573,72 +550,22 @@ function SurveysPage() {
 
             {/* ── FORMULARIO CREAR/EDITAR ── */}
             {(mode === 'CREATE' || mode === 'EDIT') && (
-                <form
-                    className="form-card"
-                    onSubmit={e => { e.preventDefault(); mode === 'CREATE' ? handleCreateSurvey() : handleUpdateSurvey() }}
-                >
-                    <h2 className="section-title">
-                        {mode === 'CREATE' ? 'Crear encuesta' : 'Editar encuesta'}
-                    </h2>
-
-                    {/* Línea 1: Tipo de respuesta, Tipo de encuesta, Evento */}
-                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '0.75rem' }}>
-                        <div className="form-field">
-                            <label className="label-text">Tipo de respuesta *</label>
-                            <select value={formPayload.responseType} onChange={e => setFormPayload({ ...formPayload, responseType: e.target.value })} required disabled={mode === 'EDIT' || loadingOptions} className="select-base">
-                                <option value="">Selecciona tipo</option>
-                                {responseTypes.map(type => <option key={type} value={type}>{translateResponseType(type)}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Tipo de encuesta *</label>
-                            <select value={formPayload.surveyType} onChange={e => setFormPayload({ ...formPayload, surveyType: e.target.value })} required disabled={loadingOptions} className="select-base">
-                                <option value="">Selecciona tipo</option>
-                                {surveyTypes.map(type => <option key={type} value={type}>{translateSurveyType(type)}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Evento *</label>
-                            <select value={formPayload.eventId} onChange={e => setFormPayload({ ...formPayload, eventId: e.target.value })} required disabled={mode === 'EDIT' || loadingOptions} className="select-base">
-                                <option value="">Selecciona un evento</option>
-                                {availableEvents.map(evt => <option key={evt.id} value={evt.id}>{evt.title}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Línea 2: Título (2 cols), Fecha apertura, Fecha cierre */}
-                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '0.75rem' }}>
-                        <div className="form-field" style={{ gridColumn: 'span 2' }}>
-                            <label className="label-text">Título *</label>
-                            <input type="text" value={formPayload.title} onChange={e => setFormPayload({ ...formPayload, title: e.target.value })} required maxLength={200} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Fecha apertura *</label>
-                            <input type="datetime-local" value={formOpensAt} onChange={e => setFormOpensAt(e.target.value)} required className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Fecha cierre *</label>
-                            <input type="datetime-local" value={formClosesAt} onChange={e => setFormClosesAt(e.target.value)} required className="input-full-width" />
-                        </div>
-                    </div>
-
-                    {/* Línea 3: Descripción */}
-                    <div className="form-grid">
-                        <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-                            <label className="label-text">Descripción</label>
-                            <textarea value={formPayload.description} onChange={e => setFormPayload({ ...formPayload, description: e.target.value })} maxLength={4000} className="textarea-base" rows={4} />
-                        </div>
-                    </div>
-
-                    <div className="button-row-1rem">
-                        <button type="submit" className="button-primary" disabled={saving}>
-                            {saving ? 'Guardando...' : mode === 'CREATE' ? 'Crear' : 'Guardar'}
-                        </button>
-                        <button type="button" className="button-secondary" onClick={handleCancelForm} disabled={saving}>
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
+                <SurveyForm
+                    editing={mode === 'EDIT' ? selectedSurvey : null}
+                    formPayload={formPayload}
+                    setFormPayload={setFormPayload}
+                    formOpensAt={formOpensAt}
+                    setFormOpensAt={setFormOpensAt}
+                    formClosesAt={formClosesAt}
+                    setFormClosesAt={setFormClosesAt}
+                    responseTypes={responseTypes}
+                    surveyTypes={surveyTypes}
+                    availableEvents={availableEvents}
+                    loadingOptions={loadingOptions}
+                    saving={saving}
+                    onSave={mode === 'CREATE' ? handleCreateSurvey : handleUpdateSurvey}
+                    onCancel={handleCancelForm}
+                />
             )}
 
             <ConfirmDialog {...confirm.dialogProps} />

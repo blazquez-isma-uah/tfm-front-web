@@ -1,0 +1,216 @@
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================
+   Este fichero es el único lugar donde se definen los valores
+   visuales de la aplicación: colores, espaciados, tipografía,
+   sombras, etc.
+
+   REGLA DE ORO: Ningún fichero CSS debe tener un color, tamaño
+   o sombra con valor literal (e.g. #2563eb, 1rem). Siempre se
+   usa la variable definida aquí.
+
+   Si quieres cambiar el color primario de toda la app,
+   solo hay que cambiar --color-primary-600 en este fichero.
+
+   aplicación del principio DRY (Don't Repeat Yourself) a nivel de CSS, 
+   y como implementación del patrón Design Tokens, 
+   estándar de la industria (usado por Google Material Design, IBM Carbon, etc.).
+   ============================================================ */
+
+:root {
+
+  /* ----------------------------------------------------------
+     PALETA DE COLORES BASE (Escala de grises)
+     Basada en la paleta original del proyecto, ligeramente
+     refinada para mejor contraste y legibilidad.
+  ---------------------------------------------------------- */
+  --color-white:    #ffffff;
+  --color-gray-50:  #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* ----------------------------------------------------------
+     COLORES PRIMARIOS (Azul)
+     El azul se mantiene como acento principal. Es profesional,
+     accesible (buen contraste sobre blanco) y ya está
+     establecido en la identidad visual del proyecto.
+  ---------------------------------------------------------- */
+  --color-primary-50:  #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;  /* Color principal de la app */
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+
+  /* ----------------------------------------------------------
+     COLORES SEMÁNTICOS
+     Rojo = peligro/error, Amarillo = advertencia,
+     Verde = éxito, Azul claro = informativo.
+     Cada uno tiene variante "light" (fondo), normal y "dark"
+     (texto/icono), así el contraste está siempre garantizado.
+  ---------------------------------------------------------- */
+  --color-danger-light:  #fee2e2;
+  --color-danger:        #ef4444;
+  --color-danger-dark:   #b91c1c;
+
+  --color-warning-light: #fef3c7;
+  --color-warning:       #f59e0b;
+  --color-warning-dark:  #92400e;
+
+  --color-success-light: #dcfce7;
+  --color-success:       #22c55e;
+  --color-success-dark:  #15803d;
+
+  --color-info-light:    #e0f2fe;
+  --color-info:          #0ea5e9;
+  --color-info-dark:     #0369a1;
+
+  /* ----------------------------------------------------------
+     ROLES DE COLOR (semántica de uso, no de valor)
+     Estos son los tokens que los componentes DEBEN usar.
+     Si mañana quisieras cambiar el fondo de página de gris a
+     azul muy claro, cambias --surface-page aquí y listo.
+  ---------------------------------------------------------- */
+
+  /* Texto */
+  --text-primary:   var(--color-gray-900);  /* Títulos, contenido principal */
+  --text-secondary: var(--color-gray-600);  /* Subtítulos, labels */
+  --text-muted:     var(--color-gray-400);  /* Placeholders, hints */
+  --text-inverse:   var(--color-white);     /* Texto sobre fondos oscuros */
+  --text-link:      var(--color-primary-600);
+
+  /* Superficies */
+  --surface-page:    var(--color-gray-100); /* Fondo general de la app */
+  --surface-card:    var(--color-white);    /* Cards, modales, formularios */
+  --surface-subtle:  var(--color-gray-50);  /* Filas expandibles, backgrounds suaves */
+  --surface-overlay: rgba(0, 0, 0, 0.5);   /* Overlay de modales */
+
+  /* Bordes */
+  --border-light:    var(--color-gray-200);
+  --border-medium:   var(--color-gray-300);
+  --border-focus:    var(--color-primary-500);
+
+  /* ----------------------------------------------------------
+     COLORES DEL LAYOUT (Header y Sidebar)
+     Son independientes de la paleta principal porque el layout
+     tiene un estilo más oscuro y diferenciado del contenido.
+  ---------------------------------------------------------- */
+  --layout-header-bg:       #1a2332;        /* Azul marino oscuro */
+  --layout-header-text:     var(--color-gray-100);
+  --layout-sidebar-bg:      #0f172a;        /* Más oscuro que el header */
+  --layout-sidebar-hover:   #1e293b;
+  --layout-sidebar-active:  var(--color-primary-600);
+  --layout-sidebar-text:    var(--color-gray-300);
+  --layout-sidebar-muted:   var(--color-gray-500);
+
+  /* ----------------------------------------------------------
+     ESPACIADO
+     Escala consistente basada en múltiplos de 4px.
+     Usar siempre estas variables en lugar de valores ad hoc.
+     Esto garantiza que todos los espaciados "riman" visualmente.
+  ---------------------------------------------------------- */
+  --space-1:  0.25rem;   /*  4px */
+  --space-2:  0.5rem;    /*  8px */
+  --space-3:  0.75rem;   /* 12px */
+  --space-4:  1rem;      /* 16px */
+  --space-5:  1.25rem;   /* 20px */
+  --space-6:  1.5rem;    /* 24px */
+  --space-8:  2rem;      /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+
+  /* ----------------------------------------------------------
+     TIPOGRAFÍA
+  ---------------------------------------------------------- */
+  --font-family-base: system-ui, -apple-system, BlinkMacSystemFont,
+                      'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+
+  --font-size-xs:  0.75rem;   /* 12px — labels pequeños */
+  --font-size-sm:  0.875rem;  /* 14px — texto de interfaz (botones, inputs) */
+  --font-size-md:  1rem;      /* 16px — base del navegador, texto de cuerpo */
+  --font-size-lg:  1.125rem;  /* 18px — subtítulos de sección */
+  --font-size-xl:  1.25rem;   /* 20px — títulos de modal */
+  --font-size-2xl: 1.5rem;    /* 24px — títulos de página */
+  --font-size-3xl: 1.875rem;  /* 30px — títulos grandes (dashboard) */
+
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  --line-height-tight:  1.25;
+  --line-height-normal: 1.5;
+  --line-height-loose:  1.75;
+
+  /* ----------------------------------------------------------
+     BORDES Y RADIOS
+     El sistema usa radius-lg para cards y modales,
+     radius-md para inputs, y radius-full para botones/pills.
+  ---------------------------------------------------------- */
+  --radius-sm:   0.375rem;  /*  6px */
+  --radius-md:   0.5rem;    /*  8px */
+  --radius-lg:   0.75rem;   /* 12px — cards, modales */
+  --radius-xl:   1rem;      /* 16px */
+  --radius-full: 9999px;    /* Pills, avatars circulares */
+
+  /* ----------------------------------------------------------
+     SOMBRAS
+     Escala progresiva: sm para cards, md para dropdowns,
+     lg para modales.
+  ---------------------------------------------------------- */
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08),
+               0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08),
+               0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.10),
+               0 4px 6px -2px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.12),
+               0 10px 10px -5px rgba(15, 23, 42, 0.04);
+
+  /* ----------------------------------------------------------
+     TRANSICIONES
+     Usar siempre estas duraciones para consistencia en
+     las animaciones de hover, focus, etc.
+  ---------------------------------------------------------- */
+  --transition-fast:   100ms ease-in-out;
+  --transition-normal: 200ms ease-in-out;
+  --transition-slow:   300ms ease-in-out;
+
+  /* ----------------------------------------------------------
+     DIMENSIONES DE LAYOUT
+  ---------------------------------------------------------- */
+  --sidebar-width:     240px;
+  --header-height:     56px;
+  --content-max-width: 1200px;
+
+  /* ----------------------------------------------------------
+     Z-INDEX (capas de apilamiento)
+     Definidos aquí para evitar "z-index wars" (el problema
+     de poner z-index: 9999 en todas partes sin criterio).
+  ---------------------------------------------------------- */
+  --z-sidebar:  100;  /* Sidebar en mobile (drawer) */
+  --z-overlay:  200;  /* Overlay de sidebar mobile */
+  --z-modal:   1000;  /* Modales de confirmación */
+  --z-toast:   1100;  /* Notificaciones (Fase 3) */
+
+  /* ----------------------------------------------------------
+     BREAKPOINTS (documentación)
+     CSS no permite usar variables en @media queries, así que
+     estos valores son solo DOCUMENTACIÓN de referencia.
+     Los breakpoints reales se usan directamente en los @media.
+
+     xs:  320px  — Móvil pequeño (punto de partida Mobile First)
+     sm:  480px  — Móvil grande
+     md:  768px  — Tablet
+     lg: 1024px  — Desktop pequeño
+     xl: 1200px  — Desktop grande
+  ---------------------------------------------------------- */
+}

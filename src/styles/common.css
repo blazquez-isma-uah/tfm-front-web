@@ -1,317 +1,504 @@
-/* Contenedores de página */
+/* ============================================================
+   COMMON.CSS — Componentes y utilidades globales
+   ============================================================
+   Depende de: design-tokens.css (debe importarse antes)
+
+   IMPORTANTE Mobile First:
+   Los estilos base aquí son para móvil (320px+).
+   Los @media query amplían el diseño para pantallas mayores.
+   Nunca al revés.
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   CONTENEDORES DE PÁGINA
+---------------------------------------------------------- */
 .page-container {
-  max-width: 1200px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 1.5rem 1.75rem;
+  /* Móvil: padding reducido para aprovechar el espacio */
+  padding: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding: var(--space-6) var(--space-8);
+  }
 }
 
 .page-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4) 0;
+  line-height: var(--line-height-tight);
 }
 
-/* Cards y secciones */
-.card {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+@media (min-width: 768px) {
+  .page-title {
+    font-size: var(--font-size-3xl);
+    margin-bottom: var(--space-6);
+  }
+}
+
+/* ----------------------------------------------------------
+   CARDS Y SUPERFICIES ELEVADAS
+   card, form-card y toolbar comparten la misma "receta"
+   de superficie: fondo blanco, borde, sombra sutil.
+   Se usa una clase base compartida para evitar duplicación.
+---------------------------------------------------------- */
+.card,
+.form-card,
+.toolbar {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
   width: 100%;
   box-sizing: border-box;
 }
 
-.section-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
+.card {
+  padding: var(--space-4) var(--space-5);
 }
 
 .form-card {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-  margin-top: 1.25rem;
-  width: 100%;
-  box-sizing: border-box;
+  padding: var(--space-4) var(--space-5);
+  margin-top: var(--space-5);
 }
 
 .toolbar {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-  margin-bottom: 1rem;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-3);
   align-items: center;
 }
 
-/* Grids */
+@media (min-width: 768px) {
+  .card,
+  .form-card {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .toolbar {
+    padding: var(--space-4) var(--space-5);
+  }
+}
+
+.section-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-3) 0;
+}
+
+/* ----------------------------------------------------------
+   GRIDS
+   Mobile First: una sola columna en móvil, múltiples en tablet+.
+
+   Problema original: minmax(180px, 1fr) hacía que en móvil
+   (<375px) los inputs intentaran ocupar 180px mínimo y
+   se salían del contenedor o generaban scroll horizontal.
+   Solución: en móvil siempre 1 columna, breakout al grid
+   solo cuando hay espacio suficiente.
+---------------------------------------------------------- */
 .search-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: 1fr;  /* Móvil: 1 columna */
+  gap: var(--space-3);
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.75rem 1rem;
+  grid-template-columns: 1fr;  /* Móvil: 1 columna */
+  gap: var(--space-3) var(--space-4);
 }
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 0.75rem 1.5rem;
+  grid-template-columns: 1fr;  /* Móvil: 1 columna */
+  gap: var(--space-3) var(--space-6);
 }
 
-/* Inputs y controles */
-.input-base {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.45rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
+@media (min-width: 480px) {
+  .search-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .detail-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+/* ----------------------------------------------------------
+   INPUTS, SELECTS Y TEXTAREAS
+   Todos comparten el mismo aspecto visual. La diferencia
+   entre input-base e input-full-width es solo el ancho.
+
+   Mejora: se añaden estados :focus y :hover explícitos,
+   que el código original no tenía (mala accesibilidad).
+   Los inputs táctiles necesitan target mínimo de 44px
+   de altura para ser usables con el dedo.
+---------------------------------------------------------- */
+.input-base,
+.input-full-width,
+.select-base,
+.textarea-base {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  color: var(--text-primary);
+  background: var(--surface-card);
   box-sizing: border-box;
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  /* Altura mínima táctil: 44px (recomendación WCAG) */
+  min-height: 2.75rem;
+  line-height: var(--line-height-normal);
+}
+
+.input-base:hover,
+.input-full-width:hover,
+.select-base:hover {
+  border-color: var(--color-gray-400);
+}
+
+.input-base:focus,
+.input-full-width:focus,
+.select-base:focus,
+.textarea-base:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
 }
 
 .input-full-width {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.45rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
   width: 100%;
-  box-sizing: border-box;
-}
-
-.select-base {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.45rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
-  box-sizing: border-box;
 }
 
 .textarea-base {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.45rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
-  box-sizing: border-box;
   min-height: 80px;
   resize: vertical;
 }
 
-/* Botones */
+/* ----------------------------------------------------------
+   BOTONES
+   Problema original: 6 clases de botón con 7-9 propiedades
+   IDÉNTICAS repetidas. ~50 líneas de código duplicado.
+
+   Solución: clase base .btn con todas las propiedades
+   compartidas. Las variantes SOLO añaden color y fondo.
+   En HTML se usará: <button class="btn btn-primary">
+
+   Retrocompatibilidad: Las clases antiguas (button-primary,
+   etc.) se mantienen como alias para no romper el código
+   existente mientras se migra.
+---------------------------------------------------------- */
+
+/* Clase base: todo lo que comparten los botones */
+.btn {
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  text-decoration: none;
+  transition: background-color var(--transition-fast),
+              opacity var(--transition-fast),
+              box-shadow var(--transition-fast);
+  /* Target táctil mínimo */
+  min-height: 2.25rem;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Variantes */
+.btn-primary,
+.button-primary {
+  background-color: var(--color-primary-600);
+  color: var(--text-inverse);
+}
+.btn-primary:hover:not(:disabled),
+.button-primary:hover {
+  background-color: var(--color-primary-700);
+}
+
+.btn-secondary,
+.button-secondary {
+  background-color: var(--color-gray-200);
+  color: var(--text-primary);
+}
+.btn-secondary:hover:not(:disabled),
+.button-secondary:hover {
+  background-color: var(--color-gray-300);
+}
+
+.btn-subtle,
+.button-subtle {
+  background-color: var(--color-gray-100);
+  color: var(--text-primary);
+}
+.btn-subtle:hover:not(:disabled),
+.button-subtle:hover {
+  background-color: var(--color-gray-200);
+}
+
+.btn-danger,
+.button-danger {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+.btn-danger:hover:not(:disabled),
+.button-danger:hover {
+  background-color: #fecaca;  /* Un tono más oscuro de danger-light */
+}
+
+.btn-warning,
+.button-warning {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+.btn-warning:hover:not(:disabled),
+.button-warning:hover {
+  background-color: #fde68a;
+}
+
+/* Alias de retrocompatibilidad:
+   Las clases antiguas sin prefijo btn también funcionan.
+   Heredan de .btn vía el selector de abajo. */
+.button-primary,
+.button-secondary,
+.button-subtle,
+.button-danger,
+.button-warning,
 .button-base {
   border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 2.25rem;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast);
 }
 
-.button-primary {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #2563eb;
-  color: #ffffff;
+.button-base {
+  background-color: var(--color-gray-100);
+  color: var(--text-primary);
 }
 
-.button-secondary {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #e5e7eb;
-  color: #111827;
-}
-
-.button-subtle {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #f3f4f6;
-  color: #111827;
-}
-
-.button-danger {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #fee2e2;
-  color: #b91c1c;
-}
-
-.button-warning {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-/* Campos de formulario */
+/* ----------------------------------------------------------
+   CAMPOS DE FORMULARIO
+---------------------------------------------------------- */
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
 }
 
 .label-text {
-  font-weight: 500;
-  color: #374151;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
 }
 
-/* Detalles */
+/* Indicador de campo requerido */
+.label-text.required::after {
+  content: ' *';
+  color: var(--color-danger);
+}
+
+/* ----------------------------------------------------------
+   ITEMS DE DETALLE (vista lectura de un registro)
+---------------------------------------------------------- */
 .detail-item {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  font-size: 0.9rem;
+  gap: 2px;
+  font-size: var(--font-size-sm);
 }
 
 .detail-label {
-  font-weight: 600;
-  color: #4b5563;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .detail-value {
-  color: #111827;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
 }
 
-/* Utilidades */
+/* ----------------------------------------------------------
+   FILAS DE ACCIONES Y BOTONES
+---------------------------------------------------------- */
 .search-actions-row {
   display: flex;
   justify-content: flex-end;
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
+  /* En móvil, los botones ocupan todo el ancho */
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (min-width: 480px) {
+  .search-actions-row {
+    flex-wrap: nowrap;
+  }
+}
+
+.actions-container,
+.actions-container-wide {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.button-row {
+  margin-top: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* button-row-1rem es alias de button-row con margin mayor */
+.button-row-1rem {
+  margin-top: var(--space-4);
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .ml-auto {
   margin-left: auto;
 }
 
-/* Contenedores de acciones y botones */
-.actions-container {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.actions-container-wide {
-  display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-
-.button-row {
-  margin-top: 0.75rem;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-.button-row-1rem {
-  margin-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-/* Mensajes de error */
+/* ----------------------------------------------------------
+   MENSAJES DE ESTADO
+   Problema original: color: red sin semántica.
+   Ahora usa los colores del sistema.
+---------------------------------------------------------- */
 .error-message {
-  color: red;
-  margin-top: 0.5rem;
+  color: var(--color-danger-dark);
+  background: var(--color-danger-light);
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-2);
 }
 
-/* Grid full width */
+/* ----------------------------------------------------------
+   UTILIDADES DE GRID
+---------------------------------------------------------- */
 .grid-full-width {
   grid-column: 1 / -1;
 }
 
-/* Checkboxes en formularios */
+/* ----------------------------------------------------------
+   CHECKBOXES EN FORMULARIOS
+---------------------------------------------------------- */
 .checkbox-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.85rem;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  /* Target táctil mínimo */
+  min-height: 2.25rem;
 }
 
-/* Instrumentos en columnas */
+/* ----------------------------------------------------------
+   GRID DE INSTRUMENTOS
+   Problema original: column-count: 5 fijo → inutilizable en móvil.
+   Solución Mobile First: 1 col → 2 cols → 3 cols → 5 cols.
+---------------------------------------------------------- */
 .instruments-grid {
   max-height: 300px;
   overflow-y: auto;
-  padding: 0.5rem 1rem;
-  column-count: 5;
-  column-gap: 0.75rem;
+  padding: var(--space-2) var(--space-4);
+  /* Móvil: 1 columna */
+  column-count: 1;
+  column-gap: var(--space-3);
+}
+
+@media (min-width: 480px) {
+  .instruments-grid { column-count: 2; }
+}
+
+@media (min-width: 768px) {
+  .instruments-grid { column-count: 3; }
+}
+
+@media (min-width: 1024px) {
+  .instruments-grid { column-count: 5; }
 }
 
 .instrument-group {
   break-inside: avoid;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 .instrument-group-title {
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 0.15rem;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: 2px;
 }
 
 .instrument-item {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  padding: 1px 0;
-  margin-left: 0.75rem;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  padding: 2px 0;
+  margin-left: var(--space-3);
+  min-height: 2rem; /* target táctil */
 }
 
-/* Fila expandible en tablas */
+/* ----------------------------------------------------------
+   FILA EXPANDIBLE EN TABLAS
+---------------------------------------------------------- */
 .expanded-row-content {
-  padding: 1rem;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--space-4);
+  background: var(--surface-subtle);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
   animation: expandRow 0.25s ease-in-out;
   overflow: hidden;
 }
@@ -324,6 +511,7 @@
   from {
     opacity: 0;
     transform: scaleY(0);
+    transform-origin: top;
     max-height: 0;
     padding-top: 0;
     padding-bottom: 0;
@@ -331,9 +519,10 @@
   to {
     opacity: 1;
     transform: scaleY(1);
+    transform-origin: top;
     max-height: 2000px;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-4);
   }
 }
 
@@ -341,89 +530,486 @@
   from {
     opacity: 1;
     transform: scaleY(1);
+    transform-origin: top;
     max-height: 2000px;
   }
   to {
     opacity: 0;
     transform: scaleY(0);
+    transform-origin: top;
     max-height: 0;
     padding-top: 0;
     padding-bottom: 0;
   }
 }
 
-/* Modal */
+/* ----------------------------------------------------------
+   MODAL
+   Problema original: en móvil el modal tenía max-width: 500px
+   y width: 90%, lo que en pantallas de 320px deja márgenes
+   de solo 16px a cada lado. Con el teclado virtual abierto
+   (cuando el usuario está en un input del modal) el espacio
+   se reduce aún más y el modal quedaba cortado.
+
+   Solución Mobile First:
+   - Móvil (<480px): modal ocupa prácticamente toda la pantalla,
+     se ancla al fondo (bottom sheet pattern) para que sea
+     accesible con el pulgar.
+   - Tablet/Desktop: comportamiento original centrado.
+---------------------------------------------------------- */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;  /* top/right/bottom/left: 0 en un shorthand moderno */
+  background-color: var(--surface-overlay);
   display: flex;
-  align-items: center;
+  align-items: flex-end;  /* Móvil: ancla al fondo (bottom sheet) */
   justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-in-out;
+  z-index: var(--z-modal);
+  animation: fadeIn var(--transition-normal);
+  /* Permite scroll del overlay en caso de modal muy alto */
+  overflow-y: auto;
+  padding: 0;
 }
 
 .modal-content {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 500px;
-  width: 90%;
-  animation: slideIn 0.2s ease-in-out;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-xl);
+  animation: slideUp var(--transition-normal);
+  /* Móvil: ocupa todo el ancho, bordes redondeados solo arriba */
+  width: 100%;
+  max-width: 100%;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  /* Máximo 90% del viewport para que siempre se vea algo del overlay */
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 480px) {
+  .modal-overlay {
+    align-items: center;  /* Tablet+: centrado */
+    padding: var(--space-4);
+  }
+
+  .modal-content {
+    max-width: 500px;
+    width: 90%;
+    border-radius: var(--radius-lg);  /* Todos los bordes */
+    max-height: 85vh;
+    animation: slideIn var(--transition-normal);
+  }
 }
 
 .modal-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  /* Indicador visual de "agarre" para bottom sheet en móvil */
+  position: relative;
+}
+
+/* Pastilla de agarre del bottom sheet (solo en móvil) */
+.modal-header::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: var(--color-gray-300);
+  border-radius: var(--radius-full);
+  margin: 0 auto var(--space-3);
+}
+
+@media (min-width: 480px) {
+  .modal-header::before {
+    display: none;  /* No necesario en desktop */
+  }
 }
 
 .modal-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
   margin: 0;
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: var(--space-4) var(--space-6);
 }
 
 .modal-message {
-  font-size: 0.95rem;
-  color: #000000;
-  line-height: 1.5;
+  font-size: var(--font-size-md);
+  color: var(--text-primary);
+  line-height: var(--line-height-normal);
   margin: 0;
   white-space: pre-line;
 }
 
 .modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  padding: var(--space-3) var(--space-6);
+  border-top: 1px solid var(--border-light);
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: var(--space-3);
+  /* En móvil, los botones del modal son full width */
+  flex-direction: column;
 }
 
+@media (min-width: 480px) {
+  .modal-footer {
+    flex-direction: row;  /* Inline en tablet+ */
+  }
+}
+
+/* ----------------------------------------------------------
+   ANIMACIONES GLOBALES
+---------------------------------------------------------- */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Animación para bottom sheet en móvil */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ----------------------------------------------------------
+   MENSAJE DE ÉXITO
+   Equivalente semántico a .error-message pero en verde.
+   Mismo patrón visual: fondo semántico, borde, radio.
+---------------------------------------------------------- */
+.success-message {
+  color: var(--color-success-dark);
+  background: var(--color-success-light);
+  border: 1px solid #86efac;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-4);
+}
+
+/* ----------------------------------------------------------
+   HINT DE CAMPO
+   Texto de ayuda debajo de un input (ej: "Mínimo 6 caracteres")
+---------------------------------------------------------- */
+.field-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ----------------------------------------------------------
+   TABLA MODERNA (DataTable)
+   El DataTable renderiza un <table> estándar dentro de un
+   wrapper con clase .data-table-wrapper. Los estilos aquí
+   mejoran la apariencia sin modificar la lógica del componente.
+
+   Principios aplicados:
+   - Cabeceras: fondo gris muy suave, texto uppercase pequeño
+     (patrón "tabla de gestión profesional" de Notion/Linear)
+   - Filas: hover sutil para indicar interactividad
+   - Celdas: padding reducido (compact density) para que quepan
+     más filas en pantalla, especialmente en móvil
+   - Borde solo en la parte inferior de cada fila (no grid lines)
+     → aspecto más limpio y moderno
+---------------------------------------------------------- */
+.data-table-wrapper {
+  width: 100%;
+  overflow-x: auto;  /* Scroll horizontal en móvil */
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.data-table-wrapper thead tr {
+  background-color: var(--color-gray-50);
+  border-bottom: 2px solid var(--border-light);
+}
+
+.data-table-wrapper thead th {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.data-table-wrapper thead th.sortable {
+  cursor: pointer;
+}
+
+.data-table-wrapper thead th.sortable:hover {
+  color: var(--text-primary);
+  background-color: var(--color-gray-100);
+}
+
+.data-table-wrapper tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color var(--transition-fast);
+}
+
+/* Fila clicable (con onRowClick) */
+.data-table-wrapper tbody tr.clickable {
+  cursor: pointer;
+}
+
+.data-table-wrapper tbody tr.clickable:hover {
+  background-color: var(--color-primary-50);
+}
+
+/* Fila expandida activa */
+.data-table-wrapper tbody tr.expanded {
+  background-color: var(--color-primary-50);
+}
+
+.data-table-wrapper tbody td {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+/* ----------------------------------------------------------
+   BOTÓN ICONO (para acciones en tabla)
+   Diseño: círculo pequeño (32px), solo icono, sin texto.
+   Tooltip CSS puro: el texto del tooltip se lee del atributo
+   data-tooltip del WRAPPER, no del botón.
+
+   Ventaja frente a soluciones JS: sin dependencias, sin
+   rerenders, accesible vía title como fallback.
+
+   Uso en JSX:
+   <span className="tooltip-wrap" data-tooltip="Editar usuario">
+     <button className="btn-icon btn-icon-edit" aria-label="Editar">
+       <EditIcon />
+     </button>
+   </span>
+---------------------------------------------------------- */
+.btn-icon {
+  width: 2rem;          /* 32px — target táctil razonable en lista */
+  height: 2rem;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color var(--transition-fast),
+              color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-icon svg {
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;  /* El click no se "traga" el svg */
+}
+
+/* Variante editar: azul */
+.btn-icon-edit {
+  background-color: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+.btn-icon-edit:hover:not(:disabled) {
+  background-color: var(--color-primary-200);
+}
+
+/* Variante eliminar: rojo */
+.btn-icon-danger {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+.btn-icon-danger:hover:not(:disabled) {
+  background-color: #fecaca;
+}
+
+/* Variante neutral (activar/desactivar, ver resultados, etc.) */
+.btn-icon-neutral {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+.btn-icon-neutral:hover:not(:disabled) {
+  background-color: var(--color-gray-200);
+}
+
+/* ----------------------------------------------------------
+   TOOLTIP CSS PURO
+   Funciona con cualquier elemento que tenga:
+   1. La clase .tooltip-wrap
+   2. El atributo data-tooltip="texto del tooltip"
+
+   El pseudo-elemento ::after genera el globo.
+   El pseudo-elemento ::before genera el triángulo.
+
+   NOTA IMPORTANTE: position: relative es imprescindible.
+   Sin él el tooltip se posiciona respecto al viewport.
+---------------------------------------------------------- */
+.tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Triángulo apuntando hacia abajo (bajo el tooltip) */
+.tooltip-wrap::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--color-gray-800);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  z-index: 11;
+}
+
+/* Globo del tooltip */
+.tooltip-wrap::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-gray-800);
+  color: var(--color-white);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-base);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  z-index: 10;
+}
+
+.tooltip-wrap:hover::before,
+.tooltip-wrap:hover::after {
+  opacity: 1;
+}
+
+/* ----------------------------------------------------------
+   PANEL DE FILTROS COLAPSABLE (SearchFiltersPanel)
+   Implementa el patrón "Filtros" con:
+   - Cabecera clickable con chevron animado
+   - Badge con número de filtros activos
+   - Contenido animado via max-height transition
+   - Borde bottom de color primario cuando hay filtros activos
+
+   La animación con max-height tiene una limitación conocida:
+   necesita un valor máximo grande (9999px). La alternativa
+   (JS con altura real) añade complejidad que no se justifica
+   en este contexto. Se documenta para la defensa.
+---------------------------------------------------------- */
+.filter-panel {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-4);
+  overflow: hidden;
+  /* Borde inferior de acento cuando hay filtros activos */
+  transition: border-color var(--transition-normal);
+}
+
+.filter-panel.has-active-filters {
+  border-color: var(--color-primary-200);
+  border-bottom: 2px solid var(--color-primary-600);
+}
+
+.filter-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition-fast);
+}
+
+.filter-panel-header:hover {
+  background-color: var(--color-gray-50);
+}
+
+.filter-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-panel-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Badge: círculo pequeño con número de filtros activos */
+.filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-600);
+  color: var(--text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+}
+
+.filter-panel-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Icono chevron con rotación animada */
+.filter-chevron {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--text-secondary);
+  transition: transform var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.filter-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Contenido colapsable */
+.filter-panel-body {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height var(--transition-slow) ease-in-out,
+              padding var(--transition-slow) ease-in-out,
+              opacity var(--transition-normal);
+  padding: 0 var(--space-4);
+  opacity: 0;
+}
+
+.filter-panel-body.open {
+  max-height: 9999px;  /* Ver nota en el comentario del bloque */
+  padding: var(--space-1) var(--space-4) var(--space-4);
+  opacity: 1;
 }

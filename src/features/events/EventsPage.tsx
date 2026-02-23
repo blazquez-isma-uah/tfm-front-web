@@ -29,14 +29,17 @@ import type {
 import {
     translateEventType,
     translateEventStatus,
-    translateEventVisibility,
     formatEventDateTime,
 } from '../../utils/eventTranslations'
 import { PaginationBar } from '../../components/PaginationBar'
-import { DataTable, type SortState } from '../../components/DataTable'
+import { DataTable } from '../../components/DataTable'
 import { EventDetailCard } from '../../components/EventDetailCard'
 import { EventDetailCardComplete } from '../../components/EventDetailCardComplete'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { EventFiltersPanel } from '../../components/EventFiltersPanel'
+import { EventCalendarView } from '../../components/EventCalendarView'
+import { EventForm } from '../../components/EventForm'
+import { EditIcon, TrashIcon } from '../../components/Icons'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
 import '../../styles/common.css'
 
@@ -85,7 +88,7 @@ function toDateTimeLocal(isoString: string): string {
 
 function EventsPage() {
     const location = useLocation()
-    const { token, hasRole } = useAuth()
+    const { token } = useAuth()
 
     const isAdminView = location.pathname.startsWith('/admin/events')
 
@@ -203,20 +206,20 @@ function EventsPage() {
         width: '15%',
         render: (e: EventDTO) => (
             <div className="actions-container">
-                <button
-                    type="button"
-                    className="button-secondary"
-                    onClick={(ev) => { ev.stopPropagation(); handleEditEvent(e) }}
-                >
-                    Editar
-                </button>
-                <button
-                    type="button"
-                    className="button-danger"
-                    onClick={(ev) => { ev.stopPropagation(); handleDeleteEvent(e) }}
-                >
-                    Eliminar
-                </button>
+                <span className="tooltip-wrap" data-tooltip="Editar">
+                    <button
+                        type="button"
+                        className="btn-icon btn-icon-edit"
+                        onClick={(ev) => { ev.stopPropagation(); handleEditEvent(e) }}
+                    ><EditIcon /></button>
+                </span>
+                <span className="tooltip-wrap" data-tooltip="Eliminar">
+                    <button
+                        type="button"
+                        className="btn-icon btn-icon-danger"
+                        onClick={(ev) => { ev.stopPropagation(); handleDeleteEvent(e) }}
+                    ><TrashIcon /></button>
+                </span>
             </div>
         ),
     }
@@ -636,144 +639,47 @@ function EventsPage() {
         )
     }
 
-    const renderCalendarView = () => {
-        const monthName      = currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })
-        const firstDay       = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-        const lastDay        = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
-        const daysInMonth    = lastDay.getDate()
-        const startDayOfWeek = firstDay.getDay()
-        const adjustedStart  = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1
-
-        const days: (number | null)[] = []
-        for (let i = 0; i < adjustedStart; i++) days.push(null)
-        for (let d = 1; d <= daysInMonth; d++) days.push(d)
-
-        const eventsByDay: Record<number, CalendarEventItemDTO[]> = {}
-        calendarEvents.forEach(event => {
-            const eventDate = new Date(event.startAt)
-            if (
-                eventDate.getMonth()    === currentMonth.getMonth() &&
-                eventDate.getFullYear() === currentMonth.getFullYear()
-            ) {
-                const day = eventDate.getDate()
-                if (!eventsByDay[day]) eventsByDay[day] = []
-                eventsByDay[day].push(event)
-            }
-        })
-
-        return (
-            <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <button type="button" className="button-secondary" onClick={handlePreviousMonth}>← Anterior</button>
-                    <h2 style={{ textTransform: 'capitalize', margin: 0 }}>{monthName}</h2>
-                    <button type="button" className="button-secondary" onClick={handleNextMonth}>Siguiente →</button>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', backgroundColor: '#e0e0e0', border: '1px solid #e0e0e0' }}>
-                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                        <div key={day} style={{ backgroundColor: '#f5f5f5', padding: '0.5rem', textAlign: 'center', fontWeight: 600 }}>{day}</div>
-                    ))}
-                    {days.map((day, index) => (
-                        <div key={index} style={{ backgroundColor: 'white', minHeight: '80px', padding: '0.5rem', position: 'relative' }}>
-                            {day && (
-                                <>
-                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{day}</div>
-                                    {eventsByDay[day]?.length > 0 && (
-                                        <div style={{ fontSize: '0.75rem' }}>
-                                            {eventsByDay[day].slice(0, 3).map(event => (
-                                                <div key={event.id} style={{ backgroundColor: '#e3f2fd', padding: '0.15rem 0.25rem', marginBottom: '0.15rem', borderRadius: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {event.title}
-                                                </div>
-                                            ))}
-                                            {eventsByDay[day].length > 3 && (
-                                                <div style={{ fontSize: '0.7rem', color: '#666' }}>+{eventsByDay[day].length - 3} más</div>
-                                            )}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )
-    }
+    const renderCalendarView = () => (
+        <EventCalendarView
+            currentMonth={currentMonth}
+            calendarEvents={calendarEvents}
+            onPrevMonth={handlePreviousMonth}
+            onNextMonth={handleNextMonth}
+        />
+    )
 
     const renderSearchFilters = () => {
         if (!isAdminView && activeTab !== 'BUSQUEDA') return null
 
+        const activeFiltersCount = [
+            searchTitle, searchLocation, searchType, searchStatus, searchVisibility,
+            searchStartAtFrom, searchStartAtTo, searchEndAtFrom, searchEndAtTo,
+        ].filter(v => v !== '' && v !== undefined).length
+
         return (
-            <form onSubmit={handleSearchSubmit} className="card" style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <div className="section-title" style={{ marginBottom: 0 }}>Filtros de búsqueda</div>
-                    {isAdminView && (
-                        <button type="button" className="button-secondary" onClick={handleOpenCreateEvent}>
-                            + Nuevo evento
-                        </button>
-                    )}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-                    {/* Grupo 1: Título, Localización, Tipo, Estado, Visibilidad */}
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Título</span>
-                            <input type="text" placeholder="Buscar por título" value={filterTitle} onChange={e => setFilterTitle(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Localización</span>
-                            <input type="text" placeholder="Buscar por localización" value={filterLocation} onChange={e => setFilterLocation(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Tipo</span>
-                            <select value={filterType} onChange={e => setFilterType(e.target.value as EventType | '')} className="select-base" disabled={loadingOptions}>
-                                <option value="">Todos</option>
-                                {eventTypes.map(t => <option key={t} value={t}>{translateEventType(t)}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Estado</span>
-                            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as EventStatus | '')} className="select-base" disabled={loadingOptions}>
-                                <option value="">Todos</option>
-                                {eventStatuses.map(s => <option key={s} value={s}>{translateEventStatus(s)}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Visibilidad</span>
-                            <select value={filterVisibility} onChange={e => setFilterVisibility(e.target.value as EventVisibility | '')} className="select-base" disabled={loadingOptions}>
-                                <option value="">Todas</option>
-                                {eventVisibilities.map(v => <option key={v} value={v}>{translateEventVisibility(v)}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Grupo 2: Fechas de inicio y fin */}
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Fecha inicio (desde)</span>
-                            <input type="datetime-local" value={filterStartAtFrom} onChange={e => setFilterStartAtFrom(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha inicio (hasta)</span>
-                            <input type="datetime-local" value={filterStartAtTo} onChange={e => setFilterStartAtTo(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha fin (desde)</span>
-                            <input type="datetime-local" value={filterEndAtFrom} onChange={e => setFilterEndAtFrom(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha fin (hasta)</span>
-                            <input type="datetime-local" value={filterEndAtTo} onChange={e => setFilterEndAtTo(e.target.value)} className="input-full-width" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="search-actions-row" style={{ justifyContent: 'space-between' }}>
-                    <button type="submit" className="button-primary">Buscar</button>
-                    <button type="button" className="button-subtle" onClick={handleResetFilters} style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}>
-                        Resetear filtros
+            <EventFiltersPanel
+                filterTitle={filterTitle}               setFilterTitle={setFilterTitle}
+                filterLocation={filterLocation}         setFilterLocation={setFilterLocation}
+                filterType={filterType}                 setFilterType={setFilterType}
+                filterStatus={filterStatus}             setFilterStatus={setFilterStatus}
+                filterVisibility={filterVisibility}     setFilterVisibility={setFilterVisibility}
+                filterStartAtFrom={filterStartAtFrom}   setFilterStartAtFrom={setFilterStartAtFrom}
+                filterStartAtTo={filterStartAtTo}       setFilterStartAtTo={setFilterStartAtTo}
+                filterEndAtFrom={filterEndAtFrom}       setFilterEndAtFrom={setFilterEndAtFrom}
+                filterEndAtTo={filterEndAtTo}           setFilterEndAtTo={setFilterEndAtTo}
+                eventTypes={eventTypes}
+                eventStatuses={eventStatuses}
+                eventVisibilities={eventVisibilities}
+                loadingOptions={loadingOptions}
+                activeFiltersCount={activeFiltersCount}
+                onSubmit={handleSearchSubmit}
+                onReset={handleResetFilters}
+                actionButton={isAdminView ? (
+                    <button type="button" className="button-secondary" onClick={handleOpenCreateEvent}>
+                        + Nuevo evento
                     </button>
-                </div>
-            </form>
+                ) : undefined}
+            />
         )
     }
 
@@ -848,74 +754,21 @@ function EventsPage() {
 
             {/* FORMULARIO CREAR/EDITAR — solo para admin */}
             {isAdminView && (mode === 'CREATE' || mode === 'EDIT') && (
-                <div className="form-card">
-                    <h2 className="section-title">
-                        {mode === 'CREATE' ? 'Crear evento' : 'Editar evento'}
-                    </h2>
-
-                    {/* Línea 1: Título, Localización */}
-                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
-                        <div className="form-field">
-                            <label className="label-text">Título *</label>
-                            <input type="text" value={formPayload.title} onChange={e => setFormPayload({ ...formPayload, title: e.target.value })} required className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Localización</label>
-                            <input type="text" value={formPayload.location} onChange={e => setFormPayload({ ...formPayload, location: e.target.value })} className="input-full-width" />
-                        </div>
-                    </div>
-
-                    {/* Línea 2: Tipo, Estado, Visibilidad */}
-                    <div className="form-grid" style={{ marginBottom: '0.75rem' }}>
-                        <div className="form-field">
-                            <label className="label-text">Tipo *</label>
-                            <select value={formPayload.type} onChange={e => setFormPayload({ ...formPayload, type: e.target.value as EventType })} className="select-base" required>
-                                {eventTypes.map(t => <option key={t} value={t}>{translateEventType(t)}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Estado</label>
-                            <select value={formPayload.status || eventStatuses[0] || ''} onChange={e => setFormPayload({ ...formPayload, status: e.target.value as EventStatus })} className="select-base">
-                                {eventStatuses.map(s => <option key={s} value={s}>{translateEventStatus(s)}</option>)}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Visibilidad *</label>
-                            <select value={formPayload.visibility} onChange={e => setFormPayload({ ...formPayload, visibility: e.target.value as EventVisibility })} className="select-base" required>
-                                {eventVisibilities.map(v => <option key={v} value={v}>{translateEventVisibility(v)}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Línea 3: Fecha inicio, Fecha fin */}
-                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
-                        <div className="form-field">
-                            <label className="label-text">Fecha inicio *</label>
-                            <input type="datetime-local" value={formStartAt} onChange={e => setFormStartAt(e.target.value)} className="input-full-width" required />
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Fecha fin *</label>
-                            <input type="datetime-local" value={formEndAt} onChange={e => setFormEndAt(e.target.value)} className="input-full-width" required />
-                        </div>
-                    </div>
-
-                    {/* Línea 4: Descripción */}
-                    <div className="form-grid">
-                        <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-                            <label className="label-text">Descripción</label>
-                            <textarea value={formPayload.description} onChange={e => setFormPayload({ ...formPayload, description: e.target.value })} className="textarea-base" rows={4} />
-                        </div>
-                    </div>
-
-                    <div className="button-row-1rem">
-                        <button type="button" className="button-primary" onClick={mode === 'CREATE' ? handleCreateEvent : handleUpdateEvent} disabled={saving}>
-                            {saving ? 'Guardando...' : mode === 'CREATE' ? 'Crear' : 'Guardar'}
-                        </button>
-                        <button type="button" className="button-secondary" onClick={handleCancelForm} disabled={saving}>
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
+                <EventForm
+                    editing={mode === 'EDIT' ? selectedEvent : null}
+                    formPayload={formPayload}
+                    setFormPayload={setFormPayload}
+                    formStartAt={formStartAt}
+                    setFormStartAt={setFormStartAt}
+                    formEndAt={formEndAt}
+                    setFormEndAt={setFormEndAt}
+                    eventTypes={eventTypes}
+                    eventStatuses={eventStatuses}
+                    eventVisibilities={eventVisibilities}
+                    saving={saving}
+                    onSave={mode === 'CREATE' ? handleCreateEvent : handleUpdateEvent}
+                    onCancel={handleCancelForm}
+                />
             )}
 
             <ConfirmDialog {...confirm.dialogProps} />

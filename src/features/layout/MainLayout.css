@@ -7,13 +7,22 @@
    El layout base es para móvil. El sidebar es un "drawer"
    (cajón deslizante desde la izquierda) que se activa con
    un botón hamburguesa en el header.
-   En tablet (768px+) el sidebar siempre está visible y el
-   botón hamburguesa desaparece.
+
+   En móvil y tablet (< 1024px): drawer con hamburguesa.
+   En desktop (≥ 1024px): sidebar siempre visible.
+
+   Por qué 1024px y no 768px:
+   A 768px (tablet portrait) el sidebar de 240px consume el 31%
+   del viewport, dejando solo ~528px para el contenido. Con tablas
+   de varias columnas eso genera scroll horizontal constante.
+   A 1024px el sidebar consume el 23% y el contenido dispone de
+   ~784px, suficiente para la mayoría de las vistas de gestión.
+   El patrón lo usan Notion, Linear y GitHub en sus versiones web.
 
    Por qué drawer y no bottom nav:
    La app tiene 9 items de navegación (5 generales + 4 admin).
    Una bottom nav está recomendada para 3-5 items máximo.
-   Un drawer maneja cualquier número de items, es el patrón
+   Un drawer maneja cualquier número de items y es el patrón
    correcto para este caso de uso.
    ============================================================ */
 
@@ -104,9 +113,8 @@
 }
 
 /* ----------------------------------------------------------
-   BOTÓN HAMBURGUESA (solo visible en móvil)
-   El botón abre/cierra el sidebar drawer.
-   Se oculta en tablet porque el sidebar siempre está visible.
+   BOTÓN HAMBURGUESA (visible en móvil y tablet, < 1024px)
+   Se oculta en desktop porque el sidebar siempre está visible.
 ---------------------------------------------------------- */
 .layout-hamburger {
   display: flex;
@@ -151,15 +159,15 @@
   transform: translateY(-7px) rotate(-45deg);
 }
 
-/* En tablet+, el hamburguesa desaparece */
-@media (min-width: 768px) {
+/* En desktop (≥ 1024px), el hamburguesa desaparece */
+@media (min-width: 1024px) {
   .layout-hamburger {
     display: none;
   }
 }
 
 /* ----------------------------------------------------------
-   OVERLAY DEL SIDEBAR (solo en móvil)
+   OVERLAY DEL SIDEBAR (solo en móvil y tablet, < 1024px)
    Tapa el contenido cuando el drawer está abierto.
    Al hacer click cierra el menú.
 ---------------------------------------------------------- */
@@ -176,9 +184,10 @@
   animation: fadeIn var(--transition-normal);
 }
 
-@media (min-width: 768px) {
+/* Nunca visible en desktop */
+@media (min-width: 1024px) {
   .layout-sidebar-overlay {
-    display: none !important;  /* Nunca visible en tablet+ */
+    display: none !important;
   }
 }
 
@@ -196,18 +205,18 @@
 /* ----------------------------------------------------------
    SIDEBAR / DRAWER DE NAVEGACIÓN
 
-   MÓVIL:
+   MÓVIL Y TABLET (< 1024px):
    - Posición fixed, ocupa toda la altura menos el header
    - Por defecto fuera de pantalla (translateX -100%)
    - Cuando .is-open: desliza hacia adentro
    - z-index entre el header y el overlay
 
-   TABLET+:
+   DESKTOP (≥ 1024px):
    - Posición normal en el flujo del documento
    - Siempre visible, sin translateX
 ---------------------------------------------------------- */
 .layout-sidebar {
-  /* Móvil: drawer */
+  /* Móvil/Tablet: drawer */
   position: fixed;
   top: var(--header-height);
   left: 0;
@@ -222,7 +231,6 @@
   /* Por defecto: fuera de pantalla */
   transform: translateX(-100%);
   transition: transform var(--transition-slow);
-  /* Mejora visual: sombra cuando está visible */
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
@@ -230,16 +238,15 @@
   transform: translateX(0);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .layout-sidebar {
-    /* Tablet+: en el flujo normal, siempre visible */
+    /* Desktop: en el flujo normal, siempre visible */
     position: static;
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
     transform: none;
     box-shadow: none;
     border-right: 1px solid rgba(255, 255, 255, 0.05);
-    /* Permite scroll interno del sidebar si hay muchos items */
     overflow-y: auto;
   }
 }
@@ -271,7 +278,6 @@
   margin-bottom: 2px;
   transition: background-color var(--transition-fast),
               color var(--transition-fast);
-  /* Target táctil mínimo */
   min-height: 2.5rem;
 }
 
@@ -303,7 +309,7 @@
   scrollbar-gutter: stable;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .layout-content {
     padding: var(--space-6);
   }

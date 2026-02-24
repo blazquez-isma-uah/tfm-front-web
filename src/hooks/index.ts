@@ -23,3 +23,5 @@ export type { ConfirmDialogControl, ConfirmDialogVariant } from './useConfirmDia
 
 export { useRowExpansion }     from './useRowExpansion'
 export type { RowExpansionControl } from './useRowExpansion'
+
+export { useMediaQuery } from './useMediaQuery'

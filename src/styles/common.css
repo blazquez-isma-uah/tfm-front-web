@@ -703,38 +703,42 @@
 }
 
 /* ----------------------------------------------------------
-   TABLA MODERNA (DataTable)
-   El DataTable renderiza un <table> estándar dentro de un
-   wrapper con clase .data-table-wrapper. Los estilos aquí
-   mejoran la apariencia sin modificar la lógica del componente.
+   DATA TABLE — Mobile First
+   Estrategia de renderizado condicional con useMediaQuery:
+     · < 480px  → vista tarjeta (card view), no se renderiza <table>
+     · ≥ 480px  → tabla tradicional dentro de .data-table-wrapper
 
-   Principios aplicados:
-   - Cabeceras: fondo gris muy suave, texto uppercase pequeño
-     (patrón "tabla de gestión profesional" de Notion/Linear)
-   - Filas: hover sutil para indicar interactividad
-   - Celdas: padding reducido (compact density) para que quepan
-     más filas en pantalla, especialmente en móvil
-   - Borde solo en la parte inferior de cada fila (no grid lines)
-     → aspecto más limpio y moderno
+   Las clases .dt-table* usan BEM para evitar el acoplamiento
+   entre CSS y estructura HTML que tenían los selectores
+   descendientes del bloque anterior (.data-table-wrapper table).
+   Ref: https://getbem.com/
 ---------------------------------------------------------- */
+
+/* ── Wrapper: se mantiene para overflow-x como fallback ─── */
+
 .data-table-wrapper {
   width: 100%;
-  overflow-x: auto;  /* Scroll horizontal en móvil */
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-.data-table-wrapper table {
+/* ── Tabla (tablet/desktop ≥ 480px) ────────────────────── */
+
+.dt-table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--font-size-sm);
+  background: var(--color-white, #ffffff);
+  border-radius: var(--radius-md, 0.5rem);
+  overflow: hidden;
 }
 
-.data-table-wrapper thead tr {
+.dt-table__head {
   background-color: var(--color-gray-50);
   border-bottom: 2px solid var(--border-light);
 }
 
-.data-table-wrapper thead th {
+.dt-table__th {
   padding: var(--space-2) var(--space-3);
   text-align: left;
   font-size: var(--font-size-xs);
@@ -746,38 +750,139 @@
   user-select: none;
 }
 
-.data-table-wrapper thead th.sortable {
+.dt-table__th--sortable {
   cursor: pointer;
 }
 
-.data-table-wrapper thead th.sortable:hover {
+.dt-table__th--sortable:hover {
   color: var(--text-primary);
   background-color: var(--color-gray-100);
 }
 
-.data-table-wrapper tbody tr {
+.dt-table__row {
   border-bottom: 1px solid var(--border-light);
   transition: background-color var(--transition-fast);
 }
 
-/* Fila clicable (con onRowClick) */
-.data-table-wrapper tbody tr.clickable {
+.dt-table__row--clickable {
   cursor: pointer;
 }
 
-.data-table-wrapper tbody tr.clickable:hover {
+.dt-table__row--clickable:hover {
   background-color: var(--color-primary-50);
 }
 
-/* Fila expandida activa */
-.data-table-wrapper tbody tr.expanded {
+.dt-table__row--expanded {
   background-color: var(--color-primary-50);
 }
 
-.data-table-wrapper tbody td {
+.dt-table__td {
   padding: var(--space-2) var(--space-3);
   color: var(--text-primary);
   vertical-align: middle;
+}
+
+.dt-table__expanded-td {
+  padding: 0;
+  border: none;
+}
+
+.dt-table__empty {
+  padding: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ── Card view (móvil < 480px) ──────────────────────────── */
+
+/*
+ * Mobile First: estos estilos son la BASE porque el componente
+ * renderiza tarjetas en móvil por defecto (useMediaQuery devuelve
+ * true para pantallas pequeñas). No es necesario un @media query
+ * aquí porque el renderizado condicional en JS ya se encarga de
+ * mostrar solo el DOM necesario.
+ */
+
+.dt-card-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dt-card-empty {
+  padding: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.dt-card {
+  background: var(--color-white, #ffffff);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md, 0.5rem);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-sm);
+}
+
+.dt-card[role='button'] {
+  cursor: pointer;
+}
+
+.dt-card[role='button']:hover,
+.dt-card[role='button']:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  outline: none;
+}
+
+.dt-card--expanded {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-50);
+}
+
+.dt-card__body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dt-card__pair {
+  /*
+   * Grid 2 columnas: etiqueta fija (40%), valor flexible (60%).
+   * Más legible que flex en valores largos porque los valores
+   * siempre empiezan en la misma columna visual.
+   */
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.dt-card__term {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dt-card__value {
+  margin: 0; /* reset del margin por defecto de <dd> */
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.dt-card__actions {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
 }
 
 /* ----------------------------------------------------------

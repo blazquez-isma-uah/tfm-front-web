@@ -196,8 +196,8 @@
      Definidos aquí para evitar "z-index wars" (el problema
      de poner z-index: 9999 en todas partes sin criterio).
   ---------------------------------------------------------- */
-  --z-sidebar:  100;  /* Sidebar en mobile (drawer) */
-  --z-overlay:  200;  /* Overlay de sidebar mobile */
+  --z-sidebar:  200;  /* Sideba r desktop */
+  --z-overlay:  100;  /* Overlay en modales en móvil */
   --z-modal:   1000;  /* Modales de confirmación */
   --z-toast:   1100;  /* Notificaciones (Fase 3) */
 

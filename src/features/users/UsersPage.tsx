@@ -27,6 +27,7 @@ import { EditIcon, TrashIcon, CheckIcon, XMarkIcon } from '../../components/Icon
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
 import { useToast } from '../../context/toast/ToastContext'
 import { ErrorState } from '../../components/ErrorState'
+import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
 
 /**
@@ -552,7 +553,7 @@ function UsersPage() {
             </SearchFiltersPanel>
             )}
 
-            {loading && <p>Cargando usuarios...</p>}
+            {loading && <Spinner />}
             {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
             {mode === 'LIST' && !loading && !error && !managingInstruments && !managingRoles && (

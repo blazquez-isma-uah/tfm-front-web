@@ -1362,3 +1362,136 @@
   color: var(--text-secondary);
   font-style: italic;
 }
+
+/* ============================================================
+   TAB NAVIGATION
+   Sistema de tabs para MyEventsPage y cualquier vista futura
+   que necesite navegación por pestañas.
+
+   Mobile First:
+   · Base: tabs en fila con scroll horizontal si no caben
+     (overflow-x: auto) — no se rompe en pantallas pequeñas
+   · ≥ 480px: los tabs tienen más padding y caben con comodidad
+
+   Decisión de diseño: borde inferior activo en lugar de fondo
+   activo. Es el patrón de tabs más extendido (Chrome DevTools,
+   GitHub, Linear) y funciona bien sobre cualquier fondo.
+   ============================================================ */
+
+.tab-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border-light);
+  margin-bottom: var(--space-3);
+  /* Scroll horizontal en móvil si los tabs no caben */
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox: oculta scrollbar pero mantiene funcionalidad */
+  -ms-overflow-style: none;
+}
+
+.tab-nav::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.tab-nav__item {
+  flex-shrink: 0; /* Los tabs no se encogen — se hace scroll si no caben */
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  /* El borde inferior del tab está sobre el borde del contenedor.
+     margin-bottom: -2px lo superpone para que el activo "rompa" la línea */
+  margin-bottom: -2px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+@media (min-width: 480px) {
+  .tab-nav__item {
+    padding: var(--space-2) var(--space-4);
+  }
+}
+
+.tab-nav__item:hover {
+  color: var(--text-primary);
+}
+
+.tab-nav__item--active {
+  color: var(--color-primary-600);
+  border-bottom-color: var(--color-primary-600);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Descripción contextual de la tab activa */
+.tab-description {
+  margin: 0 0 var(--space-4) 0;
+  padding: var(--space-3);
+  background: var(--surface-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+/* ============================================================
+   SPINNER
+   Indicador de carga genérico. Animación CSS pura — sin JS,
+   sin dependencias externas.
+
+   La técnica es un borde circular con un cuarto transparente
+   que rota continuamente. Es el patrón más ligero posible:
+   un solo elemento DOM, una sola regla @keyframes.
+   ============================================================ */
+
+.spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  color: var(--text-secondary);
+}
+
+.spinner-wrap--sm {
+  flex-direction: row;
+  padding: 0;
+  gap: var(--space-1);
+}
+
+.spinner {
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-light);
+  border-top-color: var(--color-primary-600);
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinner-wrap--md .spinner {
+  width: 32px;
+  height: 32px;
+}
+
+.spinner-wrap--sm .spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.spinner-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.spinner-wrap--sm .spinner-label {
+  font-size: var(--font-size-xs);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

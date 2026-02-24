@@ -8,6 +8,8 @@ import { formatDateTime } from '../../utils/date'
 import { translateEventType, translateEventStatus } from '../../utils/eventTranslations'
 import { translateSurveyType, formatSurveyDateTime } from '../../utils/surveyTranslations'
 import { ErrorState } from '../../components/ErrorState'
+import { Spinner } from '../../components/Spinner'
+import '../../styles/common.css'
 
 /**
  * DashboardPage — Página de inicio tras el login.
@@ -88,7 +90,7 @@ function DashboardPage() {
       <section className="dashboard-section">
         <h2 className="section-title">Próximos eventos</h2>
 
-        {loadingEvents && <p>Cargando eventos...</p>}
+        {loadingEvents && <Spinner />}
 
         {errorEvents && (
           <ErrorState message={errorEvents} onRetry={fetchUpcomingEvents} />
@@ -133,7 +135,7 @@ function DashboardPage() {
       <section className="dashboard-section">
         <h2 className="section-title">Encuestas pendientes</h2>
 
-        {loadingSurveys && <p>Cargando encuestas...</p>}
+        {loadingSurveys && <Spinner />}
 
         {errorSurveys && (
           <ErrorState message={errorSurveys} onRetry={fetchPendingSurveys} />

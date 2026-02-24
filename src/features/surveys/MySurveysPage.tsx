@@ -5,6 +5,8 @@ import type { SurveyDTO } from '../../types/surveys'
 import { DataTable } from '../../components/DataTable'
 import { SurveyDetailCard } from '../../components/SurveyDetailCard'
 import { PaginationBar } from '../../components/PaginationBar'
+import { ErrorState } from '../../components/ErrorState'
+import { Spinner } from '../../components/Spinner'
 import { translateSurveyStatus, translateSurveyType, formatSurveyDateTime } from '../../utils/surveyTranslations'
 import { usePagination, useSorting, useRowExpansion } from '../../hooks'
 import '../../styles/common.css'
@@ -12,61 +14,57 @@ import '../../styles/common.css'
 /**
  * MySurveysPage — Encuestas del músico autenticado (vista no-admin).
  *
- * HOOKS APLICADOS:
- * - usePagination:   sustituye page/size/totalPages/totalElements
- * - useSorting:      sustituye sortField/sortDirection con valor inicial 'closesAt'
- * - useRowExpansion: sustituye expandedSurveyId/isClosing
+ * Ruta: /surveys
  *
- * useConfirmDialog NO se usa porque esta página no tiene acciones destructivas.
- * El usuario solo puede ver y responder encuestas, no eliminarlas.
+ * Tabs:
+ *   - PENDING: encuestas abiertas sin responder
+ *   - ACTIVE:  todas las encuestas actualmente abiertas
+ *   - HISTORY: encuestas cerradas o canceladas en las que participó el usuario
  *
- * NOTA sobre handleViewDetails:
- * El original tenía un bug sutil: al hacer click en una fila ya expandida,
- * llamaba a setExpandedSurveyId(null) directamente sin animación de cierre,
- * ignorando isClosing. El nuevo código usa rowExpansion.close() que respeta
- * la animación de 250ms consistentemente con el resto de páginas.
+ * useConfirmDialog NO se usa: esta página no tiene acciones destructivas.
+ * El usuario solo puede ver y responder encuestas.
  */
 
 type TabType = 'PENDING' | 'ACTIVE' | 'HISTORY'
 type SortableField = 'title' | 'surveyType' | 'status' | 'opensAt' | 'closesAt'
 
+const TAB_LABELS: Record<TabType, string> = {
+    PENDING: 'Pendientes',
+    ACTIVE:  'Activas',
+    HISTORY: 'Historial',
+}
+
+const TAB_DESCRIPTIONS: Record<TabType, string> = {
+    PENDING: 'Encuestas abiertas que aún no has respondido',
+    ACTIVE:  'Todas las encuestas actualmente abiertas (respondidas o no)',
+    HISTORY: 'Encuestas cerradas o canceladas en las que participaste',
+}
+
 function MySurveysPage() {
     const { token } = useAuth()
 
-    const [activeTab, setActiveTab] = useState<TabType>('PENDING')
-    const [surveys, setSurveys]     = useState<SurveyDTO[]>([])
-    const [loading, setLoading]     = useState(false)
-    const [error, setError]         = useState<string | null>(null)
+    const [activeTab, setActiveTab]           = useState<TabType>('PENDING')
+    const [surveys, setSurveys]               = useState<SurveyDTO[]>([])
+    const [loading, setLoading]               = useState(false)
+    const [error, setError]                   = useState<string | null>(null)
     const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-    // ── Hooks de estado reutilizable ──────────────────────────────────────────
     const pagination   = usePagination({ defaultSize: 10 })
-    // useSorting con valor inicial 'closesAt': el campo más relevante para el usuario
     const sorting      = useSorting<SortableField>('closesAt')
     const rowExpansion = useRowExpansion<string>()
 
     // ── Columnas ──────────────────────────────────────────────────────────────
+
     const surveyColumns = [
         { key: 'title',      header: 'Título',  sortable: true, sortField: 'title'      as SortableField, width: '30%' },
-        {
-            key: 'surveyType', header: 'Tipo',   sortable: true, sortField: 'surveyType' as SortableField, width: '15%',
-            render: (s: SurveyDTO) => translateSurveyType(s.surveyType),
-        },
-        {
-            key: 'status',     header: 'Estado', sortable: true, sortField: 'status'     as SortableField, width: '12%',
-            render: (s: SurveyDTO) => translateSurveyStatus(s.status),
-        },
-        {
-            key: 'opensAt',    header: 'Abre',   sortable: true, sortField: 'opensAt'    as SortableField, width: '18%',
-            render: (s: SurveyDTO) => formatSurveyDateTime(s.opensAt),
-        },
-        {
-            key: 'closesAt',   header: 'Cierra', sortable: true, sortField: 'closesAt'   as SortableField, width: '18%',
-            render: (s: SurveyDTO) => formatSurveyDateTime(s.closesAt),
-        },
+        { key: 'surveyType', header: 'Tipo',    sortable: true, sortField: 'surveyType' as SortableField, width: '15%', render: (s: SurveyDTO) => translateSurveyType(s.surveyType) },
+        { key: 'status',     header: 'Estado',  sortable: true, sortField: 'status'     as SortableField, width: '12%', render: (s: SurveyDTO) => translateSurveyStatus(s.status) },
+        { key: 'opensAt',    header: 'Abre',    sortable: true, sortField: 'opensAt'    as SortableField, width: '18%', render: (s: SurveyDTO) => formatSurveyDateTime(s.opensAt) },
+        { key: 'closesAt',   header: 'Cierra',  sortable: true, sortField: 'closesAt'   as SortableField, width: '18%', render: (s: SurveyDTO) => formatSurveyDateTime(s.closesAt) },
     ]
 
-    // ── Effect: carga de encuestas ────────────────────────────────────────────
+    // ── Effect ────────────────────────────────────────────────────────────────
+
     useEffect(() => {
         if (!token) return
 
@@ -118,14 +116,11 @@ function MySurveysPage() {
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
-    // handleSort: resetea página además de cambiar ordenación
     const handleSort = (field: SortableField) => {
         pagination.goToPage(0)
         sorting.handleSortChange(field)
     }
 
-    // handleViewDetails: usa rowExpansion.close() para respetar la animación
-    // al cerrar (el original la ignoraba cuando se cerraba por segundo click en la fila)
     const handleViewDetails = (survey: SurveyDTO) => {
         if (rowExpansion.expandedId === survey.id) {
             rowExpansion.close()
@@ -134,52 +129,40 @@ function MySurveysPage() {
         }
     }
 
-    const handleResponseSubmitted = () => {
-        setRefreshTrigger(prev => prev + 1)
-    }
-
     const handleTabChange = (tab: TabType) => {
         setActiveTab(tab)
         pagination.goToPage(0)
         rowExpansion.forceClose()
     }
 
-    // ── Estilos de tab (función auxiliar para evitar repetición) ─────────────
-    const tabStyle = (tab: TabType): React.CSSProperties => ({
-        padding: '0.75rem 1.5rem',
-        border: 'none',
-        backgroundColor: 'transparent',
-        borderBottom: activeTab === tab ? '3px solid #1976d2' : 'none',
-        color:      activeTab === tab ? '#1976d2' : '#666',
-        fontWeight: activeTab === tab ? 600 : 400,
-        cursor: 'pointer',
-    })
-
-    const tabDescriptions: Record<TabType, string> = {
-        PENDING: 'Encuestas abiertas que aún no has respondido',
-        ACTIVE:  'Todas las encuestas actualmente abiertas (respondidas o no)',
-        HISTORY: 'Encuestas cerradas o canceladas en las que participaste',
+    const handleResponseSubmitted = () => {
+        setRefreshTrigger(prev => prev + 1)
     }
 
     // ── Render ────────────────────────────────────────────────────────────────
+
     return (
         <div className="page-container">
             <h1 className="page-title">Encuestas</h1>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '2px solid #e0e0e0' }}>
-                <button type="button" onClick={() => handleTabChange('PENDING')} style={tabStyle('PENDING')}>🕓 Pendientes</button>
-                <button type="button" onClick={() => handleTabChange('ACTIVE')}  style={tabStyle('ACTIVE')} >🟢 Activas</button>
-                <button type="button" onClick={() => handleTabChange('HISTORY')} style={tabStyle('HISTORY')}>📁 Historial</button>
-            </div>
+            <nav className="tab-nav" aria-label="Vistas de encuestas">
+                {(Object.keys(TAB_LABELS) as TabType[]).map((tab) => (
+                    <button
+                        key={tab}
+                        type="button"
+                        className={`tab-nav__item${activeTab === tab ? ' tab-nav__item--active' : ''}`}
+                        onClick={() => handleTabChange(tab)}
+                        aria-current={activeTab === tab ? 'page' : undefined}
+                    >
+                        {TAB_LABELS[tab]}
+                    </button>
+                ))}
+            </nav>
 
-            {/* Descripción del tab activo */}
-            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-                <p style={{ margin: 0, color: '#666' }}>{tabDescriptions[activeTab]}</p>
-            </div>
+            <p className="tab-description">{TAB_DESCRIPTIONS[activeTab]}</p>
 
-            {loading && <p>Cargando encuestas...</p>}
-            {error   && <p className="error-message">{error}</p>}
+            {loading && <Spinner />}
+            {error   && <ErrorState message={error} onRetry={() => setRefreshTrigger(prev => prev + 1)} />}
 
             {!loading && !error && (
                 <>
@@ -204,10 +187,7 @@ function MySurveysPage() {
                             )}
                         />
                     </div>
-                    <PaginationBar
-                        {...pagination.barProps}
-                        currentCount={surveys.length}
-                    />
+                    <PaginationBar {...pagination.barProps} currentCount={surveys.length} />
                 </>
             )}
         </div>

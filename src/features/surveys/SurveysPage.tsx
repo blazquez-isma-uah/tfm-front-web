@@ -38,6 +38,7 @@ import {
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
 import { useToast } from '../../context/toast/ToastContext'
 import { ErrorState } from '../../components/ErrorState'
+import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
 
 /**
@@ -520,7 +521,7 @@ function SurveysPage() {
             />
             )}
 
-            {loading && <p>Cargando encuestas...</p>}
+            {loading && <Spinner />}
             {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
             {/* ── LISTA ── */}

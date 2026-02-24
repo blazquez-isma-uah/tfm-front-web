@@ -6,6 +6,7 @@ import UsersPage from './features/users/UsersPage'
 import ProfilePage from './features/users/ProfilePage'
 import InstrumentsPage from './features/instruments/InstrumentsPage'
 import EventsPage from './features/events/EventsPage'
+import MyEventsPage from './features/events/MyEventsPage'
 import SurveysPage from './features/surveys/SurveysPage'
 import MySurveysPage from './features/surveys/MySurveysPage'
 import { AuthProvider } from './features/auth/AuthContext'
@@ -45,9 +46,9 @@ function App() {
 
             {/* Zona común — todos los usuarios autenticados */}
             <Route path="dashboard"  element={<DashboardPage />} />
-            <Route path="events"     element={<EventsPage />} />
+            <Route path="events"    element={<MyEventsPage />} />
             <Route path="surveys"    element={<MySurveysPage />} />
-            {/* <Route path="scores"     element={<div>Partituras — Por implementar</div>} /> */}
+            <Route path="scores"     element={<div>Partituras — Por implementar</div>} />
             <Route path="profile"    element={<ProfilePage />} />
 
             {/* Zona administrador — solo usuarios con rol ADMIN */}

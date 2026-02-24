@@ -20,6 +20,7 @@ import { EditIcon, TrashIcon, EyeIcon } from '../../components/Icons'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
 import { useToast } from '../../context/toast/ToastContext'
 import { ErrorState } from '../../components/ErrorState'
+import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
 
 /**
@@ -400,7 +401,7 @@ function InstrumentsPage() {
       </SearchFiltersPanel>
       )}
 
-      {loading && <p>Cargando instrumentos...</p>}
+      {loading && <Spinner />}
       {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
       {mode === 'LIST' && !loading && !error && (

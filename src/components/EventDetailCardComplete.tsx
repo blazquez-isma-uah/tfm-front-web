@@ -5,6 +5,7 @@ import { EventInfoSection } from './EventInfoSection'
 import { SurveyDetailCard } from './SurveyDetailCard'
 import { searchSurveysPage } from '../api/surveysApi'
 import { useAuth } from '../features/auth/AuthContext'
+import { Spinner } from './Spinner'
 import '../styles/common.css'
 
 interface EventDetailCardCompleteProps {
@@ -98,7 +99,7 @@ export function EventDetailCardComplete({
                 <h3 style={{ marginBottom: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>
                     Encuestas asociadas
                 </h3>
-                {loadingSurveys && <p>Cargando encuestas...</p>}
+                {loadingSurveys && <Spinner />}
                 {errorSurveys && <p style={{ color: 'red' }}>{errorSurveys}</p>}
                 {!loadingSurveys && !errorSurveys && surveys.length === 0 && (
                     <p style={{ color: '#666' }}>No hay encuestas asociadas a este evento</p>

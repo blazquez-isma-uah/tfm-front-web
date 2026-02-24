@@ -36,6 +36,8 @@ import {
     formatSurveyDateTime,
 } from '../../utils/surveyTranslations'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
+import { useToast } from '../../context/toast/ToastContext'
+import { ErrorState } from '../../components/ErrorState'
 import '../../styles/common.css'
 
 /**
@@ -68,6 +70,7 @@ function toDateTimeLocal(isoString?: string): string {
 function SurveysPage() {
     const { token, hasRole } = useAuth()
     const isAdmin = hasRole('ADMIN')
+    const { showToast } = useToast()
 
     const [surveys, setSurveys]   = useState<SurveyDTO[]>([])
     const [loading, setLoading]   = useState(false)
@@ -343,11 +346,12 @@ function SurveysPage() {
                 description: formPayload.description || undefined,
             }
             await createSurvey(payload, token)
+            showToast('Encuesta creada correctamente', 'success')
             setMode('LIST')
             setSearchTrigger(prev => prev + 1)
         } catch (e: any) {
             console.error('Error creating survey:', e)
-            setError(extractErrorMessage(e, 'Error creando encuesta'))
+            showToast(extractErrorMessage(e, 'Error creando encuesta'), 'error')
         } finally {
             setSaving(false)
         }
@@ -367,6 +371,7 @@ function SurveysPage() {
             }
             const updated = await updateSurvey(selectedSurvey.id, payload, selectedSurvey.version, token)
             setSurveys(prev => prev.map(s => (s.id === updated.id ? updated : s)))
+            showToast('Encuesta actualizada correctamente', 'success')
             setMode('LIST')
             rowExpansion.forceClose()
             setSelectedSurvey(null)
@@ -374,9 +379,9 @@ function SurveysPage() {
             console.error('Error updating survey:', e)
             const status = e?.response?.status
             if (status === 412 || status === 428) {
-                setError('La encuesta ha sido modificada. Recarga los datos.')
+                showToast('La encuesta ha sido modificada. Recarga los datos.', 'error')
             } else {
-                setError(extractErrorMessage(e, 'Error actualizando encuesta'))
+                showToast(extractErrorMessage(e, 'Error actualizando encuesta'), 'error')
             }
         } finally {
             setSaving(false)
@@ -399,6 +404,7 @@ function SurveysPage() {
                 try {
                     setError(null)
                     await deleteSurvey(survey.id, survey.version, token)
+                    showToast('Encuesta eliminada correctamente', 'success')
                     setSurveys(prev => prev.filter(s => s.id !== survey.id))
                     setSearchTrigger(prev => prev + 1)
                     if (selectedSurvey?.id === survey.id) rowExpansion.forceClose()
@@ -406,9 +412,9 @@ function SurveysPage() {
                     console.error('Error deleting survey:', e)
                     const status = e?.response?.status
                     if (status === 412 || status === 428) {
-                        setError('La encuesta ha sido modificada. Recarga los datos.')
+                        showToast('La encuesta ha sido modificada. Recarga los datos.', 'error')
                     } else {
-                        setError(extractErrorMessage(e, 'Error eliminando encuesta'))
+                        showToast(extractErrorMessage(e, 'Error eliminando encuesta'), 'error')
                     }
                 }
             },
@@ -427,10 +433,11 @@ function SurveysPage() {
                     setError(null)
                     const updated = await openSurvey(survey.id, survey.version, token)
                     setSurveys(prev => prev.map(s => (s.id === updated.id ? updated : s)))
+                    showToast('Encuesta abierta correctamente', 'success')
                     setSelectedSurvey(updated)
                 } catch (e: any) {
                     console.error('Error opening survey:', e)
-                    setError(extractErrorMessage(e, 'Error abriendo encuesta'))
+                    showToast(extractErrorMessage(e, 'Error abriendo encuesta'), 'error')
                 }
             },
         })
@@ -448,10 +455,11 @@ function SurveysPage() {
                     setError(null)
                     const updated = await closeSurvey(survey.id, survey.version, token)
                     setSurveys(prev => prev.map(s => (s.id === updated.id ? updated : s)))
+                    showToast('Encuesta cerrada correctamente', 'success')
                     setSelectedSurvey(updated)
                 } catch (e: any) {
                     console.error('Error closing survey:', e)
-                    setError(extractErrorMessage(e, 'Error cerrando encuesta'))
+                    showToast(extractErrorMessage(e, 'Error cerrando encuesta'), 'error')
                 }
             },
         })
@@ -469,10 +477,11 @@ function SurveysPage() {
                     setError(null)
                     const updated = await cancelSurvey(survey.id, survey.version, token)
                     setSurveys(prev => prev.map(s => (s.id === updated.id ? updated : s)))
+                    showToast('Encuesta cancelada correctamente', 'success')
                     setSelectedSurvey(updated)
                 } catch (e: any) {
                     console.error('Error cancelling survey:', e)
-                    setError(extractErrorMessage(e, 'Error cancelando encuesta'))
+                    showToast(extractErrorMessage(e, 'Error cancelando encuesta'), 'error')
                 }
             },
         })
@@ -484,6 +493,7 @@ function SurveysPage() {
             <h1 className="page-title">Gestión de encuestas</h1>
 
             {/* ── Buscador ── */}
+            {!error && (
             <SurveyFiltersPanel
                 filterTitle={filterTitle}               setFilterTitle={setFilterTitle}
                 filterEventId={filterEventId}           setFilterEventId={setFilterEventId}
@@ -508,9 +518,10 @@ function SurveysPage() {
                     </button>
                 }
             />
+            )}
 
             {loading && <p>Cargando encuestas...</p>}
-            {error   && <p className="error-message">{error}</p>}
+            {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
             {/* ── LISTA ── */}
             {mode === 'LIST' && !loading && !error && (

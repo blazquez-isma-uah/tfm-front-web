@@ -705,8 +705,8 @@
 /* ----------------------------------------------------------
    DATA TABLE — Mobile First
    Estrategia de renderizado condicional con useMediaQuery:
-     · < 480px  → vista tarjeta (card view), no se renderiza <table>
-     · ≥ 480px  → tabla tradicional dentro de .data-table-wrapper
+     · < 768px  → vista tarjeta (card view), no se renderiza <table>
+     · ≥ 768px  → tabla tradicional dentro de .data-table-wrapper
 
    Las clases .dt-table* usan BEM para evitar el acoplamiento
    entre CSS y estructura HTML que tenían los selectores
@@ -856,7 +856,7 @@
    * siempre empiezan en la misma columna visual.
    */
   display: grid;
-  grid-template-columns: 2fr 3fr;
+  grid-template-columns: 1fr 2fr;
   gap: var(--space-2);
   align-items: baseline;
 }
@@ -865,8 +865,6 @@
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .dt-card__value {
@@ -1117,4 +1115,250 @@
   max-height: 9999px;  /* Ver nota en el comentario del bloque */
   padding: var(--space-1) var(--space-4) var(--space-4);
   opacity: 1;
+}
+
+
+/* ============================================================
+   TOAST SYSTEM
+   Feedback transiente para resultados de operaciones
+   (guardar, borrar, actualizar). No usar para errores de carga
+   persistentes — para eso está ErrorState.
+
+   Posicionamiento Mobile First:
+   · Base (móvil): centrado en la parte inferior, full-width con margen
+   · ≥ 480px: esquina inferior derecha, ancho fijo
+
+   z-index: var(--z-toast) = 1100, por encima de modales (1000).
+   ============================================================ */
+
+.toast-container {
+  position: fixed;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  pointer-events: none; /* El contenedor no intercepta clicks... */
+}
+
+@media (min-width: 480px) {
+  .toast-container {
+    left: auto;
+    right: var(--space-6);
+    width: 360px;
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  pointer-events: all; /* ...pero cada toast sí recibe clicks */
+  animation: toast-in var(--transition-normal) ease-out;
+}
+
+.toast--success {
+  background: var(--color-success-dark);
+  color: var(--color-white);
+}
+
+.toast--error {
+  background: var(--color-danger-dark);
+  color: var(--color-white);
+}
+
+.toast--warning {
+  background: var(--color-warning-dark);
+  color: var(--color-white);
+}
+
+.toast--info {
+  background: var(--color-primary-700);
+  color: var(--color-white);
+}
+
+.toast__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.toast__message {
+  flex: 1;
+  line-height: var(--line-height-normal);
+}
+
+.toast__close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  opacity: 0.7;
+  padding: 0 var(--space-1);
+  transition: opacity var(--transition-fast);
+}
+
+.toast__close:hover {
+  opacity: 1;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-4));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   ERROR STATE
+   Bloque persistente para errores de carga de datos.
+   Vive en el flujo normal de la página (no flotante).
+   ============================================================ */
+
+.error-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-danger-light);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger-dark);
+  font-size: var(--font-size-sm);
+}
+
+.error-state__icon {
+  flex-shrink: 0;
+}
+
+.error-state__message {
+  flex: 1;
+  line-height: var(--line-height-normal);
+}
+
+.error-state__retry {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-full);
+  color: var(--color-danger-dark);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-1) var(--space-3);
+  transition: background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.error-state__retry:hover {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+
+/* ============================================================
+   DASHBOARD
+   Layout y tarjetas de la página de inicio.
+
+   Las tarjetas del dashboard reutilizan la estructura dl/dt/dd
+   ya establecida en el card view del DataTable (.dt-card__*)
+   para consistencia semántica y visual.
+   ============================================================ */
+
+.dashboard-section {
+  margin-top: var(--space-6);
+}
+
+.dashboard-section:first-of-type {
+  margin-top: var(--space-4);
+}
+
+.dashboard-empty {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  padding: var(--space-2) 0;
+}
+
+/*
+ * Grid responsive sin breakpoints explícitos: auto-fill con
+ * minmax(280px, 1fr) crea automáticamente 1 columna en móvil,
+ * 2 en tablet y 3 en desktop cuando hay espacio suficiente.
+ * Es el patrón más robusto para grids de cards de contenido variable.
+ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.dashboard-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Variante para encuestas pendientes: borde izquierdo de aviso */
+.dashboard-card--warning {
+  border-left: 3px solid var(--color-warning);
+}
+
+.dashboard-card__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-3) 0;
+  line-height: var(--line-height-tight);
+}
+
+.dashboard-card__body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-card__pair {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.dashboard-card__term {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.dashboard-card__value {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.dashboard-card__value--urgent {
+  color: var(--color-warning-dark);
+  font-weight: var(--font-weight-medium);
+}
+
+.dashboard-card__value--muted {
+  color: var(--text-secondary);
+  font-style: italic;
 }

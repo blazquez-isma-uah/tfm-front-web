@@ -10,42 +10,57 @@ import SurveysPage from './features/surveys/SurveysPage'
 import MySurveysPage from './features/surveys/MySurveysPage'
 import { AuthProvider } from './features/auth/AuthContext'
 import RequireAuth from './features/auth/RequireAuth'
+import { ToastProvider } from './context/toast/ToastContext'
 
+/**
+ * Orden de providers:
+ *   BrowserRouter (en main.tsx)
+ *     └─ ToastProvider   ← UI global, no depende de auth
+ *          └─ AuthProvider
+ *               └─ Routes
+ *
+ * ToastProvider envuelve AuthProvider (y no al revés) porque los toasts
+ * son una capa de UI pura, independiente del estado de autenticación.
+ * AuthProvider podría en teoría llamar a showToast si necesitara
+ * notificar al usuario de expiración de sesión, por ejemplo.
+ */
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        {/* Ruta pública */}
-        <Route path="/login" element={<LoginPage />} />
+    <ToastProvider>
+      <AuthProvider>
+        <Routes>
+          {/* Ruta pública */}
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Rutas protegidas */}
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <MainLayout />
-            </RequireAuth>
-          }
-        >
-          <Route index element={<Navigate to="dashboard" replace />} />
-          
-          {/* Zona común - todos los usuarios autenticados */}
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="events" element={<EventsPage />} />
-          <Route path="surveys" element={<MySurveysPage />} />
-          <Route path="scores" element={<div>Partituras - Por implementar</div>} />
-          <Route path="profile" element={<ProfilePage />} />
+          {/* Rutas protegidas */}
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <MainLayout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
 
-          {/* Zona administrador - solo usuarios con rol ADMIN */}
-          <Route path="admin/users" element={<UsersPage />} />
-          <Route path="admin/instruments" element={<InstrumentsPage />} />
-          <Route path="admin/events" element={<EventsPage />} />
-          <Route path="admin/surveys" element={<SurveysPage />} />
-        </Route>
+            {/* Zona común — todos los usuarios autenticados */}
+            <Route path="dashboard"  element={<DashboardPage />} />
+            <Route path="events"     element={<EventsPage />} />
+            <Route path="surveys"    element={<MySurveysPage />} />
+            {/* <Route path="scores"     element={<div>Partituras — Por implementar</div>} /> */}
+            <Route path="profile"    element={<ProfilePage />} />
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </AuthProvider>
+            {/* Zona administrador — solo usuarios con rol ADMIN */}
+            <Route path="admin/users"       element={<UsersPage />} />
+            <Route path="admin/instruments" element={<InstrumentsPage />} />
+            <Route path="admin/events"      element={<EventsPage />} />
+            <Route path="admin/surveys"     element={<SurveysPage />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AuthProvider>
+    </ToastProvider>
   )
 }
 

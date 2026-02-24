@@ -41,6 +41,8 @@ import { EventCalendarView } from '../../components/EventCalendarView'
 import { EventForm } from '../../components/EventForm'
 import { EditIcon, TrashIcon } from '../../components/Icons'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
+import { useToast } from '../../context/toast/ToastContext'
+import { ErrorState } from '../../components/ErrorState'
 import '../../styles/common.css'
 
 /**
@@ -89,6 +91,7 @@ function toDateTimeLocal(isoString: string): string {
 function EventsPage() {
     const location = useLocation()
     const { token } = useAuth()
+    const { showToast } = useToast()
 
     const isAdminView = location.pathname.startsWith('/admin/events')
 
@@ -521,11 +524,12 @@ function EventsPage() {
                 endAt:   datetimeLocalToISOInstant(formEndAt),
             }
             await createEvent(payload, token)
+            showToast('Evento creado correctamente', 'success')
             setMode('LIST')
             setSearchTrigger(prev => prev + 1)
         } catch (e: any) {
             console.error('Error creating event:', e)
-            setError(extractErrorMessage(e, 'Error creando evento'))
+            showToast(extractErrorMessage(e, 'Error creando evento'), 'error')
         } finally {
             setSaving(false)
         }
@@ -542,6 +546,7 @@ function EventsPage() {
                 endAt:   datetimeLocalToISOInstant(formEndAt),
             }
             await updateEvent(selectedEvent.id, selectedEvent.version, payload, token)
+            showToast('Evento actualizado correctamente', 'success')
             setMode('LIST')
             setSearchTrigger(prev => prev + 1)
             // Cerrar la fila expandida del evento editado sin animación
@@ -551,9 +556,9 @@ function EventsPage() {
             console.error('Error updating event:', e)
             const status = e?.response?.status
             if (status === 412 || status === 428) {
-                setError('El evento ha sido modificado. Recarga los datos.')
+                showToast('El evento ha sido modificado. Recarga los datos.', 'error')
             } else {
-                setError(extractErrorMessage(e, 'Error actualizando evento'))
+                showToast(extractErrorMessage(e, 'Error actualizando evento'), 'error')
             }
         } finally {
             setSaving(false)
@@ -572,6 +577,7 @@ function EventsPage() {
                 try {
                     setError(null)
                     await deleteEvent(event.id, event.version, token)
+                    showToast('Evento eliminado correctamente', 'success')
                     pagination.goToPage(0)
                     setSearchTrigger(prev => prev + 1)
                     if (selectedEvent?.id === event.id) {
@@ -582,9 +588,9 @@ function EventsPage() {
                     console.error('Error deleting event:', e)
                     const status = e?.response?.status
                     if (status === 412 || status === 428) {
-                        setError('El evento ha sido modificado. Recarga los datos.')
+                        showToast('El evento ha sido modificado. Recarga los datos.', 'error')
                     } else {
-                        setError(extractErrorMessage(e, 'Error eliminando evento'))
+                        showToast(extractErrorMessage(e, 'Error eliminando evento'), 'error')
                     }
                 }
             },
@@ -737,7 +743,7 @@ function EventsPage() {
             {renderTabDescription()}
 
             {loading && <p>Cargando eventos...</p>}
-            {error   && <p className="error-message">{error}</p>}
+            {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
             {!loading && !error && (
                 <>

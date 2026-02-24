@@ -61,7 +61,7 @@ export function DataTable<T, F extends string>({
 }: DataTableProps<T, F>) {
   // El punto de corte 480px coincide con el breakpoint 'sm' de design-tokens.css
   // y con el umbral definido en el handoff de Fase 3.
-  const isMobile = useMediaQuery('(max-width: 479px)')
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const resolveId = (row: T, idx: number) =>
     getRowId ? getRowId(row) : defaultGetRowId(row, idx)

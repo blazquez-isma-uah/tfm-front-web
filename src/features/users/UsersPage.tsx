@@ -25,6 +25,8 @@ import { UserRolesPanel } from '../../components/UserRolesPanel'
 import { UserInstrumentsPanel } from '../../components/UserInstrumentsPanel'
 import { EditIcon, TrashIcon, CheckIcon, XMarkIcon } from '../../components/Icons'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
+import { useToast } from '../../context/toast/ToastContext'
+import { ErrorState } from '../../components/ErrorState'
 import '../../styles/common.css'
 
 /**
@@ -52,6 +54,7 @@ type SortableField = 'username' | 'email' | 'active' | 'bandJoinDate'
 function UsersPage() {
     const { token, hasRole } = useAuth()
     const isAdmin = hasRole('ADMIN')
+    const { showToast } = useToast()
 
     const [users, setUsers]     = useState<UserDTO[]>([])
     const [loading, setLoading] = useState(false)
@@ -181,15 +184,18 @@ function UsersPage() {
 
     useEffect(() => {
         if (!token || !isAdmin) return
+        let cancelled = false
         const load = async () => {
             try {
                 setRolesLoading(true)
-                setRoles(await getAllRoles(token))
+                const result = await getAllRoles(token)
+                if (!cancelled) setRoles(result)
             } catch (e) {
-                setError(extractErrorMessage(e, 'Error cargando roles'))
-            } finally { setRolesLoading(false) }
+                if (!cancelled) console.error('Error cargando roles:', e)
+            } finally { if (!cancelled) setRolesLoading(false) }
         }
         load()
+        return () => { cancelled = true }
     }, [token, isAdmin])
 
     useEffect(() => {
@@ -308,9 +314,10 @@ function UsersPage() {
                 instrumentIds: createPayload.instrumentIds ?? [],
                 roles: createPayload.roles ?? [],
             }, token)
+            showToast('Usuario creado correctamente', 'success')
             setMode('LIST'); pagination.goToPage(0)
             setSearchTrigger(prev => prev + 1)
-        } catch (e) { setError(extractErrorMessage(e, 'Error creando usuario'))
+        } catch (e) { showToast(extractErrorMessage(e, 'Error creando usuario'), 'error')
         } finally { setSaving(false) }
     }
 
@@ -341,9 +348,10 @@ function UsersPage() {
                 profilePictureUrl: editPayload.profilePictureUrl || undefined,
             }, selectedUser.version, token)
             setUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
+            showToast('Usuario actualizado correctamente', 'success')
             setSelectedUser(updated); setMode('LIST')
             setSearchTrigger(prev => prev + 1)
-        } catch (e: any) { setError(extractErrorMessage(e, 'Error actualizando usuario'))
+        } catch (e: any) { showToast(extractErrorMessage(e, 'Error actualizando usuario'), 'error')
         } finally { setSaving(false) }
     }
 
@@ -370,7 +378,8 @@ function UsersPage() {
                     const refreshed = await getUserById(user.id, token)
                     setUsers(prev => prev.map(u => u.id === refreshed.id ? refreshed : u))
                     if (selectedUser?.id === refreshed.id) setSelectedUser(refreshed)
-                } catch (e: any) { setError(extractErrorMessage(e, 'Error cambiando estado del usuario')) }
+                    showToast(user.active ? 'Usuario desactivado' : 'Usuario activado', 'success')
+                } catch (e: any) { showToast(extractErrorMessage(e, 'Error cambiando estado del usuario'), 'error') }
             },
         })
     }
@@ -386,10 +395,11 @@ function UsersPage() {
                 try {
                     setError(null)
                     await deleteUser(user.id, user.version, token)
+                    showToast('Usuario eliminado correctamente', 'success')
                     pagination.goToPage(0); setMode('LIST')
                     setSearchTrigger(prev => prev + 1)
                     if (selectedUser?.id === user.id) setSelectedUser(null)
-                } catch (e: any) { setError(extractErrorMessage(e, 'Error eliminando usuario')) }
+                } catch (e: any) { showToast(extractErrorMessage(e, 'Error eliminando usuario'), 'error') }
             },
         })
     }
@@ -413,7 +423,7 @@ function UsersPage() {
                 .filter((id): id is number => id != null) ?? []
             setSelectedInstrumentIds(currentIds)
         } catch (e) {
-            setError(extractErrorMessage(e, 'Error cargando instrumentos del usuario'))
+            showToast(extractErrorMessage(e, 'Error cargando instrumentos del usuario'), 'error')
             setManagingInstruments(false)
         } finally { setInstrumentsLoading(false) }
     }
@@ -426,8 +436,9 @@ function UsersPage() {
                 selectedUser.id, selectedInstrumentIds, selectedUser.version, token,
             )
             setUsers(prev => prev.map(u => u.id === refreshed.id ? refreshed : u))
+            showToast('Instrumentos guardados correctamente', 'success')
             setSelectedUser(refreshed); setManagingInstruments(false)
-        } catch (e) { setError(extractErrorMessage(e, 'Error guardando instrumentos'))
+        } catch (e) { showToast(extractErrorMessage(e, 'Error guardando instrumentos'), 'error')
         } finally { setSaving(false) }
     }
 
@@ -447,9 +458,10 @@ function UsersPage() {
                 selectedUser.id, selectedRoleNames, selectedUser.version, token,
             )
             setUsers(prev => prev.map(u => u.id === refreshed.id ? refreshed : u))
+            showToast('Roles guardados correctamente', 'success')
             setSelectedUser(refreshed); setManagingRoles(false)
             setSearchTrigger(prev => prev + 1)
-        } catch (e) { setError(extractErrorMessage(e, 'Error guardando roles'))
+        } catch (e) { showToast(extractErrorMessage(e, 'Error guardando roles'), 'error')
         } finally { setSaving(false) }
     }
 
@@ -458,6 +470,7 @@ function UsersPage() {
         <div className="page-container">
             <h1 className="page-title">Gestión de usuarios</h1>
 
+            {!error && (
             <SearchFiltersPanel
                 activeFiltersCount={activeFiltersCount}
                 onSubmit={handleSearchSubmit}
@@ -537,9 +550,10 @@ function UsersPage() {
                     </button>
                 </div>
             </SearchFiltersPanel>
+            )}
 
             {loading && <p>Cargando usuarios...</p>}
-            {error   && <p className="error-message">{error}</p>}
+            {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
             {mode === 'LIST' && !loading && !error && !managingInstruments && !managingRoles && (
                 <>

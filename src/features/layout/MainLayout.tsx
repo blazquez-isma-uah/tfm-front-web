@@ -135,14 +135,6 @@ function MainLayout() {
                             Encuestas
                         </NavLink>
                         <NavLink
-                            to="/scores"
-                            className={({ isActive }) =>
-                                'menu-link' + (isActive ? ' menu-link-active' : '')
-                            }
-                        >
-                            Partituras
-                        </NavLink>
-                        <NavLink
                             to="/profile"
                             className={({ isActive }) =>
                                 'menu-link' + (isActive ? ' menu-link-active' : '')

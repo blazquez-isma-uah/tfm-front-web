@@ -18,6 +18,8 @@ import { InstrumentForm } from '../../components/InstrumentForm'
 import { UsersWithInstrumentPanel } from '../../components/UsersWithInstrumentPanel'
 import { EditIcon, TrashIcon, EyeIcon } from '../../components/Icons'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
+import { useToast } from '../../context/toast/ToastContext'
+import { ErrorState } from '../../components/ErrorState'
 import '../../styles/common.css'
 
 /**
@@ -54,6 +56,7 @@ const EMPTY_PAYLOAD: InstrumentRequestDTO = { instrumentName: '', voice: '' }
 function InstrumentsPage() {
   const { token, hasRole } = useAuth()
   const isAdmin = hasRole('ADMIN')
+  const { showToast } = useToast()
 
   const [instruments, setInstruments] = useState<InstrumentDTO[]>([])
   const [loading, setLoading]         = useState(false)
@@ -257,10 +260,11 @@ function InstrumentsPage() {
     try {
       setLoading(true); setError(null)
       await createInstrument(formPayload, token)
+      showToast('Instrumento creado correctamente', 'success')
       switchToList(); pagination.goToPage(0)
       setSearchTrigger(prev => prev + 1)
     } catch (err) {
-      setError(extractErrorMessage(err, 'Error creando instrumento'))
+      showToast(extractErrorMessage(err, 'Error creando instrumento'), 'error')
     } finally { setLoading(false) }
   }
 
@@ -270,14 +274,16 @@ function InstrumentsPage() {
       setLoading(true); setError(null)
       const updated = await updateInstrument(editing.id, formPayload, editing.version, token)
       setInstruments(prev => prev.map(i => i.id === updated.id ? updated : i))
+      showToast('Instrumento actualizado correctamente', 'success')
       switchToList()
       setSearchTrigger(prev => prev + 1)
     } catch (e: any) {
       const s = e?.response?.status
-      setError(
+      showToast(
         s === 412 || s === 428
           ? 'El instrumento ha sido modificado. Recarga la lista antes de editar.'
-          : extractErrorMessage(e, 'Error actualizando instrumento')
+          : extractErrorMessage(e, 'Error actualizando instrumento'),
+        'error'
       )
     } finally { setLoading(false) }
   }
@@ -294,14 +300,16 @@ function InstrumentsPage() {
         try {
           setLoading(true); setError(null)
           await deleteInstrument(inst.id, inst.version, token)
+          showToast('Instrumento eliminado correctamente', 'success')
           setInstruments(prev => prev.filter(i => i.id !== inst.id))
           setSearchTrigger(prev => prev + 1)
         } catch (e: any) {
           const s = e?.response?.status
-          setError(
+          showToast(
             s === 412 || s === 428
               ? 'El instrumento ha cambiado. Recarga la lista antes de borrar.'
-              : extractErrorMessage(e, 'Error borrando instrumento')
+              : extractErrorMessage(e, 'Error borrando instrumento'),
+            'error'
           )
         } finally { setLoading(false) }
       },
@@ -319,7 +327,7 @@ function InstrumentsPage() {
       const data = await searchUsersPage({ instrumentId: inst.id, page: 0, size: 100 }, token)
       setUsersWithInstrument(data.content ?? [])
     } catch (e) {
-      setError(extractErrorMessage(e, 'Error cargando usuarios del instrumento'))
+      showToast(extractErrorMessage(e, 'Error cargando usuarios del instrumento'), 'error')
     } finally { setUsersLoading(false) }
   }
 
@@ -335,7 +343,7 @@ function InstrumentsPage() {
     try {
       setSelectedUserDetail(await getUserById(user.id, token))
     } catch (e) {
-      setError(extractErrorMessage(e, 'Error cargando detalles del usuario'))
+      showToast(extractErrorMessage(e, 'Error cargando detalles del usuario'), 'error')
     } finally { setUserDetailLoading(false) }
   }
 
@@ -349,6 +357,7 @@ function InstrumentsPage() {
     <div className="page-container">
       <h1 className="page-title">Gestión de instrumentos</h1>
 
+      {!error && (
       <SearchFiltersPanel
         activeFiltersCount={activeFiltersCount}
         onSubmit={handleSearchSubmit}
@@ -389,9 +398,10 @@ function InstrumentsPage() {
           </button>
         </div>
       </SearchFiltersPanel>
+      )}
 
       {loading && <p>Cargando instrumentos...</p>}
-      {error   && <p className="error-message">{error}</p>}
+      {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
       {mode === 'LIST' && !loading && !error && (
         <>

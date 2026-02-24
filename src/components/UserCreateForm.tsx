@@ -1,25 +1,27 @@
 import type { FormEvent } from 'react'
 import type { UserCreatePayload } from '../api/usersApi'
 import type { KeycloakRoleResponse } from '../types/roles'
+import { useFormValidation, rules } from '../hooks/useFormValidation'
 import '../styles/common.css'
 
 /**
  * UserCreateForm — Formulario de creación de nuevo usuario.
  *
- * DIFERENCIA CON UserEditForm:
- * - Incluye campos de credenciales (username, password) que no son
- *   editables una vez creado el usuario (restricción de Keycloak).
- * - Incluye selección de roles inline (en edición los roles se gestionan
- *   en un panel separado para no mezclar responsabilidades).
- * - No recibe selectedUser porque no hay usuario previo al que referenciar.
- *
- * DECISIÓN — ¿Por qué roles en el formulario de creación pero no en edición?
- * En creación, la asignación inicial de roles es parte del proceso de alta
- * del usuario: se hace una sola llamada a la API que crea el usuario con sus
- * roles. En edición, cambiar roles es una operación independiente (PUT /roles)
- * que puede fallar de forma aislada. Separarla en un panel propio facilita
- * el manejo de errores y hace la UX más clara.
+ * VALIDACIÓN FRONTEND:
+ * Reglas más estrictas que en edición porque incluye credenciales:
+ * - username: requerido, mínimo 3 caracteres, sin espacios
+ * - password: requerido, mínimo 8 caracteres
+ * - email: requerido, formato válido
+ * - firstName, lastName: requeridos
  */
+
+const VALIDATION_RULES = {
+  username:  [rules.required('El username es obligatorio'), rules.minLength(3, 'Mínimo 3 caracteres'), rules.noSpaces('No puede contener espacios')],
+  email:     [rules.required('El email es obligatorio'), rules.email('Formato de email no válido')],
+  password:  [rules.required('La contraseña es obligatoria'), rules.minLength(6, 'Mínimo 6 caracteres')],
+  firstName: [rules.required('El nombre es obligatorio')],
+  lastName:  [rules.required('El primer apellido es obligatorio')],
+}
 
 interface UserCreateFormProps {
   createPayload: UserCreatePayload
@@ -40,8 +42,22 @@ export function UserCreateForm({
   onCancel,
   saving,
 }: UserCreateFormProps) {
+  const { errors, validate, clearError } = useFormValidation<UserCreatePayload>(VALIDATION_RULES)
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    if (validate(createPayload as unknown as Record<string, unknown>)) {
+      onSubmit(e)
+    }
+  }
+
+  const handleChange = (field: keyof UserCreatePayload, value: string) => {
+    clearError(field)
+    onFieldChange(field, value)
+  }
+
   return (
-    <form onSubmit={onSubmit} className="form-card">
+    <form onSubmit={handleSubmit} className="form-card" noValidate>
       <div className="section-title">Nuevo usuario</div>
 
       <div className="form-grid">
@@ -49,47 +65,57 @@ export function UserCreateForm({
         <div className="form-field">
           <label className="label-text">Username *</label>
           <input
-            type="text" required className="input-full-width"
+            type="text"
+            className={`input-full-width${errors.username ? ' input--error' : ''}`}
             value={createPayload.username}
-            onChange={e => onFieldChange('username', e.target.value)}
+            onChange={e => handleChange('username', e.target.value)}
           />
+          {errors.username && <span className="field-error">{errors.username}</span>}
         </div>
 
         <div className="form-field">
           <label className="label-text">Email *</label>
           <input
-            type="email" required className="input-full-width"
+            type="email"
+            className={`input-full-width${errors.email ? ' input--error' : ''}`}
             value={createPayload.email}
-            onChange={e => onFieldChange('email', e.target.value)}
+            onChange={e => handleChange('email', e.target.value)}
           />
+          {errors.email && <span className="field-error">{errors.email}</span>}
         </div>
 
         <div className="form-field">
           <label className="label-text">Password *</label>
           <input
-            type="password" required className="input-full-width"
+            type="password"
+            className={`input-full-width${errors.password ? ' input--error' : ''}`}
             value={createPayload.password}
-            onChange={e => onFieldChange('password', e.target.value)}
+            onChange={e => handleChange('password', e.target.value)}
           />
+          {errors.password && <span className="field-error">{errors.password}</span>}
         </div>
 
         {/* ── Datos personales ── */}
         <div className="form-field">
           <label className="label-text">Nombre *</label>
           <input
-            type="text" required className="input-full-width"
+            type="text"
+            className={`input-full-width${errors.firstName ? ' input--error' : ''}`}
             value={createPayload.firstName}
-            onChange={e => onFieldChange('firstName', e.target.value)}
+            onChange={e => handleChange('firstName', e.target.value)}
           />
+          {errors.firstName && <span className="field-error">{errors.firstName}</span>}
         </div>
 
         <div className="form-field">
           <label className="label-text">1er apellido *</label>
           <input
-            type="text" required className="input-full-width"
+            type="text"
+            className={`input-full-width${errors.lastName ? ' input--error' : ''}`}
             value={createPayload.lastName}
-            onChange={e => onFieldChange('lastName', e.target.value)}
+            onChange={e => handleChange('lastName', e.target.value)}
           />
+          {errors.lastName && <span className="field-error">{errors.lastName}</span>}
         </div>
 
         <div className="form-field">
@@ -97,7 +123,7 @@ export function UserCreateForm({
           <input
             type="text" className="input-full-width"
             value={createPayload.secondLastName ?? ''}
-            onChange={e => onFieldChange('secondLastName', e.target.value)}
+            onChange={e => handleChange('secondLastName', e.target.value)}
           />
         </div>
 
@@ -106,7 +132,7 @@ export function UserCreateForm({
           <input
             type="date" className="input-full-width"
             value={createPayload.birthDate ?? ''}
-            onChange={e => onFieldChange('birthDate', e.target.value)}
+            onChange={e => handleChange('birthDate', e.target.value)}
           />
         </div>
 
@@ -115,7 +141,7 @@ export function UserCreateForm({
           <input
             type="date" className="input-full-width"
             value={createPayload.bandJoinDate ?? ''}
-            onChange={e => onFieldChange('bandJoinDate', e.target.value)}
+            onChange={e => handleChange('bandJoinDate', e.target.value)}
           />
         </div>
 
@@ -124,7 +150,7 @@ export function UserCreateForm({
           <input
             type="text" className="input-full-width"
             value={createPayload.phone ?? ''}
-            onChange={e => onFieldChange('phone', e.target.value)}
+            onChange={e => handleChange('phone', e.target.value)}
           />
         </div>
 
@@ -133,7 +159,7 @@ export function UserCreateForm({
           <textarea
             rows={3} className="textarea-base"
             value={createPayload.notes ?? ''}
-            onChange={e => onFieldChange('notes', e.target.value)}
+            onChange={e => handleChange('notes', e.target.value)}
           />
         </div>
 
@@ -142,7 +168,7 @@ export function UserCreateForm({
           <input
             type="text" className="input-full-width"
             value={createPayload.profilePictureUrl ?? ''}
-            onChange={e => onFieldChange('profilePictureUrl', e.target.value)}
+            onChange={e => handleChange('profilePictureUrl', e.target.value)}
           />
         </div>
 

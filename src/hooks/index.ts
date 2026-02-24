@@ -25,3 +25,4 @@ export { useRowExpansion }     from './useRowExpansion'
 export type { RowExpansionControl } from './useRowExpansion'
 
 export { useMediaQuery } from './useMediaQuery'
+export { useFormValidation, rules } from './useFormValidation'

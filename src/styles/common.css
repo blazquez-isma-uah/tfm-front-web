@@ -1495,3 +1495,37 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+
+/* ============================================================
+   VALIDACIÓN DE FORMULARIOS
+   Estilos para el estado de error en campos de formulario.
+
+   Patrón: el input recibe la clase .input--error cuando hay
+   un error de validación, y un <span class="field-error">
+   aparece debajo con el mensaje.
+
+   El borde rojo en el input da feedback visual inmediato.
+   El mensaje debajo da contexto sobre qué corregir.
+   Ambos desaparecen en cuanto el usuario empieza a escribir
+   (clearError en onChange).
+   ============================================================ */
+
+.input--error {
+  border-color: var(--color-danger) !important;
+  /* El !important es necesario porque input-full-width puede
+     tener especificidad mayor en algunos contextos */
+}
+
+.input--error:focus {
+  outline-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.field-error {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-danger-dark);
+  line-height: var(--line-height-normal);
+}

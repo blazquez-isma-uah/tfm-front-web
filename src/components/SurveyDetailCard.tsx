@@ -12,6 +12,7 @@ import { getEventById } from '../api/eventsApi'
 import { getUserByIamId } from '../api/usersApi'
 import { useAuth } from '../features/auth/AuthContext'
 import { SurveyResponseForm } from './SurveyResponseForm'
+import { XMarkIcon } from './Icons'
 import '../styles/common.css'
 
 interface SurveyDetailCardProps {
@@ -67,11 +68,6 @@ const mutedValue: React.CSSProperties = { color: 'var(--text-muted)' }
 export function SurveyDetailCard({
   survey,
   onBack,
-  onEdit,
-  onOpen,
-  onClose,
-  onCancel,
-  onViewResults,
   showButtons = true,
   backButtonLabel = 'Volver a la lista',
   compact = false,
@@ -155,14 +151,7 @@ export function SurveyDetailCard({
   return (
     <div className="card" style={{ marginTop: '1rem' }}>
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 'var(--space-4)',
-        }}
-      >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
         <div className="section-title" style={{ marginBottom: 0 }}>
           Detalle de la encuesta
         </div>
@@ -171,8 +160,9 @@ export function SurveyDetailCard({
             type="button"
             className="button-subtle"
             onClick={onBack}
-            style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
           >
+            <span style={{ width: '0.9rem', height: '0.9rem', display: 'inline-flex', flexShrink: 0 }}><XMarkIcon /></span>
             {backButtonLabel}
           </button>
         )}
@@ -265,56 +255,6 @@ export function SurveyDetailCard({
           </dd>
         </div>
       </dl>
-
-      {showButtons && (
-        <div className="button-row-1rem" style={{ marginTop: 'var(--space-5)' }}>
-          {onEdit && (
-            <button
-              type="button"
-              className="button-secondary"
-              onClick={() => onEdit(survey)}
-            >
-              Editar
-            </button>
-          )}
-          {onViewResults && (
-            <button
-              type="button"
-              className="button-primary"
-              onClick={() => onViewResults(survey)}
-            >
-              Ver resultados
-            </button>
-          )}
-          {onOpen && (survey.status === 'DRAFT' || survey.status === 'CLOSED' || survey.status === 'CANCELLED') && (
-            <button
-              type="button"
-              className="button-primary"
-              onClick={() => onOpen(survey)}
-            >
-              Abrir encuesta
-            </button>
-          )}
-          {onClose && survey.status === 'OPEN' && (
-            <button
-              type="button"
-              className="button-secondary"
-              onClick={() => onClose(survey)}
-            >
-              Cerrar encuesta
-            </button>
-          )}
-          {onCancel && (survey.status === 'DRAFT' || survey.status === 'OPEN') && (
-            <button
-              type="button"
-              className="button-danger"
-              onClick={() => onCancel(survey)}
-            >
-              Cancelar encuesta
-            </button>
-          )}
-        </div>
-      )}
 
       {/* Formulario para responder encuesta (usuarios con rol MUSICIAN) */}
       {showResponseForm && isMusician && (

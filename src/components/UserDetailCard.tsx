@@ -1,4 +1,5 @@
 import type { UserDTO } from '../types/users'
+import { XMarkIcon } from './Icons'
 import { formatDate } from '../utils/date'
 import '../styles/common.css'
 
@@ -38,8 +39,6 @@ const mutedValue: React.CSSProperties = {
 export function UserDetailCard({
   user,
   onBack,
-  onEdit,
-  onToggleActive,
   onManageInstruments,
   onManageRoles,
   showButtons = true,
@@ -73,8 +72,9 @@ export function UserDetailCard({
             type="button"
             className="button-subtle"
             onClick={onBack}
-            style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
           >
+            <span style={{ width: '0.9rem', height: '0.9rem', display: 'inline-flex', flexShrink: 0 }}><XMarkIcon /></span>
             {backButtonLabel}
           </button>
         )}
@@ -161,32 +161,23 @@ export function UserDetailCard({
       </dl>
 
       {showButtons && (
-        <div className="button-row-1rem" style={{ marginTop: 'var(--space-5)' }}>
-          {onToggleActive && (
-            <button
-              type="button"
-              className="button-subtle"
-              onClick={() => onToggleActive(user)}
-            >
-              {user.active ? 'Desactivar' : 'Activar'}
-            </button>
-          )}
+        <div className="button-row" style={{ marginTop: 'var(--space-5)' }}>
           {onManageInstruments && (
             <button
               type="button"
-              className="button-primary"
+              className="button-secondary"
               onClick={() => onManageInstruments(user)}
             >
-              Gestionar instrumentos
+              Instrumentos
             </button>
           )}
           {onManageRoles && (
             <button
               type="button"
-              className="button-primary"
+              className="button-secondary"
               onClick={() => onManageRoles(user)}
             >
-              Gestionar roles
+              Roles
             </button>
           )}
         </div>

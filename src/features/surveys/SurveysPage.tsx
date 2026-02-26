@@ -6,7 +6,6 @@ import {
     createSurvey,
     updateSurvey,
     deleteSurvey,
-    openSurvey,
     closeSurvey,
     cancelSurvey,
     getAvailableSurveyStatuses,
@@ -30,7 +29,7 @@ import { SurveyResultsModal } from '../../components/SurveyResultsModal'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { SurveyFiltersPanel } from '../../components/SurveyFiltersPanel'
 import { SurveyForm } from '../../components/SurveyForm'
-import { EditIcon, TrashIcon } from '../../components/Icons'
+import { EditIcon, TrashIcon, ChartIcon, LockIcon, CancelIcon } from '../../components/Icons'
 import {
     translateSurveyStatus,
     formatSurveyDateTime,
@@ -125,9 +124,9 @@ function SurveysPage() {
 
     // ── Columnas ──────────────────────────────────────────────────────────────
     const surveyColumns = [
-        { key: 'title',   header: 'Título',    sortable: true, sortField: 'title'   as SurveySortableField, width: '36%' },
+        { key: 'title',   header: 'Título',    sortable: true, sortField: 'title'   as SurveySortableField, width: '33%' },
         {
-            key: 'status', header: 'Estado', sortable: true, sortField: 'status' as SurveySortableField, width: '15%',
+            key: 'status', header: 'Estado', sortable: true, sortField: 'status' as SurveySortableField, width: '11%',
             render: (s: SurveyDTO) => translateSurveyStatus(s.status),
         },
         {
@@ -139,7 +138,7 @@ function SurveysPage() {
             render: (s: SurveyDTO) => formatSurveyDateTime(s.closesAt),
         },
         {
-            key: 'actions', header: 'Acciones', sortable: false, width: '17%',
+            key: 'actions', header: 'Acciones', sortable: false, width: '24%',
             render: (s: SurveyDTO) => (
                 <div className="actions-container">
                     <span className="tooltip-wrap" data-tooltip="Editar">
@@ -149,6 +148,31 @@ function SurveysPage() {
                             onClick={e => { e.stopPropagation(); handleEditSurvey(s) }}
                         ><EditIcon /></button>
                     </span>
+                    <span className="tooltip-wrap" data-tooltip="Ver resultados">
+                        <button
+                            type="button"
+                            className="btn-icon btn-icon-neutral"
+                            onClick={e => { e.stopPropagation(); handleViewResults(s) }}
+                        ><ChartIcon /></button>
+                    </span>
+                    {s.status === 'OPEN' && (
+                        <span className="tooltip-wrap" data-tooltip="Cerrar encuesta">
+                            <button
+                                type="button"
+                                className="btn-icon btn-icon-neutral"
+                                onClick={e => { e.stopPropagation(); handleCloseSurvey(s) }}
+                            ><LockIcon /></button>
+                        </span>
+                    )}
+                    {(s.status === 'DRAFT' || s.status === 'OPEN') && (
+                        <span className="tooltip-wrap" data-tooltip="Cancelar encuesta">
+                            <button
+                                type="button"
+                                className="btn-icon btn-icon-danger"
+                                onClick={e => { e.stopPropagation(); handleCancelSurvey(s) }}
+                            ><CancelIcon /></button>
+                        </span>
+                    )}
                     <span className="tooltip-wrap" data-tooltip="Eliminar">
                         <button
                             type="button"
@@ -422,28 +446,6 @@ function SurveysPage() {
         })
     }
 
-    const handleOpenSurvey = (survey: SurveyDTO) => {
-        if (!token) return
-        confirm.open({
-            title:   `Abrir encuesta "${survey.title}"`,
-            message: `¿Seguro que quieres abrir la encuesta "${survey.title}"?`,
-            variant: 'info',
-            onConfirm: async () => {
-                confirm.close()
-                try {
-                    setError(null)
-                    const updated = await openSurvey(survey.id, survey.version, token)
-                    setSurveys(prev => prev.map(s => (s.id === updated.id ? updated : s)))
-                    showToast('Encuesta abierta correctamente', 'success')
-                    setSelectedSurvey(updated)
-                } catch (e: any) {
-                    console.error('Error opening survey:', e)
-                    showToast(extractErrorMessage(e, 'Error abriendo encuesta'), 'error')
-                }
-            },
-        })
-    }
-
     const handleCloseSurvey = (survey: SurveyDTO) => {
         if (!token) return
         confirm.open({
@@ -543,11 +545,6 @@ function SurveysPage() {
                                         rowExpansion.close()
                                         setTimeout(() => { setSelectedSurvey(null) }, 250)
                                     }}
-                                    onEdit={handleEditSurvey}
-                                    onViewResults={handleViewResults}
-                                    onOpen={handleOpenSurvey}
-                                    onClose={handleCloseSurvey}
-                                    onCancel={handleCancelSurvey}
                                     backButtonLabel="Ocultar"
                                 />
                             )}

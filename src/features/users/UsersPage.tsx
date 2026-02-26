@@ -23,7 +23,7 @@ import { UserEditForm } from '../../components/UserEditForm'
 import { UserCreateForm } from '../../components/UserCreateForm'
 import { UserRolesPanel } from '../../components/UserRolesPanel'
 import { UserInstrumentsPanel } from '../../components/UserInstrumentsPanel'
-import { EditIcon, TrashIcon, CheckIcon, XMarkIcon } from '../../components/Icons'
+import { EditIcon, TrashIcon, CheckIcon, CancelIcon } from '../../components/Icons'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
 import { useToast } from '../../context/toast/ToastContext'
 import { ErrorState } from '../../components/ErrorState'
@@ -161,10 +161,10 @@ function UsersPage() {
                     </span>
                     <span className="tooltip-wrap" data-tooltip={u.active ? 'Desactivar' : 'Activar'}>
                         <button type="button"
-                            className={`btn-icon ${u.active ? 'btn-icon-neutral' : 'btn-icon-edit'}`}
+                            className={`btn-icon ${u.active ? 'btn-icon-neutral' : 'btn-icon-success'}`}
                             aria-label={u.active ? 'Desactivar usuario' : 'Activar usuario'}
                             onClick={e => { e.stopPropagation(); handleToggleActive(u) }}>
-                            {u.active ? <XMarkIcon /> : <CheckIcon />}
+                            {u.active ? <CancelIcon /> : <CheckIcon />}
                         </button>
                     </span>
                     <span className="tooltip-wrap" data-tooltip="Eliminar">

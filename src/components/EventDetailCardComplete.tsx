@@ -6,6 +6,7 @@ import { SurveyDetailCard } from './SurveyDetailCard'
 import { searchSurveysPage } from '../api/surveysApi'
 import { useAuth } from '../features/auth/AuthContext'
 import { Spinner } from './Spinner'
+import { XMarkIcon } from './Icons'
 import '../styles/common.css'
 
 interface EventDetailCardCompleteProps {
@@ -84,8 +85,9 @@ export function EventDetailCardComplete({
                         type="button"
                         className="button-subtle"
                         onClick={onBack}
-                        style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
                     >
+                        <span style={{ width: '0.9rem', height: '0.9rem', display: 'inline-flex', flexShrink: 0 }}><XMarkIcon /></span>
                         {backButtonLabel}
                     </button>
                 )}

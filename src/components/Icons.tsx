@@ -142,3 +142,22 @@ export function SaveIcon({ className, 'aria-hidden': ariaHidden = true }: IconPr
     </svg>
   )
 }
+
+/** 📊 ChartIcon — gráfico de barras, ver resultados/estadísticas */
+export function ChartIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
+  return (
+    <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
+      <path d="M3 3v18h18" />
+      <path d="M7 16V11M12 16V9M17 16V13" />
+    </svg>
+  )
+}
+
+/** 🔒 LockIcon — candado cerrado, acción de cerrar encuesta */
+export function LockIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
+  return (
+    <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
+      <path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  )
+}

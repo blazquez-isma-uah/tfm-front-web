@@ -4,10 +4,10 @@
  * DECISIÓN DE DISEÑO: ¿Por qué no usar una librería de iconos (Lucide, HeroIcons)?
  *
  * Las librerías de iconos como Lucide-React tienen entre 1.000 y 5.000 iconos.
- * Esta aplicación usa exactamente 6. Importar la librería entera para 6 iconos
+ * Esta aplicación usa exactamente 8. Importar la librería entera para 8 iconos
  * añade ~50-100KB al bundle final sin tree-shaking agresivo. Para un TFM
  * que se va a defender, justificar "importé una librería de 1.000 iconos para
- * usar 6" es más difícil que "definí los 6 SVG que necesito, eliminando
+ * usar 8" es más difícil que "definí los 8 SVG que necesito, eliminando
  * la dependencia externa".
  *
  * Los SVG son de Heroicons (MIT License, Tailwind Labs) — paths copiados
@@ -15,7 +15,7 @@
  *
  * NOTA: Todos los componentes aceptan className para que el consumidor
  * pueda controlar el tamaño y color vía CSS (width/height/color).
- * El color se hereda del padre via currentColor.
+ * El color se hereda del padre via currentColor, salvo excepciones documentadas.
  */
 
 interface IconProps {
@@ -25,13 +25,13 @@ interface IconProps {
 
 // Utilidad para el viewBox y atributos comunes
 const iconBase = {
-  xmlns:   'http://www.w3.org/2000/svg',
-  viewBox: '0 0 24 24',
-  fill:    'none',
-  stroke:  'currentColor',
-  strokeWidth: 1.5,
+  xmlns:         'http://www.w3.org/2000/svg',
+  viewBox:       '0 0 24 24',
+  fill:          'none',
+  stroke:        'currentColor',
+  strokeWidth:   1.5,
   strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
+  strokeLinejoin:'round' as const,
 }
 
 /** ✏️ Lápiz — acción de editar */
@@ -79,7 +79,7 @@ export function CheckIcon({ className, 'aria-hidden': ariaHidden = true }: IconP
   )
 }
 
-/** ⛔ X — acción de desactivar/cancelar */
+/** ✕ XMark — acción neutra de cerrar o desactivar */
 export function XMarkIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -94,6 +94,51 @@ export function EyeIcon({ className, 'aria-hidden': ariaHidden = true }: IconPro
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
       <path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
       <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  )
+}
+
+/**
+ * ❌ CancelIcon — X en color de peligro.
+ *
+ * DIFERENCIA con XMarkIcon:
+ * - XMarkIcon hereda currentColor — para acciones neutras (cerrar panel, ocultar)
+ * - CancelIcon usa var(--color-danger) explícitamente — para acciones destructivas
+ *   o irreversibles (cancelar encuesta, cerrar proceso permanente) donde el color
+ *   rojo comunica semánticamente la naturaleza de la acción.
+ *
+ * Se usa style en lugar de stroke="red" para respetar el sistema de tokens:
+ * si --color-danger cambia en design-tokens.css, este icono se actualiza solo.
+ */
+export function CancelIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
+  return (
+    <svg
+      {...iconBase}
+      className={className}
+      aria-hidden={ariaHidden}
+      style={{ stroke: 'var(--color-danger)' }}
+    >
+      <path d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+}
+
+/**
+ * 💾 SaveIcon — Disquete, acción de guardar.
+ *
+ * Tres elementos que componen el disquete:
+ *   1. Cuerpo exterior con esquina cortada superior-derecha (forma característica)
+ *   2. Etiqueta superior (zona donde va la ranura de escritura)
+ *   3. Área de almacenamiento interior inferior
+ *
+ * Source: Heroicons outline, path 24x24.
+ */
+export function SaveIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
+  return (
+    <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
+      <path d="M17.25 3.75H5.25a1.5 1.5 0 00-1.5 1.5v13.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V6.75l-3-3z" />
+      <path d="M8.25 3.75v4.5h7.5v-4.5" />
+      <path d="M6.75 13.5h10.5v6H6.75z" />
     </svg>
   )
 }

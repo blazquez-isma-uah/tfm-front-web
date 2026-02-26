@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import type { UserDTO } from '../types/users'
 import type { KeycloakRoleResponse } from '../types/roles'
 import '../styles/common.css'
+import { SaveIcon, CancelIcon } from './Icons'
 
 /**
  * UserRolesPanel — Panel para gestionar los roles asignados a un usuario.
@@ -40,8 +41,24 @@ export function UserRolesPanel({
 }: UserRolesPanelProps) {
   return (
     <form onSubmit={onSubmit} className="form-card">
-      <div className="section-title">
-        Gestionar roles de {selectedUser.username}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+        <div className="section-title" style={{ margin: 0 }}>
+          Roles de {selectedUser.firstName} {selectedUser.lastName}{selectedUser.secondLastName ? ` ${selectedUser.secondLastName}` : ''} ({selectedUser.username})
+        </div>
+        <div className="actions-container" style={{ marginLeft: 'auto' }}>
+          <span className="tooltip-wrap" data-tooltip="Guardar roles">
+            <button type="submit" className="btn-icon btn-icon-edit"
+              aria-label="Guardar roles" disabled={saving}>
+              <SaveIcon />
+            </button>
+          </span>
+          <span className="tooltip-wrap" data-tooltip="Cancelar">
+            <button type="button" className="btn-icon btn-icon-neutral"
+              aria-label="Cancelar" onClick={onCancel} disabled={saving}>
+              <CancelIcon />
+            </button>
+          </span>
+        </div>
       </div>
 
       <div className="checkbox-group" style={{ marginTop: '1rem' }}>
@@ -62,14 +79,6 @@ export function UserRolesPanel({
         )}
       </div>
 
-      <div className="button-row">
-        <button type="submit" className="button-primary" disabled={saving}>
-          {saving ? 'Guardando...' : 'Guardar roles'}
-        </button>
-        <button type="button" className="button-secondary" onClick={onCancel} disabled={saving}>
-          Cancelar
-        </button>
-      </div>
     </form>
   )
 }

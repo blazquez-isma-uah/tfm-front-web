@@ -50,7 +50,7 @@ import '../../styles/common.css'
  */
 
 type ViewMode = 'LIST' | 'EDIT' | 'CREATE'
-type SortableField = 'username' | 'email' | 'active' | 'bandJoinDate'
+type SortableField = 'username' | 'email' | 'active' | 'bandJoinDate' | 'firstName' | 'lastName'
 
 function UsersPage() {
     const { token, hasRole } = useAuth()
@@ -132,26 +132,24 @@ function UsersPage() {
     // e.stopPropagation() es imprescindible: sin él el click en el botón
     // también dispara onRowClick del DataTable, expandiendo la fila.
     const userColumns = [
-        { key: 'username',    header: 'Username',    sortable: true, sortField: 'username'    as SortableField, width: '20%' },
-        { key: 'email',       header: 'Email',       sortable: true, sortField: 'email'       as SortableField, width: '32%' },
+        { key: 'username',  header: 'Username',     sortable: true,  sortField: 'username'    as SortableField, width: '20%' },
         {
-            key: 'active', header: 'Estado', sortable: true, sortField: 'active' as SortableField, width: '12%',
-            render: (u: UserDTO) => (
-                <span style={{
-                    color: u.active ? 'var(--color-success-dark)' : 'var(--color-gray-400)',
-                    fontSize: 'var(--font-size-xs)', fontWeight: 600,
-                }}>
-                    {u.active ? '● Activo' : '○ Inactivo'}
-                </span>
-            ),
+            key: 'firstName', header: 'Nombre', sortable: true,
+            sortField: 'firstName' as SortableField, width: '20%',
+            render: (u: UserDTO) => `${u.firstName}`,
+        },
+        {
+            key: 'lastName', header: 'Apellidos', sortable: true,
+            sortField: 'lastName' as SortableField, width: '23%',
+            render: (u: UserDTO) => u.secondLastName ? `${u.lastName} ${u.secondLastName}` : u.lastName,
         },
         {
             key: 'bandJoinDate', header: 'Alta en banda', sortable: true,
-            sortField: 'bandJoinDate' as SortableField, width: '16%',
+            sortField: 'bandJoinDate' as SortableField, width: '20%',
             render: (u: UserDTO) => formatDate(u.bandJoinDate),
         },
         {
-            key: 'actions', header: '', sortable: false, width: '12%',
+            key: 'actions', header: 'Acciones', sortable: false, width: '17%',
             render: (u: UserDTO) => (
                 <div className="actions-container">
                     <span className="tooltip-wrap" data-tooltip="Editar">

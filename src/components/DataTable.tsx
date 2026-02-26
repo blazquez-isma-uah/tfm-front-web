@@ -36,6 +36,11 @@ type DataTableProps<T, F extends string> = {
    * todas las entidades actuales del proyecto sin necesitar cambios en las páginas.
    */
   getRowId?: (row: T) => string | number
+  /**
+   * Texto que aparece como tooltip nativo del navegador al hacer hover sobre la fila.
+   * Se aplica al atributo `title` del <tr> (desktop) y del <article> (móvil).
+   */
+  getRowTitle?: (row: T) => string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -58,6 +63,7 @@ export function DataTable<T, F extends string>({
   renderExpandedContent,
   isClosing = false,
   getRowId,
+  getRowTitle,
 }: DataTableProps<T, F>) {
   // El punto de corte 480px coincide con el breakpoint 'sm' de design-tokens.css
   // y con el umbral definido en el handoff de Fase 3.
@@ -110,6 +116,7 @@ export function DataTable<T, F extends string>({
                */}
               <article
                 className={`dt-card${expanded ? ' dt-card--expanded' : ''}`}
+                title={getRowTitle ? getRowTitle(row) : undefined}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 // Accesibilidad: si la fila es interactiva, debe ser operable con teclado
                 role={onRowClick ? 'button' : undefined}
@@ -210,6 +217,7 @@ export function DataTable<T, F extends string>({
               <Fragment key={rowId}>
                 <tr
                   className={`dt-table__row${expanded ? ' dt-table__row--expanded' : ''}${onRowClick ? ' dt-table__row--clickable' : ''}`}
+                  title={getRowTitle ? getRowTitle(row) : undefined}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
                   {columns.map((col) => (

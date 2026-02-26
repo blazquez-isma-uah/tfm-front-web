@@ -125,21 +125,21 @@ function SurveysPage() {
 
     // ── Columnas ──────────────────────────────────────────────────────────────
     const surveyColumns = [
-        { key: 'title',   header: 'Título',    sortable: true, sortField: 'title'   as SurveySortableField, width: '30%' },
+        { key: 'title',   header: 'Título',    sortable: true, sortField: 'title'   as SurveySortableField, width: '36%' },
         {
             key: 'status', header: 'Estado', sortable: true, sortField: 'status' as SurveySortableField, width: '15%',
             render: (s: SurveyDTO) => translateSurveyStatus(s.status),
         },
         {
-            key: 'opensAt', header: 'Apertura', sortable: true, sortField: 'opensAt' as SurveySortableField, width: '15%',
+            key: 'opensAt', header: 'Apertura', sortable: true, sortField: 'opensAt' as SurveySortableField, width: '16%',
             render: (s: SurveyDTO) => formatSurveyDateTime(s.opensAt),
         },
         {
-            key: 'closesAt', header: 'Cierre', sortable: true, sortField: 'closesAt' as SurveySortableField, width: '15%',
+            key: 'closesAt', header: 'Cierre', sortable: true, sortField: 'closesAt' as SurveySortableField, width: '16%',
             render: (s: SurveyDTO) => formatSurveyDateTime(s.closesAt),
         },
         {
-            key: 'actions', header: 'Acciones', sortable: false, width: '20%',
+            key: 'actions', header: 'Acciones', sortable: false, width: '17%',
             render: (s: SurveyDTO) => (
                 <div className="actions-container">
                     <span className="tooltip-wrap" data-tooltip="Editar">

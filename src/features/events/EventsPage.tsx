@@ -117,13 +117,12 @@ function EventsPage() {
     // ── Columnas ──────────────────────────────────────────────────────────────
 
     const eventColumns = [
-        { key: 'title',    header: 'Título',       sortable: true, sortField: 'title'    as SortableField, width: '25%' },
-        { key: 'type',     header: 'Tipo',         sortable: true, sortField: 'type'     as SortableField, width: '15%', render: (e: EventDTO) => translateEventType(e.type) },
-        { key: 'status',   header: 'Estado',       sortable: true, sortField: 'status'   as SortableField, width: '12%', render: (e: EventDTO) => translateEventStatus(e.status) },
-        { key: 'startAt',  header: 'Fecha inicio', sortable: true, sortField: 'startAt'  as SortableField, width: '18%', render: (e: EventDTO) => formatEventDateTime(e.startAt) },
-        { key: 'location', header: 'Localización', sortable: true, sortField: 'location' as SortableField, width: '15%', render: (e: EventDTO) => e.location || '-' },
+        { key: 'title',   header: 'Título',       sortable: true, sortField: 'title'   as SortableField, width: '30%' },
+        { key: 'type',    header: 'Tipo',         sortable: true, sortField: 'type'    as SortableField, width: '16%', render: (e: EventDTO) => translateEventType(e.type) },
+        { key: 'status',  header: 'Estado',       sortable: true, sortField: 'status'  as SortableField, width: '15%', render: (e: EventDTO) => translateEventStatus(e.status) },
+        { key: 'startAt', header: 'Fecha inicio', sortable: true, sortField: 'startAt' as SortableField, width: '22%', render: (e: EventDTO) => formatEventDateTime(e.startAt) },
         {
-            key: 'actions', header: 'Acciones', sortable: false, width: '15%',
+            key: 'actions', header: 'Acciones', sortable: false, width: '17%',
             render: (e: EventDTO) => (
                 <div className="actions-container">
                     <span className="tooltip-wrap" data-tooltip="Editar">

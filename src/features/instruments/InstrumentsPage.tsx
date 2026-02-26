@@ -102,14 +102,14 @@ function InstrumentsPage() {
   const instrumentColumns = [
     {
       key: 'instrumentName', header: 'Nombre', sortable: true,
-      sortField: 'instrumentName' as SortableField, width: '42%',
+      sortField: 'instrumentName' as SortableField, width: '48%',
     },
     {
       key: 'voice', header: 'Voz', sortable: true,
-      sortField: 'voice' as SortableField, width: '30%',
+      sortField: 'voice' as SortableField, width: '35%',
     },
     {
-      key: 'actions', header: '', sortable: false, width: '12%',
+      key: 'actions', header: 'Acciones', sortable: false, width: '17%',
       render: (i: InstrumentDTO) => (
         <div className="actions-container">
           <span className="tooltip-wrap" data-tooltip="Ver usuarios">
@@ -413,6 +413,7 @@ function InstrumentsPage() {
               sortState={sorting.state}
               onSortChange={handleSort}
               onRowClick={handleViewUsers}
+              getRowTitle={() => 'Ver usuarios con este instrumento'}
             />
           </div>
           <PaginationBar {...pagination.barProps} currentCount={instruments.length} />

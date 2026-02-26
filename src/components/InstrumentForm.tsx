@@ -1,7 +1,12 @@
 import type { FormEvent } from 'react'
 import type { InstrumentRequestDTO } from '../types/instruments'
 import type { InstrumentDTO } from '../types/instruments'
+import { useFormValidation, rules } from '../hooks/useFormValidation'
 import '../styles/common.css'
+
+const VALIDATION_RULES = {
+  instrumentName: [rules.required('El nombre es obligatorio')]
+}
 
 /**
  * InstrumentForm — Formulario compartido para crear y editar instrumentos.
@@ -42,8 +47,22 @@ export function InstrumentForm({
 }: InstrumentFormProps) {
   const isEdit = editing !== null
 
+  const { errors, validate, clearError } = useFormValidation<InstrumentRequestDTO>(VALIDATION_RULES)
+
+  const handleChange = (field: keyof InstrumentRequestDTO, value: string) => {
+    clearError(field)
+    onFieldChange(field, value)
+  }
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    if (validate(payload as unknown as Record<string, unknown>)) {
+      onSubmit(e)
+    }
+  }
+
   return (
-    <form onSubmit={onSubmit} className="form-card">
+    <form onSubmit={handleSubmit} className="form-card" noValidate>
       <div className="section-title">
         {isEdit
           ? `Editar instrumento: ${editing.instrumentName}${editing.voice ? ` — ${editing.voice}` : ''}`
@@ -55,22 +74,23 @@ export function InstrumentForm({
           <label className="label-text">Nombre *</label>
           <input
             type="text"
-            required
-            className="input-full-width"
+            className={`input-full-width${errors.instrumentName ? ' input--error' : ''}`}
             value={payload.instrumentName}
-            onChange={e => onFieldChange('instrumentName', e.target.value)}
+            onChange={e => handleChange('instrumentName', e.target.value)}
           />
+          {errors.instrumentName && <span className="field-error">{errors.instrumentName}</span>}
         </div>
 
         <div className="form-field">
           <label className="label-text">Voz</label>
           <input
             type="text"
-            className="input-full-width"
+            className={`input-full-width${errors.voice ? ' input--error' : ''}`}
             value={payload.voice ?? ''}
-            onChange={e => onFieldChange('voice', e.target.value)}
+            onChange={e => handleChange('voice', e.target.value)}
             placeholder="Ej: Soprano, Tenor…"
           />
+          {errors.voice && <span className="field-error">{errors.voice}</span>}
         </div>
       </div>
 

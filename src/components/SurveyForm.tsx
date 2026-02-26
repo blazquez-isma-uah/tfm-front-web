@@ -1,15 +1,36 @@
+import type { FormEvent } from 'react'
 import type {
     SurveyDTO,
     CreateSurveyRequestDTO,
     ResponseType,
     SurveyType,
 } from '../types/surveys'
+import { useFormValidation, rules } from '../hooks/useFormValidation'
+import { useToast } from '../context/toast/ToastContext'
 import type { EventDTO } from '../types/events'
 import {
     translateResponseType,
     translateSurveyType,
 } from '../utils/surveyTranslations'
 import '../styles/common.css'
+
+type SurveyFormFields = {
+    title: string
+    opensAt: string
+    closesAt: string
+    responseType: string
+    surveyType: string
+    eventId: string
+}
+
+const VALIDATION_RULES = {
+    title:        [rules.required('El título es obligatorio')],
+    opensAt:      [rules.required('La fecha de apertura es obligatoria')],
+    closesAt:     [rules.required('La fecha de cierre es obligatoria')],
+    responseType: [rules.required('Selecciona un tipo de respuesta')],
+    surveyType:   [rules.required('Selecciona un tipo de encuesta')],
+    eventId:      [rules.required('Selecciona un evento')],
+}
 
 interface SurveyFormProps {
     /** null → modo creación; SurveyDTO → modo edición */
@@ -76,8 +97,29 @@ export function SurveyForm({
 }: SurveyFormProps) {
     const isEdit = editing !== null
 
+    const { errors, validate, clearError } = useFormValidation<SurveyFormFields>(VALIDATION_RULES)
+    const { showToast } = useToast()
+
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault()
+        const valid = validate({
+            title:        formPayload.title,
+            opensAt:      formOpensAt,
+            closesAt:     formClosesAt,
+            responseType: formPayload.responseType,
+            surveyType:   formPayload.surveyType,
+            eventId:      formPayload.eventId,
+        })
+        if (!valid) return
+        if (formOpensAt && formClosesAt && new Date(formClosesAt) <= new Date(formOpensAt)) {
+            showToast('La fecha de cierre debe ser posterior a la de apertura', 'error')
+            return
+        }
+        onSave()
+    }
+
     return (
-        <div className="form-card">
+        <form className="form-card" noValidate onSubmit={handleSubmit}>
             <h2 className="section-title">
                 {isEdit ? 'Editar encuesta' : 'Crear encuesta'}
             </h2>
@@ -88,46 +130,46 @@ export function SurveyForm({
                     <label className="label-text">Tipo de respuesta *</label>
                     <select
                         value={formPayload.responseType}
-                        onChange={e => setFormPayload({ ...formPayload, responseType: e.target.value })}
-                        required
+                        onChange={e => { clearError('responseType'); setFormPayload({ ...formPayload, responseType: e.target.value }) }}
                         disabled={isEdit || loadingOptions}
-                        className="select-base"
+                        className={`select-base${errors.responseType ? ' input--error' : ''}`}
                     >
                         <option value="">Selecciona tipo</option>
                         {responseTypes.map(type => (
                             <option key={type} value={type}>{translateResponseType(type)}</option>
                         ))}
                     </select>
+                    {errors.responseType && <span className="field-error">{errors.responseType}</span>}
                 </div>
                 <div className="form-field">
                     <label className="label-text">Tipo de encuesta *</label>
                     <select
                         value={formPayload.surveyType}
-                        onChange={e => setFormPayload({ ...formPayload, surveyType: e.target.value })}
-                        required
+                        onChange={e => { clearError('surveyType'); setFormPayload({ ...formPayload, surveyType: e.target.value }) }}
                         disabled={loadingOptions}
-                        className="select-base"
+                        className={`select-base${errors.surveyType ? ' input--error' : ''}`}
                     >
                         <option value="">Selecciona tipo</option>
                         {surveyTypes.map(type => (
                             <option key={type} value={type}>{translateSurveyType(type)}</option>
                         ))}
                     </select>
+                    {errors.surveyType && <span className="field-error">{errors.surveyType}</span>}
                 </div>
                 <div className="form-field">
                     <label className="label-text">Evento *</label>
                     <select
                         value={formPayload.eventId}
-                        onChange={e => setFormPayload({ ...formPayload, eventId: e.target.value })}
-                        required
+                        onChange={e => { clearError('eventId'); setFormPayload({ ...formPayload, eventId: e.target.value }) }}
                         disabled={isEdit || loadingOptions}
-                        className="select-base"
+                        className={`select-base${errors.eventId ? ' input--error' : ''}`}
                     >
                         <option value="">Selecciona un evento</option>
                         {availableEvents.map(evt => (
                             <option key={evt.id} value={evt.id}>{evt.title}</option>
                         ))}
                     </select>
+                    {errors.eventId && <span className="field-error">{errors.eventId}</span>}
                 </div>
             </div>
 
@@ -138,31 +180,31 @@ export function SurveyForm({
                     <input
                         type="text"
                         value={formPayload.title}
-                        onChange={e => setFormPayload({ ...formPayload, title: e.target.value })}
-                        required
+                        onChange={e => { clearError('title'); setFormPayload({ ...formPayload, title: e.target.value }) }}
                         maxLength={200}
-                        className="input-full-width"
+                        className={`input-full-width${errors.title ? ' input--error' : ''}`}
                     />
+                    {errors.title && <span className="field-error">{errors.title}</span>}
                 </div>
                 <div className="form-field">
                     <label className="label-text">Fecha apertura *</label>
                     <input
                         type="datetime-local"
                         value={formOpensAt}
-                        onChange={e => setFormOpensAt(e.target.value)}
-                        required
-                        className="input-full-width"
+                        onChange={e => { clearError('opensAt'); setFormOpensAt(e.target.value) }}
+                        className={`input-full-width${errors.opensAt ? ' input--error' : ''}`}
                     />
+                    {errors.opensAt && <span className="field-error">{errors.opensAt}</span>}
                 </div>
                 <div className="form-field">
                     <label className="label-text">Fecha cierre *</label>
                     <input
                         type="datetime-local"
                         value={formClosesAt}
-                        onChange={e => setFormClosesAt(e.target.value)}
-                        required
-                        className="input-full-width"
+                        onChange={e => { clearError('closesAt'); setFormClosesAt(e.target.value) }}
+                        className={`input-full-width${errors.closesAt ? ' input--error' : ''}`}
                     />
+                    {errors.closesAt && <span className="field-error">{errors.closesAt}</span>}
                 </div>
             </div>
 
@@ -182,9 +224,8 @@ export function SurveyForm({
 
             <div className="button-row-1rem">
                 <button
-                    type="button"
+                    type="submit"
                     className="button-primary"
-                    onClick={onSave}
                     disabled={saving}
                 >
                     {saving ? 'Guardando...' : isEdit ? 'Guardar' : 'Crear'}
@@ -198,6 +239,6 @@ export function SurveyForm({
                     Cancelar
                 </button>
             </div>
-        </div>
+        </form>
     )
 }

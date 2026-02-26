@@ -1,3 +1,4 @@
+import type { FormEvent } from 'react'
 import type {
     EventDTO,
     EventCreateRequestDTO,
@@ -5,12 +6,32 @@ import type {
     EventStatus,
     EventVisibility,
 } from '../types/events'
+import { useFormValidation, rules } from '../hooks/useFormValidation'
+import { useToast } from '../context/toast/ToastContext'
 import {
     translateEventType,
     translateEventStatus,
     translateEventVisibility,
 } from '../utils/eventTranslations'
 import '../styles/common.css'
+
+type EventFormFields = {
+    title: string
+    startAt: string
+    endAt: string
+    type: string
+    status: string
+    visibility: string
+}
+
+const VALIDATION_RULES = {
+    title:      [rules.required()],
+    startAt:    [rules.required('La fecha de inicio es obligatoria')],
+    endAt:      [rules.required('La fecha de fin es obligatoria')],
+    type:       [rules.required('Selecciona un tipo')],
+    status:     [rules.required('Selecciona un estado')],
+    visibility: [rules.required('Selecciona la visibilidad')],
+}
 
 interface EventFormProps {
     /** null → modo creación; EventDTO → modo edición */
@@ -71,8 +92,29 @@ export function EventForm({
 }: EventFormProps) {
     const isEdit = editing !== null
 
+    const { errors, validate, clearError } = useFormValidation<EventFormFields>(VALIDATION_RULES)
+    const { showToast } = useToast()
+
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault()
+        const valid = validate({
+            title:      formPayload.title,
+            startAt:    formStartAt,
+            endAt:      formEndAt,
+            type:       formPayload.type,
+            status:     formPayload.status ?? '',
+            visibility: formPayload.visibility,
+        })
+        if (!valid) return
+        if (formStartAt && formEndAt && new Date(formEndAt) <= new Date(formStartAt)) {
+            showToast('La fecha de fin debe ser posterior a la de inicio', 'error')
+            return
+        }
+        onSave()
+    }
+
     return (
-        <div className="form-card">
+        <form className="form-card" noValidate onSubmit={handleSubmit}>
             <h2 className="section-title">
                 {isEdit ? 'Editar evento' : 'Crear evento'}
             </h2>
@@ -84,10 +126,10 @@ export function EventForm({
                     <input
                         type="text"
                         value={formPayload.title}
-                        onChange={e => setFormPayload({ ...formPayload, title: e.target.value })}
-                        required
-                        className="input-full-width"
+                        onChange={e => { clearError('title'); setFormPayload({ ...formPayload, title: e.target.value }) }}
+                        className={`input-full-width${errors.title ? ' input--error' : ''}`}
                     />
+                    {errors.title && <span className="field-error">{errors.title}</span>}
                 </div>
                 <div className="form-field">
                     <label className="label-text">Localización</label>
@@ -106,39 +148,40 @@ export function EventForm({
                     <label className="label-text">Tipo *</label>
                     <select
                         value={formPayload.type}
-                        onChange={e => setFormPayload({ ...formPayload, type: e.target.value as EventType })}
-                        className="select-base"
-                        required
+                        onChange={e => { clearError('type'); setFormPayload({ ...formPayload, type: e.target.value as EventType }) }}
+                        className={`select-base${errors.type ? ' input--error' : ''}`}
                     >
                         {eventTypes.map(t => (
                             <option key={t} value={t}>{translateEventType(t)}</option>
                         ))}
                     </select>
+                    {errors.type && <span className="field-error">{errors.type}</span>}
                 </div>
                 <div className="form-field">
                     <label className="label-text">Estado</label>
                     <select
                         value={formPayload.status || eventStatuses[0] || ''}
-                        onChange={e => setFormPayload({ ...formPayload, status: e.target.value as EventStatus })}
-                        className="select-base"
+                        onChange={e => { clearError('status'); setFormPayload({ ...formPayload, status: e.target.value as EventStatus }) }}
+                        className={`select-base${errors.status ? ' input--error' : ''}`}
                     >
                         {eventStatuses.map(s => (
                             <option key={s} value={s}>{translateEventStatus(s)}</option>
                         ))}
                     </select>
+                    {errors.status && <span className="field-error">{errors.status}</span>}
                 </div>
                 <div className="form-field">
                     <label className="label-text">Visibilidad *</label>
                     <select
                         value={formPayload.visibility}
-                        onChange={e => setFormPayload({ ...formPayload, visibility: e.target.value as EventVisibility })}
-                        className="select-base"
-                        required
+                        onChange={e => { clearError('visibility'); setFormPayload({ ...formPayload, visibility: e.target.value as EventVisibility }) }}
+                        className={`select-base${errors.visibility ? ' input--error' : ''}`}
                     >
                         {eventVisibilities.map(v => (
                             <option key={v} value={v}>{translateEventVisibility(v)}</option>
                         ))}
                     </select>
+                    {errors.visibility && <span className="field-error">{errors.visibility}</span>}
                 </div>
             </div>
 
@@ -149,20 +192,20 @@ export function EventForm({
                     <input
                         type="datetime-local"
                         value={formStartAt}
-                        onChange={e => setFormStartAt(e.target.value)}
-                        className="input-full-width"
-                        required
+                        onChange={e => { clearError('startAt'); setFormStartAt(e.target.value) }}
+                        className={`input-full-width${errors.startAt ? ' input--error' : ''}`}
                     />
+                    {errors.startAt && <span className="field-error">{errors.startAt}</span>}
                 </div>
                 <div className="form-field">
                     <label className="label-text">Fecha fin *</label>
                     <input
                         type="datetime-local"
                         value={formEndAt}
-                        onChange={e => setFormEndAt(e.target.value)}
-                        className="input-full-width"
-                        required
+                        onChange={e => { clearError('endAt'); setFormEndAt(e.target.value) }}
+                        className={`input-full-width${errors.endAt ? ' input--error' : ''}`}
                     />
+                    {errors.endAt && <span className="field-error">{errors.endAt}</span>}
                 </div>
             </div>
 
@@ -181,9 +224,8 @@ export function EventForm({
 
             <div className="button-row-1rem">
                 <button
-                    type="button"
+                    type="submit"
                     className="button-primary"
-                    onClick={onSave}
                     disabled={saving}
                 >
                     {saving ? 'Guardando...' : isEdit ? 'Guardar' : 'Crear'}
@@ -197,6 +239,6 @@ export function EventForm({
                     Cancelar
                 </button>
             </div>
-        </div>
+        </form>
     )
 }

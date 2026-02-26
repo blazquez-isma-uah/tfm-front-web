@@ -523,21 +523,25 @@ function UsersPage() {
                         </div>
                     </div>
 
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Fecha de nacimiento</span>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <input type="date" value={filterBirthDateFrom} onChange={e => setFilterBirthDateFrom(e.target.value)} className="input-full-width" title="Desde" />
-                                <span style={{ color: 'var(--text-muted)' }}>–</span>
-                                <input type="date" value={filterBirthDateTo} onChange={e => setFilterBirthDateTo(e.target.value)} className="input-full-width" title="Hasta" />
+                    <div className="search-date-row">
+                        <div className="search-date-group">
+                            <div className="form-field">
+                                <span className="label-text">Nacimiento (desde)</span>
+                                <input type="date" value={filterBirthDateFrom} onChange={e => setFilterBirthDateFrom(e.target.value)} className="input-full-width" />
+                            </div>
+                            <div className="form-field">
+                                <span className="label-text">Nacimiento (hasta)</span>
+                                <input type="date" value={filterBirthDateTo} onChange={e => setFilterBirthDateTo(e.target.value)} className="input-full-width" />
                             </div>
                         </div>
-                        <div className="form-field">
-                            <span className="label-text">Alta en banda</span>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <input type="date" value={filterBandJoinDateFrom} onChange={e => setFilterBandJoinDateFrom(e.target.value)} className="input-full-width" title="Desde" />
-                                <span style={{ color: 'var(--text-muted)' }}>–</span>
-                                <input type="date" value={filterBandJoinDateTo} onChange={e => setFilterBandJoinDateTo(e.target.value)} className="input-full-width" title="Hasta" />
+                        <div className="search-date-group">
+                            <div className="form-field">
+                                <span className="label-text">Alta en banda (desde)</span>
+                                <input type="date" value={filterBandJoinDateFrom} onChange={e => setFilterBandJoinDateFrom(e.target.value)} className="input-full-width" />
+                            </div>
+                            <div className="form-field">
+                                <span className="label-text">Alta en banda (hasta)</span>
+                                <input type="date" value={filterBandJoinDateTo} onChange={e => setFilterBandJoinDateTo(e.target.value)} className="input-full-width" />
                             </div>
                         </div>
                     </div>

@@ -157,42 +157,46 @@ export function EventFiltersPanel({
                 </div>
 
                 {/* Grupo 2: Rangos de fechas de inicio y fin */}
-                <div className="search-grid">
-                    <div className="form-field">
-                        <span className="label-text">Fecha inicio (desde)</span>
-                        <input
-                            type="datetime-local"
-                            value={filterStartAtFrom}
-                            onChange={e => setFilterStartAtFrom(e.target.value)}
-                            className="input-full-width"
-                        />
+                <div className="search-date-row">
+                    <div className="search-date-group">
+                        <div className="form-field">
+                            <span className="label-text">Fecha inicio (desde)</span>
+                            <input
+                                type="datetime-local"
+                                value={filterStartAtFrom}
+                                onChange={e => setFilterStartAtFrom(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">Fecha inicio (hasta)</span>
+                            <input
+                                type="datetime-local"
+                                value={filterStartAtTo}
+                                onChange={e => setFilterStartAtTo(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
                     </div>
-                    <div className="form-field">
-                        <span className="label-text">Fecha inicio (hasta)</span>
-                        <input
-                            type="datetime-local"
-                            value={filterStartAtTo}
-                            onChange={e => setFilterStartAtTo(e.target.value)}
-                            className="input-full-width"
-                        />
-                    </div>
-                    <div className="form-field">
-                        <span className="label-text">Fecha fin (desde)</span>
-                        <input
-                            type="datetime-local"
-                            value={filterEndAtFrom}
-                            onChange={e => setFilterEndAtFrom(e.target.value)}
-                            className="input-full-width"
-                        />
-                    </div>
-                    <div className="form-field">
-                        <span className="label-text">Fecha fin (hasta)</span>
-                        <input
-                            type="datetime-local"
-                            value={filterEndAtTo}
-                            onChange={e => setFilterEndAtTo(e.target.value)}
-                            className="input-full-width"
-                        />
+                    <div className="search-date-group">
+                        <div className="form-field">
+                            <span className="label-text">Fecha fin (desde)</span>
+                            <input
+                                type="datetime-local"
+                                value={filterEndAtFrom}
+                                onChange={e => setFilterEndAtFrom(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">Fecha fin (hasta)</span>
+                            <input
+                                type="datetime-local"
+                                value={filterEndAtTo}
+                                onChange={e => setFilterEndAtTo(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

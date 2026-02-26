@@ -381,6 +381,35 @@
   align-items: center;
 }
 
+/* ----------------------------------------------------------
+   GRUPOS DE FECHA EN FILTROS DE BÚSQUEDA
+   search-date-group: par desde/hasta en la misma fila.
+   search-date-row:   dos grupos (p. ej. inicio y fin) apilados
+                      en móvil, en dos columnas en desktop.
+---------------------------------------------------------- */
+.search-date-group {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.search-date-group > .form-field {
+  flex: 1;
+  min-width: 0; /* evita desbordamiento en flex */
+}
+
+.search-date-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+@media (min-width: 1024px) {
+  .search-date-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .button-row {
   margin-top: var(--space-3);
   display: flex;
@@ -879,7 +908,7 @@
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-light);
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
   justify-content: flex-end;
 }
 
@@ -1432,9 +1461,10 @@
 .tab-description {
   margin: 0 0 var(--space-4) 0;
   padding: var(--space-3);
-  background: var(--surface-subtle);
+  background: var(--color-primary-50);
   border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  border-left: 3px solid var(--color-primary-500);
+  color: var(--color-primary-800);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
 }

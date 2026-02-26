@@ -123,42 +123,46 @@ export function SurveyFiltersPanel({
                 </div>
 
                 {/* Grupo 2: Rangos de fechas de apertura y cierre */}
-                <div className="search-grid">
-                    <div className="form-field">
-                        <span className="label-text">Fecha apertura (desde)</span>
-                        <input
-                            type="datetime-local"
-                            value={filterOpensAtFrom}
-                            onChange={e => setFilterOpensAtFrom(e.target.value)}
-                            className="input-full-width"
-                        />
+                <div className="search-date-row">
+                    <div className="search-date-group">
+                        <div className="form-field">
+                            <span className="label-text">Fecha apertura (desde)</span>
+                            <input
+                                type="datetime-local"
+                                value={filterOpensAtFrom}
+                                onChange={e => setFilterOpensAtFrom(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">Fecha apertura (hasta)</span>
+                            <input
+                                type="datetime-local"
+                                value={filterOpensAtTo}
+                                onChange={e => setFilterOpensAtTo(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
                     </div>
-                    <div className="form-field">
-                        <span className="label-text">Fecha apertura (hasta)</span>
-                        <input
-                            type="datetime-local"
-                            value={filterOpensAtTo}
-                            onChange={e => setFilterOpensAtTo(e.target.value)}
-                            className="input-full-width"
-                        />
-                    </div>
-                    <div className="form-field">
-                        <span className="label-text">Fecha cierre (desde)</span>
-                        <input
-                            type="datetime-local"
-                            value={filterClosesAtFrom}
-                            onChange={e => setFilterClosesAtFrom(e.target.value)}
-                            className="input-full-width"
-                        />
-                    </div>
-                    <div className="form-field">
-                        <span className="label-text">Fecha cierre (hasta)</span>
-                        <input
-                            type="datetime-local"
-                            value={filterClosesAtTo}
-                            onChange={e => setFilterClosesAtTo(e.target.value)}
-                            className="input-full-width"
-                        />
+                    <div className="search-date-group">
+                        <div className="form-field">
+                            <span className="label-text">Fecha cierre (desde)</span>
+                            <input
+                                type="datetime-local"
+                                value={filterClosesAtFrom}
+                                onChange={e => setFilterClosesAtFrom(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span className="label-text">Fecha cierre (hasta)</span>
+                            <input
+                                type="datetime-local"
+                                value={filterClosesAtTo}
+                                onChange={e => setFilterClosesAtTo(e.target.value)}
+                                className="input-full-width"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

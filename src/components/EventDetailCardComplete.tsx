@@ -73,7 +73,7 @@ export function EventDetailCardComplete({
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '0.75rem',
+                    marginBottom: 'var(--space-4)',
                 }}
             >
                 <div className="section-title" style={{ marginBottom: 0 }}>
@@ -90,55 +90,53 @@ export function EventDetailCardComplete({
                     </button>
                 )}
             </div>
-            
+
             {/* Información básica del evento */}
             <EventInfoSection event={event} />
 
             {/* Sección de Encuestas */}
-            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #e0e0e0' }}>
-                <h3 style={{ marginBottom: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>
-                    Encuestas asociadas
-                </h3>
-                {loadingSurveys && <Spinner />}
-                {errorSurveys && <p style={{ color: 'red' }}>{errorSurveys}</p>}
-                {!loadingSurveys && !errorSurveys && surveys.length === 0 && (
-                    <p style={{ color: '#666' }}>No hay encuestas asociadas a este evento</p>
-                )}
-                {!loadingSurveys && !errorSurveys && surveys.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {surveys.map((survey) => (
-                            <div key={survey.id} style={{ cursor: 'pointer' }}>
-                                <div onClick={() => handleSurveyClick(survey.id)}>
-                                    <SurveyDetailCard 
+            <hr style={{ margin: 'var(--space-5) 0', borderColor: 'var(--border-light)' }} />
+            <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
+                Encuestas asociadas
+            </div>
+            {loadingSurveys && <Spinner />}
+            {errorSurveys && <p style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-sm)' }}>{errorSurveys}</p>}
+            {!loadingSurveys && !errorSurveys && surveys.length === 0 && (
+                <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)' }}>No hay encuestas asociadas a este evento</p>
+            )}
+            {!loadingSurveys && !errorSurveys && surveys.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                    {surveys.map((survey) => (
+                        <div key={survey.id} style={{ cursor: 'pointer' }}>
+                            <div onClick={() => handleSurveyClick(survey.id)}>
+                                <SurveyDetailCard
+                                    survey={survey}
+                                    compact={true}
+                                />
+                            </div>
+                            {expandedSurveyId === survey.id && (
+                                <div style={{ marginTop: 'var(--space-3)', marginLeft: 'var(--space-4)' }}>
+                                    <SurveyDetailCard
                                         survey={survey}
-                                        compact={true}
+                                        showResponseForm={true}
+                                        onResponseSubmitted={handleResponseSubmitted}
+                                        showButtons={false}
                                     />
                                 </div>
-                                {expandedSurveyId === survey.id && (
-                                    <div style={{ marginTop: '0.75rem', marginLeft: '1rem' }}>
-                                        <SurveyDetailCard
-                                            survey={survey}
-                                            showResponseForm={true}
-                                            onResponseSubmitted={handleResponseSubmitted}
-                                            showButtons={false}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Sección de Partituras - Placeholder */}
-            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #e0e0e0' }}>
-                <h3 style={{ marginBottom: '0.75rem', fontSize: '1.1rem', fontWeight: 600 }}>
-                    Partituras asociadas
-                </h3>
-                <p style={{ color: '#666', fontStyle: 'italic' }}>
-                    Las partituras se mostrarán aquí cuando el microservicio esté disponible
-                </p>
+            <hr style={{ margin: 'var(--space-5) 0', borderColor: 'var(--border-light)' }} />
+            <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
+                Partituras asociadas
             </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', fontStyle: 'italic' }}>
+                Las partituras se mostrarán aquí cuando el microservicio esté disponible
+            </p>
         </div>
     )
 }

@@ -11,6 +11,33 @@ interface EventInfoSectionProps {
     event: EventDTO
 }
 
+const badgeScheduled: React.CSSProperties = {
+    background: 'var(--color-info-light)',
+    color: 'var(--color-info-dark)',
+    padding: '2px 8px',
+    borderRadius: 'var(--radius-full)',
+    fontSize: 'var(--font-size-xs)',
+    fontWeight: 'var(--font-weight-medium)',
+}
+
+const badgeCanceled: React.CSSProperties = {
+    background: 'var(--color-gray-100)',
+    color: 'var(--color-gray-600)',
+    padding: '2px 8px',
+    borderRadius: 'var(--radius-full)',
+    fontSize: 'var(--font-size-xs)',
+    fontWeight: 'var(--font-weight-medium)',
+}
+
+const mutedValue: React.CSSProperties = {
+    color: 'var(--text-muted)',
+}
+
+function EventStatusBadge({ status }: { status: string }) {
+    const style = status === 'SCHEDULED' ? badgeScheduled : badgeCanceled
+    return <span style={style}>{translateEventStatus(status)}</span>
+}
+
 /**
  * Componente compartido que muestra la información básica de un evento.
  * Usado tanto en EventDetailCard (admin) como en EventDetailCardComplete (general).
@@ -18,61 +45,58 @@ interface EventInfoSectionProps {
 export function EventInfoSection({ event }: EventInfoSectionProps) {
     return (
         <>
-            {/* Línea 1: Título, Localización (2 columnas) */}
-            <div className="detail-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
-                <div className="detail-item">
-                    <span className="detail-label">Título</span>
-                    <span className="detail-value">{event.title}</span>
+            <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-semibold)', margin: '0 0 var(--space-3) 0', color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                {event.title}
+            </h2>
+            <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
+                <div className="dashboard-card__pair">
+                    <dt className="dashboard-card__term">Tipo</dt>
+                    <dd className="dashboard-card__value">{translateEventType(event.type)}</dd>
                 </div>
-                <div className="detail-item">
-                    <span className="detail-label">Localización</span>
-                    <span className="detail-value">{event.location || '-'}</span>
+                <div className="dashboard-card__pair">
+                    <dt className="dashboard-card__term">Estado</dt>
+                    <dd className="dashboard-card__value">
+                        <EventStatusBadge status={event.status} />
+                    </dd>
                 </div>
-            </div>
+                <div className="dashboard-card__pair">
+                    <dt className="dashboard-card__term">Visibilidad</dt>
+                    <dd className="dashboard-card__value">{translateEventVisibility(event.visibility)}</dd>
+                </div>
+            </dl>
 
-            {/* Línea 2: Tipo, Estado, Visibilidad (3 columnas) */}
-            <div className="detail-grid" style={{ marginBottom: '0.75rem' }}>
-                <div className="detail-item">
-                    <span className="detail-label">Tipo</span>
-                    <span className="detail-value">{translateEventType(event.type)}</span>
+            {/* Grupo: Fechas */}
+            <div className="detail-section-divider">Fechas</div>
+            <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
+                <div className="dashboard-card__pair">
+                    <dt className="dashboard-card__term">Fecha inicio</dt>
+                    <dd className="dashboard-card__value">{formatEventDateTime(event.startAt)}</dd>
                 </div>
-                <div className="detail-item">
-                    <span className="detail-label">Estado</span>
-                    <span className="detail-value">{translateEventStatus(event.status)}</span>
+                <div className="dashboard-card__pair">
+                    <dt className="dashboard-card__term">Fecha fin</dt>
+                    <dd className="dashboard-card__value">{formatEventDateTime(event.endAt)}</dd>
                 </div>
-                <div className="detail-item">
-                    <span className="detail-label">Visibilidad</span>
-                    <span className="detail-value">
-                        {translateEventVisibility(event.visibility)}
-                    </span>
-                </div>
-            </div>
+            </dl>
 
-            {/* Línea 3: Fecha inicio, Fecha fin (2 columnas) */}
-            <div className="detail-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
-                <div className="detail-item">
-                    <span className="detail-label">Fecha inicio</span>
-                    <span className="detail-value">
-                        {formatEventDateTime(event.startAt)}
-                    </span>
+            {/* Grupo: Lugar */}
+            <div className="detail-section-divider">Lugar</div>
+            <dl className="dashboard-card__body" style={{ marginBottom: 0 }}>
+                <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
+                    <dd className="dashboard-card__value">
+                        {event.location || <span style={mutedValue}>-</span>}
+                    </dd>
                 </div>
-                <div className="detail-item">
-                    <span className="detail-label">Fecha fin</span>
-                    <span className="detail-value">
-                        {formatEventDateTime(event.endAt)}
-                    </span>
-                </div>
-            </div>
+            </dl>
 
-            {/* Línea 4: Descripción (ancho completo) */}
-            <div className="detail-grid">
-                <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
-                    <span className="detail-label">Descripción</span>
-                    <span className="detail-value" style={{ whiteSpace: 'pre-wrap' }}>
+            {/* Grupo: Descripción */}
+            <div className="detail-section-divider">Descripción</div>
+            <dl className="dashboard-card__body" style={{ marginBottom: 0 }}>
+                <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
+                    <dd className="dashboard-card__value" style={{ whiteSpace: 'pre-wrap', ...(event.description ? {} : mutedValue) }}>
                         {event.description || '-'}
-                    </span>
+                    </dd>
                 </div>
-            </div>
+            </dl>
         </>
     )
 }

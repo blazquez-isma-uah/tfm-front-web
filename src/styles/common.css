@@ -93,6 +93,31 @@
   margin: 0 0 var(--space-3) 0;
 }
 
+/* Ruled divider: line — label — line, used in detail cards */
+.detail-section-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.detail-section-divider::before,
+.detail-section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
+}
+/* First divider in a card needs no top rule */
+.detail-section-divider:first-of-type::before {
+  display: none;
+}
+
 /* ----------------------------------------------------------
    GRIDS
    Mobile First: una sola columna en móvil, múltiples en tablet+.

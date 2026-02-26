@@ -29,7 +29,7 @@ export function EventDetailCard({
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '0.75rem',
+                    marginBottom: 'var(--space-4)',
                 }}
             >
                 <div className="section-title" style={{ marginBottom: 0 }}>
@@ -46,11 +46,11 @@ export function EventDetailCard({
                     </button>
                 )}
             </div>
-            
+
             <EventInfoSection event={event} />
 
             {showButtons && onEdit && (
-                <div className="button-row-1rem">
+                <div className="button-row-1rem" style={{ marginTop: 'var(--space-5)' }}>
                     <button
                         type="button"
                         className="button-secondary"

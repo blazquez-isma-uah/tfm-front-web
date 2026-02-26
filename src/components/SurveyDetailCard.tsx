@@ -9,7 +9,7 @@ import {
   formatSurveyDateTime,
 } from '../utils/surveyTranslations'
 import { getEventById } from '../api/eventsApi'
-import { getUserByIamId, getUserById } from '../api/usersApi'
+import { getUserByIamId } from '../api/usersApi'
 import { useAuth } from '../features/auth/AuthContext'
 import { SurveyResponseForm } from './SurveyResponseForm'
 import '../styles/common.css'
@@ -28,6 +28,41 @@ interface SurveyDetailCardProps {
   showResponseForm?: boolean // Mostrar formulario para responder encuesta
   onResponseSubmitted?: () => void // Callback cuando se envía una respuesta
 }
+
+// ─── Badge helpers ────────────────────────────────────────────────────────────
+function surveyStatusBadgeStyle(status: string): React.CSSProperties {
+  if (status === 'OPEN') {
+    return {
+      background: 'var(--color-success-light)',
+      color: 'var(--color-success-dark)',
+      padding: '2px 8px',
+      borderRadius: 'var(--radius-full)',
+      fontSize: 'var(--font-size-xs)',
+      fontWeight: 'var(--font-weight-medium)',
+    }
+  }
+  if (status === 'DRAFT') {
+    return {
+      background: 'var(--color-info-light)',
+      color: 'var(--color-info-dark)',
+      padding: '2px 8px',
+      borderRadius: 'var(--radius-full)',
+      fontSize: 'var(--font-size-xs)',
+      fontWeight: 'var(--font-weight-medium)',
+    }
+  }
+  return {
+    background: 'var(--color-gray-100)',
+    color: 'var(--color-gray-600)',
+    padding: '2px 8px',
+    borderRadius: 'var(--radius-full)',
+    fontSize: 'var(--font-size-xs)',
+    fontWeight: 'var(--font-weight-medium)',
+  }
+}
+
+const mutedValue: React.CSSProperties = { color: 'var(--text-muted)' }
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function SurveyDetailCard({
   survey,
@@ -84,6 +119,7 @@ export function SurveyDetailCard({
         setLoadingCreator(false)
       }
     }
+    loadCreator()
   }, [survey.createdBy, token])
   
   // Modo compacto: versión simplificada sin cargar evento/creador
@@ -99,15 +135,7 @@ export function SurveyDetailCard({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
           <strong style={{ fontSize: '0.95rem' }}>{survey.title}</strong>
-          <span 
-            style={{ 
-              fontSize: '0.85rem', 
-              padding: '0.15rem 0.5rem', 
-              borderRadius: '4px',
-              backgroundColor: survey.status === 'OPEN' ? '#e8f5e9' : '#f5f5f5',
-              color: survey.status === 'OPEN' ? '#2e7d32' : '#666'
-            }}
-          >
+          <span style={surveyStatusBadgeStyle(survey.status)}>
             {translateSurveyStatus(survey.status)}
           </span>
         </div>
@@ -123,15 +151,16 @@ export function SurveyDetailCard({
     )
   }
   
-  // Modo completo: versión detallada original
+  // Modo completo: versión detallada rediseñada
   return (
     <div className="card" style={{ marginTop: '1rem' }}>
+      {/* Header */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '0.75rem',
+          marginBottom: 'var(--space-4)',
         }}
       >
         <div className="section-title" style={{ marginBottom: 0 }}>
@@ -149,107 +178,96 @@ export function SurveyDetailCard({
         )}
       </div>
 
-      {/* Línea 1: Título, Evento (2 columnas) */}
-      <div
-        className="detail-grid"
-        style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}
-      >
-        <div className="detail-item">
-          <span className="detail-label">Título</span>
-          <span className="detail-value">{survey.title}</span>
+      <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-semibold)', margin: '0 0 var(--space-3) 0', color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+        {survey.title}
+      </h2>
+      <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
+        <div className="dashboard-card__pair">
+          <dt className="dashboard-card__term">Tipo de encuesta</dt>
+          <dd className="dashboard-card__value">{translateSurveyType(survey.surveyType)}</dd>
         </div>
-        <div className="detail-item">
-          <span className="detail-label">Evento</span>
-          <span className="detail-value">
-            {loadingEvent ? 'Cargando...' : event ? event.title : survey.eventId}
-          </span>
+        <div className="dashboard-card__pair">
+          <dt className="dashboard-card__term">Estado</dt>
+          <dd className="dashboard-card__value">
+            <span style={surveyStatusBadgeStyle(survey.status)}>
+              {translateSurveyStatus(survey.status)}
+            </span>
+          </dd>
         </div>
-      </div>
+        <div className="dashboard-card__pair" style={{ gridColumn: '1 / -1' }}>
+          <dt className="dashboard-card__term">Tipo de respuesta</dt>
+          <dd className="dashboard-card__value">{translateResponseType(survey.responseType)}</dd>
+        </div>
+      </dl>
 
-      {/* Línea 2: Estado, Tipo de respuesta, Tipo de encuesta (3 columnas) */}
-      <div
-        className="detail-grid"
-        style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '0.75rem' }}
-      >
-        <div className="detail-item">
-          <span className="detail-label">Estado</span>
-          <span className="detail-value">{translateSurveyStatus(survey.status)}</span>
+      {/* Grupo: Evento */}
+      <div className="detail-section-divider">Evento</div>
+      <dl className="dashboard-card__body" style={{ marginBottom: 0 }}>
+        <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
+          <dd className="dashboard-card__value">
+            {loadingEvent
+              ? 'Cargando...'
+              : event
+              ? event.title
+              : <span style={mutedValue}>Sin evento asociado</span>}
+          </dd>
         </div>
-        <div className="detail-item">
-          <span className="detail-label">Tipo de respuesta</span>
-          <span className="detail-value">
-            {translateResponseType(survey.responseType)}
-          </span>
-        </div>
-        <div className="detail-item">
-          <span className="detail-label">Tipo de encuesta</span>
-          <span className="detail-value">
-            {translateSurveyType(survey.surveyType)}
-          </span>
-        </div>
-      </div>
+      </dl>
 
-      {/* Línea 3: Fecha apertura, Fecha cierre (2 columnas) */}
-      <div
-        className="detail-grid"
-        style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}
-      >
-        <div className="detail-item">
-          <span className="detail-label">Fecha apertura</span>
-          <span className="detail-value">
-            {formatSurveyDateTime(survey.opensAt)}
-          </span>
+      {/* Grupo: Fechas */}
+      <div className="detail-section-divider">Fechas</div>
+      <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
+        <div className="dashboard-card__pair">
+          <dt className="dashboard-card__term">Fecha apertura</dt>
+          <dd className="dashboard-card__value">{formatSurveyDateTime(survey.opensAt)}</dd>
         </div>
-        <div className="detail-item">
-          <span className="detail-label">Fecha cierre</span>
-          <span className="detail-value">
-            {formatSurveyDateTime(survey.closesAt)}
-          </span>
+        <div className="dashboard-card__pair">
+          <dt className="dashboard-card__term">Fecha cierre</dt>
+          <dd className="dashboard-card__value">{formatSurveyDateTime(survey.closesAt)}</dd>
         </div>
-      </div>
+      </dl>
 
-      {/* Línea 4: Descripción (ancho completo) */}
-      <div className="detail-grid" style={{ marginBottom: '0.75rem' }}>
-        <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
-          <span className="detail-label">Descripción</span>
-          <span className="detail-value" style={{ whiteSpace: 'pre-wrap' }}>
-            {survey.description || '-'}
-          </span>
-        </div>
-      </div>
-
-      {/* Línea 5: Creado por, Fecha creación, Fecha actualización (3 columnas) */}
+      {/* Grupo: Autoría */}
       {(survey.createdBy || survey.createdAt || survey.updatedAt) && (
-        <div className="detail-grid">
-          {survey.createdBy && (
-            <div className="detail-item">
-              <span className="detail-label">Creado por</span>
-              <span className="detail-value">
-                {loadingCreator ? 'Cargando...' : creator ? creator.username : "-"}
-              </span>
-            </div>
-          )}
-          {survey.createdAt && (
-            <div className="detail-item">
-              <span className="detail-label">Fecha creación</span>
-              <span className="detail-value">
-                {formatSurveyDateTime(survey.createdAt)}
-              </span>
-            </div>
-          )}
-          {survey.updatedAt && (
-            <div className="detail-item">
-              <span className="detail-label">Última actualización</span>
-              <span className="detail-value">
-                {formatSurveyDateTime(survey.updatedAt)}
-              </span>
-            </div>
-          )}
-        </div>
+        <>
+          <div className="detail-section-divider">Autoría</div>
+          <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
+            {survey.createdAt && (
+              <div className="dashboard-card__pair">
+                <dt className="dashboard-card__term">Fecha creación</dt>
+                <dd className="dashboard-card__value">{formatSurveyDateTime(survey.createdAt)}</dd>
+              </div>
+            )}
+            {survey.updatedAt && (
+              <div className="dashboard-card__pair">
+                <dt className="dashboard-card__term">Última actualización</dt>
+                <dd className="dashboard-card__value">{formatSurveyDateTime(survey.updatedAt)}</dd>
+              </div>
+            )}
+            {survey.createdBy && (
+              <div className="dashboard-card__pair">
+                <dt className="dashboard-card__term">Creado por</dt>
+                <dd className="dashboard-card__value">
+                  {loadingCreator ? 'Cargando...' : creator ? creator.username : <span style={mutedValue}>-</span>}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </>
       )}
 
+      {/* Grupo: Descripción */}
+      <div className="detail-section-divider">Descripción</div>
+      <dl className="dashboard-card__body" style={{ marginBottom: 0 }}>
+        <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
+          <dd className="dashboard-card__value" style={{ whiteSpace: 'pre-wrap', ...(survey.description ? {} : mutedValue) }}>
+            {survey.description || '-'}
+          </dd>
+        </div>
+      </dl>
+
       {showButtons && (
-        <div className="button-row-1rem">
+        <div className="button-row-1rem" style={{ marginTop: 'var(--space-5)' }}>
           {onEdit && (
             <button
               type="button"
@@ -300,9 +318,9 @@ export function SurveyDetailCard({
 
       {/* Formulario para responder encuesta (usuarios con rol MUSICIAN) */}
       {showResponseForm && isMusician && (
-        <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '2px solid #e0e0e0' }}>
-          <SurveyResponseForm 
-            survey={survey} 
+        <div style={{ marginTop: 'var(--space-6)', paddingTop: 'var(--space-4)', borderTop: '2px solid var(--border-light)' }}>
+          <SurveyResponseForm
+            survey={survey}
             onResponseSubmitted={onResponseSubmitted}
           />
         </div>

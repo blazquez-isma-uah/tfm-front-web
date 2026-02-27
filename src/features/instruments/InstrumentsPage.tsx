@@ -50,7 +50,7 @@ import '../../styles/common.css'
 
 type ViewMode        = 'LIST' | 'CREATE' | 'EDIT' | 'USERS'
 type SortableField   = 'instrumentName' | 'voice'
-type UserSortField   = 'username' | 'firstName' | 'lastName' | 'email'
+type UserSortField   = 'username' | 'firstName' | 'lastName' | 'email' | 'bandJoinDate'
 
 const EMPTY_PAYLOAD: InstrumentRequestDTO = { instrumentName: '', voice: '' }
 
@@ -190,6 +190,13 @@ function InstrumentsPage() {
     const dir   = userSorting.direction
 
     setUsersWithInstrument(prev => [...prev].sort((a, b) => {
+      if (field === 'bandJoinDate') {
+        const aVal = a.bandJoinDate ? new Date(a.bandJoinDate).getTime() : 0
+        const bVal = b.bandJoinDate ? new Date(b.bandJoinDate).getTime() : 0
+        if (aVal < bVal) return dir === 'asc' ? -1 : 1
+        if (aVal > bVal) return dir === 'asc' ?  1 : -1
+        return 0
+      }
       const aVal = field === 'lastName'
         ? [a.lastName, a.secondLastName].filter(Boolean).join(' ').toLowerCase()
         : (a[field] ?? '').toLowerCase()

@@ -2,6 +2,7 @@ import type { UserDTO } from '../types/users'
 import type { InstrumentDTO } from '../types/instruments'
 import { DataTable } from './DataTable'
 import { UserDetailCard } from './UserDetailCard'
+import { formatDate } from '../utils/date'
 import '../styles/common.css'
 
 /**
@@ -30,7 +31,7 @@ import '../styles/common.css'
  * cargar datos pesados para todas las filas de golpe.
  */
 
-type UserSortableField = 'username' | 'firstName' | 'lastName' | 'email'
+type UserSortableField = 'username' | 'firstName' | 'lastName' | 'email' | 'bandJoinDate'
 
 interface UsersWithInstrumentPanelProps {
   instrument: InstrumentDTO
@@ -63,22 +64,15 @@ export function UsersWithInstrumentPanel({
 }: UsersWithInstrumentPanelProps) {
   const userColumns = [
     { key: 'username',  header: 'Username',  sortable: true,  sortField: 'username'  as UserSortableField, width: '20%' },
-    { key: 'firstName', header: 'Nombre',    sortable: true,  sortField: 'firstName' as UserSortableField, width: '20%' },
+    { key: 'firstName', header: 'Nombre',    sortable: true,  sortField: 'firstName' as UserSortableField, width: '15%' },
     {
       key: 'lastName',  header: 'Apellidos', sortable: true,  sortField: 'lastName'  as UserSortableField, width: '30%',
       render: (u: UserDTO) => [u.lastName, u.secondLastName].filter(Boolean).join(' '),
     },
-    { key: 'email',  header: 'Email',  sortable: true,  sortField: 'email'  as UserSortableField, width: '20%' },
+    { key: 'email',  header: 'Email',         sortable: true,  sortField: 'email'         as UserSortableField, width: '22%' },
     {
-      key: 'active', header: 'Estado', sortable: false, width: '10%',
-      render: (u: UserDTO) => (
-        <span style={{
-          color: u.active ? 'var(--color-success-dark)' : 'var(--color-gray-400)',
-          fontSize: 'var(--font-size-xs)', fontWeight: 600,
-        }}>
-          {u.active ? '● Activo' : '○ Inactivo'}
-        </span>
-      ),
+      key: 'bandJoinDate', header: 'Alta en banda', sortable: true, sortField: 'bandJoinDate' as UserSortableField, width: '13%',
+      render: (u: UserDTO) => formatDate(u.bandJoinDate),
     },
   ]
 

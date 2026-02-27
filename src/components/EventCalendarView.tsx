@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react'
 import type { CalendarEventItemDTO } from '../types/events'
 import '../styles/common.css'
 
@@ -90,23 +91,193 @@ export function EventCalendarView({
         return match ? `${match[1]}:${match[2]}` : ''
     }
 
+    // Estado y lógica del selector de mes/año
+    const [isPickerOpen, setIsPickerOpen] = useState(false)
+    const [pickerYear, setPickerYear] = useState(currentMonth.getFullYear())
+    const pickerRef = useRef<HTMLDivElement>(null)
+
+    const monthNames = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ]
+
+    const monthNamesShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+    // Rango amplio de años: desde 2000 hasta 2050
+    const minYear = 2000
+    const maxYear = 2050
+
+    // Cerrar el picker al hacer clic fuera
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+                setIsPickerOpen(false)
+            }
+        }
+        if (isPickerOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [isPickerOpen])
+
+    const handleMonthSelect = (month: number) => {
+        onMonthChange(new Date(pickerYear, month, 1))
+        setIsPickerOpen(false)
+    }
+
+    const handleYearChange = (delta: number) => {
+        const newYear = pickerYear + delta
+        if (newYear >= minYear && newYear <= maxYear) {
+            setPickerYear(newYear)
+        }
+    }
+
+    const formatCurrentMonth = () => {
+        return `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`
+    }
+
     return (
         <div className="card">
             {/* Navegación de mes */}
             <div className="cal-nav">
-                <button type="button" className="button-secondary" onClick={onPrevMonth}>← Anterior</button>
-                <input
-                    type="month"
-                    className="input-base"
-                    value={`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`}
-                    onChange={(e) => {
-                        if (!e.target.value) return
-                        const [year, month] = e.target.value.split('-').map(Number)
-                        onMonthChange(new Date(year, month - 1, 1))
-                    }}
-                    style={{ textTransform: 'capitalize', width: 'auto' }}
-                />
-                <button type="button" className="button-secondary" onClick={onNextMonth}>Siguiente →</button>
+                <button type="button" className="button-secondary" onClick={onPrevMonth}>
+                    ← Anterior
+                </button>
+                
+                {/* Selector de mes/año personalizado */}
+                <div style={{ position: 'relative' }} ref={pickerRef}>
+                    <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() => {
+                            setPickerYear(currentMonth.getFullYear())
+                            setIsPickerOpen(!isPickerOpen)
+                        }}
+                        style={{
+                            fontSize: '1.1rem',
+                            fontWeight: '600',
+                            padding: '0.6rem 1.2rem',
+                            minWidth: '200px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <span>{formatCurrentMonth()}</span>
+                        <span style={{ fontSize: '0.8rem' }}>📅</span>
+                    </button>
+
+                    {/* Dropdown del picker */}
+                    {isPickerOpen && (
+                        <div
+                            style={{
+                                position: 'absolute',
+                                top: 'calc(100% + 0.5rem)',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                backgroundColor: 'white',
+                                border: '1px solid #ddd',
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                padding: '1rem',
+                                zIndex: 1000,
+                                minWidth: '280px'
+                            }}
+                        >
+                            {/* Selector de año */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                marginBottom: '1rem',
+                                padding: '0.5rem',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '6px'
+                            }}>
+                                <button
+                                    type="button"
+                                    onClick={() => handleYearChange(-1)}
+                                    disabled={pickerYear <= minYear}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        fontSize: '1.2rem',
+                                        cursor: pickerYear <= minYear ? 'not-allowed' : 'pointer',
+                                        opacity: pickerYear <= minYear ? 0.3 : 1,
+                                        padding: '0.25rem 0.5rem'
+                                    }}
+                                >
+                                    ‹
+                                </button>
+                                <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+                                    {pickerYear}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => handleYearChange(1)}
+                                    disabled={pickerYear >= maxYear}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        fontSize: '1.2rem',
+                                        cursor: pickerYear >= maxYear ? 'not-allowed' : 'pointer',
+                                        opacity: pickerYear >= maxYear ? 0.3 : 1,
+                                        padding: '0.25rem 0.5rem'
+                                    }}
+                                >
+                                    ›
+                                </button>
+                            </div>
+
+                            {/* Grid de meses */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: '0.5rem'
+                            }}>
+                                {monthNamesShort.map((name, index) => {
+                                    const isSelected = index === currentMonth.getMonth() && 
+                                                     pickerYear === currentMonth.getFullYear()
+                                    return (
+                                        <button
+                                            key={index}
+                                            type="button"
+                                            onClick={() => handleMonthSelect(index)}
+                                            style={{
+                                                padding: '0.6rem',
+                                                border: '1px solid #ddd',
+                                                borderRadius: '6px',
+                                                backgroundColor: isSelected ? '#007bff' : 'white',
+                                                color: isSelected ? 'white' : '#333',
+                                                cursor: 'pointer',
+                                                fontSize: '0.9rem',
+                                                fontWeight: isSelected ? '600' : '400',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.backgroundColor = '#f0f0f0'
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.backgroundColor = 'white'
+                                                }
+                                            }}
+                                        >
+                                            {name}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <button type="button" className="button-secondary" onClick={onNextMonth}>
+                    Siguiente →
+                </button>
             </div>
 
             {/* Cuadrícula 7 columnas */}

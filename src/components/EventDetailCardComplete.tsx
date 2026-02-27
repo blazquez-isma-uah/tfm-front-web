@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { EventDTO } from '../types/events'
 import type { SurveyDTO } from '../types/surveys'
 import { EventInfoSection } from './EventInfoSection'
-import { SurveyDetailCard } from './SurveyDetailCard'
-import { searchSurveysPage } from '../api/surveysApi'
+import { searchSurveysPage, getMyResponse } from '../api/surveysApi'
 import { useAuth } from '../features/auth/AuthContext'
+import { translateSurveyStatus } from '../utils/surveyTranslations'
 import { Spinner } from './Spinner'
 import { XMarkIcon } from './Icons'
 import '../styles/common.css'
@@ -25,11 +26,11 @@ export function EventDetailCardComplete({
     backButtonLabel = 'Volver a la lista',
 }: EventDetailCardCompleteProps) {
     const { token } = useAuth()
+    const navigate = useNavigate()
     const [surveys, setSurveys] = useState<SurveyDTO[]>([])
     const [loadingSurveys, setLoadingSurveys] = useState(false)
     const [errorSurveys, setErrorSurveys] = useState<string | null>(null)
-    const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null)
-    const [refreshTrigger, setRefreshTrigger] = useState(0)
+    const [answeredSurveyIds, setAnsweredSurveyIds] = useState<Set<string>>(new Set())
 
     useEffect(() => {
         if (!token || !event.id) return
@@ -42,11 +43,20 @@ export function EventDetailCardComplete({
                     {
                         eventId: event.id,
                         page: 0,
-                        size: 50, // Cargar todas las encuestas del evento
+                        size: 50,
                     },
                     token
                 )
                 setSurveys(response.content)
+                // Comprobar cuáles encuestas ya ha respondido el usuario
+                const responseChecks = await Promise.allSettled(
+                    response.content.map(s => getMyResponse(s.id, token))
+                )
+                const answeredIds = new Set<string>()
+                response.content.forEach((s, idx) => {
+                    if (responseChecks[idx].status === 'fulfilled') answeredIds.add(s.id)
+                })
+                setAnsweredSurveyIds(answeredIds)
             } catch (err) {
                 console.error('Error loading surveys:', err)
                 setErrorSurveys('No se pudieron cargar las encuestas')
@@ -56,16 +66,7 @@ export function EventDetailCardComplete({
         }
 
         loadSurveys()
-    }, [event.id, token, refreshTrigger])
-
-    const handleResponseSubmitted = () => {
-        // Refrescar la lista de encuestas después de responder
-        setRefreshTrigger(prev => prev + 1)
-    }
-
-    const handleSurveyClick = (surveyId: string) => {
-        setExpandedSurveyId(expandedSurveyId === surveyId ? null : surveyId)
-    }
+    }, [event.id, token])
 
     return (
         <div className="card" style={{ marginTop: '1rem' }}>
@@ -107,38 +108,71 @@ export function EventDetailCardComplete({
                 <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)' }}>No hay encuestas asociadas a este evento</p>
             )}
             {!loadingSurveys && !errorSurveys && surveys.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                     {surveys.map((survey) => (
-                        <div key={survey.id} style={{ cursor: 'pointer' }}>
-                            <div onClick={() => handleSurveyClick(survey.id)}>
-                                <SurveyDetailCard
-                                    survey={survey}
-                                    compact={true}
-                                />
+                        <div
+                            key={survey.id}
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '0.6rem 0.9rem',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                backgroundColor: 'var(--color-surface)',
+                                gap: 'var(--space-3)',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>
+                                <span style={{
+                                    fontWeight: 'var(--font-weight-medium)',
+                                    fontSize: 'var(--font-size-sm)',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}>
+                                    {survey.title}
+                                </span>
+                                <span style={{
+                                    background: survey.status === 'OPEN' ? 'var(--color-success-light)' : 'var(--color-gray-100)',
+                                    color: survey.status === 'OPEN' ? 'var(--color-success-dark)' : 'var(--color-gray-600)',
+                                    padding: '2px 8px',
+                                    borderRadius: 'var(--radius-full)',
+                                    fontSize: 'var(--font-size-xs)',
+                                    fontWeight: 'var(--font-weight-medium)',
+                                    flexShrink: 0,
+                                }}>
+                                    {translateSurveyStatus(survey.status)}
+                                </span>
                             </div>
-                            {expandedSurveyId === survey.id && (
-                                <div style={{ marginTop: 'var(--space-3)', marginLeft: 'var(--space-4)' }}>
-                                    <SurveyDetailCard
-                                        survey={survey}
-                                        showResponseForm={true}
-                                        onResponseSubmitted={handleResponseSubmitted}
-                                        showButtons={false}
-                                    />
-                                </div>
-                            )}
+                            <button
+                                type="button"
+                                className="button-primary"
+                                style={{ flexShrink: 0, fontSize: 'var(--font-size-sm)', padding: '0.35rem 0.8rem' }}
+                                onClick={() =>
+                                    navigate('/surveys', {
+                                        state: {
+                                            surveyId: survey.id,
+                                            tab: answeredSurveyIds.has(survey.id) ? 'ACTIVE' : 'PENDING',
+                                        },
+                                    })
+                                }
+                            >
+                                {answeredSurveyIds.has(survey.id) ? 'Ver respuesta' : 'Responder'}
+                            </button>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Sección de Partituras - Placeholder */}
+            {/* Sección de Partituras - Placeholder
             <hr style={{ margin: 'var(--space-5) 0', borderColor: 'var(--border-light)' }} />
             <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
                 Partituras asociadas
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', fontStyle: 'italic' }}>
                 Las partituras se mostrarán aquí cuando el microservicio esté disponible
-            </p>
+            </p> */}
         </div>
     )
 }

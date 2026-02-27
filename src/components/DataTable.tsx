@@ -115,6 +115,7 @@ export function DataTable<T, F extends string>({
                * Ref: HTML spec §4.3.2
                */}
               <article
+                id={String(rowId)}
                 className={`dt-card${expanded ? ' dt-card--expanded' : ''}`}
                 title={getRowTitle ? getRowTitle(row) : undefined}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
@@ -216,6 +217,7 @@ export function DataTable<T, F extends string>({
                */
               <Fragment key={rowId}>
                 <tr
+                  id={String(rowId)}
                   className={`dt-table__row${expanded ? ' dt-table__row--expanded' : ''}${onRowClick ? ' dt-table__row--clickable' : ''}`}
                   title={getRowTitle ? getRowTitle(row) : undefined}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}

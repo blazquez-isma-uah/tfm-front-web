@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { getMyNotAnsweredSurveys, getMyAnsweredSurveys, searchSurveysPage } from '../../api/surveysApi'
+import { getMyNotAnsweredSurveys, getMyAnsweredSurveys, searchSurveysPage, getMyResponse } from '../../api/surveysApi'
 import type { SurveyDTO } from '../../types/surveys'
 import { DataTable } from '../../components/DataTable'
 import { SurveyDetailCard } from '../../components/SurveyDetailCard'
@@ -40,10 +41,71 @@ const TAB_DESCRIPTIONS: Record<TabType, string> = {
     HISTORY: 'Encuestas cerradas o canceladas en las que participaste',
 }
 
+// ─── Wrapper para la fila expandida de encuesta ───────────────────────────────────────────────
+interface SurveyExpandedRowProps {
+    survey: SurveyDTO
+    onBack: () => void
+    onResponseSubmitted: () => void
+}
+
+function SurveyExpandedRow({ survey, onBack, onResponseSubmitted }: SurveyExpandedRowProps) {
+    const { token } = useAuth()
+    const [showForm, setShowForm] = useState(false)
+    const [hasResponse, setHasResponse] = useState<boolean | null>(null)
+
+    useEffect(() => {
+        if (!token) return
+        getMyResponse(survey.id, token)
+            .then(() => setHasResponse(true))
+            .catch((err: any) => {
+                if (err?.response?.status === 404) setHasResponse(false)
+            })
+    }, [survey.id, token])
+
+    return (
+        <div>
+            <SurveyDetailCard
+                survey={survey}
+                onBack={onBack}
+                backButtonLabel="Ocultar"
+                showResponseForm={showForm}
+                onResponseSubmitted={onResponseSubmitted}
+                showButtons={false}
+            />
+            {!showForm && (
+                <div style={{ marginTop: 'var(--space-3)', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                        type="button"
+                        className="button-primary"
+                        disabled={hasResponse === null}
+                        onClick={() => setShowForm(true)}
+                    >
+                        {hasResponse === null
+                            ? 'Cargando...'
+                            : hasResponse
+                            ? 'Ver / editar respuesta'
+                            : 'Responder'}
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+}
+// ───────────────────────────────────────────────────────────────────────────────
+
 function MySurveysPage() {
     const { token } = useAuth()
 
-    const [activeTab, setActiveTab]           = useState<TabType>('PENDING')
+    // Leer el state de navegación de forma SÍNCRONA en el inicializador del estado.
+    // Si se leyera en un useEffect (deps=[]), el effect de carga de encuestas ya
+    // habría arrancado con el tab inicial ('PENDING') antes de que el effect de
+    // mount actualizara el tab. Eso genera dos peticiones simultáneas y una
+    // condición de carrera: la petición obsoleta (PENDING) podría sobreescribir
+    // los datos correctos (ACTIVE) si llega después, dejando la UI inconsistente.
+    const location = useLocation()
+    const _navState = location.state as { surveyId?: string; tab?: TabType } | null
+
+    const [activeTab, setActiveTab]           = useState<TabType>(_navState?.tab ?? 'PENDING')
     const [surveys, setSurveys]               = useState<SurveyDTO[]>([])
     const [loading, setLoading]               = useState(false)
     const [error, setError]                   = useState<string | null>(null)
@@ -52,6 +114,32 @@ function MySurveysPage() {
     const pagination   = usePagination({ defaultSize: 10 })
     const sorting      = useSorting<SortableField>('closesAt')
     const rowExpansion = useRowExpansion<string>()
+
+    const [targetSurveyId, setTargetSurveyId] = useState<string | null>(_navState?.surveyId ?? null)
+
+    // Limpiar el state del historial para que no persista en recargas manuales.
+    // Solo necesita ejecutarse una vez al montar; ya no es necesario leer nada aquí.
+    useEffect(() => {
+        window.history.replaceState({}, '')
+    }, [])
+
+    // Expandir y hacer scroll a la encuesta objetivo cuando los datos estén listos
+    useEffect(() => {
+        if (!targetSurveyId || surveys.length === 0) return
+        const exists = surveys.some(s => s.id === targetSurveyId)
+        if (!exists) return
+
+        rowExpansion.toggle(targetSurveyId)
+
+        setTimeout(() => {
+            const element = document.getElementById(targetSurveyId)
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+        }, 100)
+
+        setTargetSurveyId(null)
+    }, [surveys, targetSurveyId]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Columnas ──────────────────────────────────────────────────────────────
 
@@ -176,13 +264,10 @@ function MySurveysPage() {
                             expandedRowId={rowExpansion.expandedId}
                             isClosing={rowExpansion.isClosing}
                             renderExpandedContent={(survey) => (
-                                <SurveyDetailCard
+                                <SurveyExpandedRow
                                     survey={survey}
                                     onBack={() => rowExpansion.close()}
-                                    backButtonLabel="Ocultar"
-                                    showResponseForm={true}
                                     onResponseSubmitted={handleResponseSubmitted}
-                                    showButtons={false}
                                 />
                             )}
                         />

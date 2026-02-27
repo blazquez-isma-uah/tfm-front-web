@@ -23,7 +23,6 @@ interface EventDetailCardCompleteProps {
 export function EventDetailCardComplete({
     event,
     onBack,
-    backButtonLabel = 'Volver a la lista',
 }: EventDetailCardCompleteProps) {
     const { token } = useAuth()
     const navigate = useNavigate()
@@ -82,14 +81,8 @@ export function EventDetailCardComplete({
                     Detalle del evento
                 </div>
                 {onBack && (
-                    <button
-                        type="button"
-                        className="button-subtle"
-                        onClick={onBack}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
-                    >
-                        <span style={{ width: '0.9rem', height: '0.9rem', display: 'inline-flex', flexShrink: 0 }}><XMarkIcon /></span>
-                        {backButtonLabel}
+                    <button type="button" className="button-secondary" onClick={onBack}>
+                        <XMarkIcon /> Ocultar
                     </button>
                 )}
             </div>

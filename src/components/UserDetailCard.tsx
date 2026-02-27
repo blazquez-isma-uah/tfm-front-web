@@ -42,7 +42,6 @@ export function UserDetailCard({
   onManageInstruments,
   onManageRoles,
   showButtons = true,
-  backButtonLabel = 'Volver a la lista',
 }: UserDetailCardProps) {
   const fullLastName = [user.lastName, user.secondLastName].filter(Boolean).join(' ')
 
@@ -68,14 +67,8 @@ export function UserDetailCard({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
         <div className="section-title" style={{ marginBottom: 0 }}>Detalle de usuario</div>
         {showButtons && onBack && (
-          <button
-            type="button"
-            className="button-subtle"
-            onClick={onBack}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
-          >
-            <span style={{ width: '0.9rem', height: '0.9rem', display: 'inline-flex', flexShrink: 0 }}><XMarkIcon /></span>
-            {backButtonLabel}
+          <button type="button" className="button-secondary" onClick={onBack}>
+            <XMarkIcon /> Ocultar
           </button>
         )}
       </div>

@@ -12,14 +12,16 @@ import { useAuth } from '../features/auth/AuthContext'
 import { extractErrorMessage } from '../utils/errorHandler'
 import { translateYesNoMaybeAnswer } from '../utils/surveyTranslations'
 import { ConfirmDialog } from './ConfirmDialog'
+import { XMarkIcon } from './Icons'
 import '../styles/common.css'
 
 interface SurveyResponseFormProps {
     survey: SurveyDTO
     onResponseSubmitted?: () => void
+    onHide?: () => void
 }
 
-export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyResponseFormProps) {
+export function SurveyResponseForm({ survey, onResponseSubmitted, onHide }: SurveyResponseFormProps) {
     const { token } = useAuth()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -243,9 +245,16 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
 
     return (
         <div className="card" style={{ padding: '1rem' }}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
-                {hasResponse ? 'Actualizar respuesta' : 'Responder encuesta'}
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
+                    {hasResponse ? 'Actualizar respuesta' : 'Responder encuesta'}
+                </h3>
+                {onHide && (
+                    <button type="button" className="button-secondary" onClick={onHide}>
+                        <XMarkIcon /> Ocultar
+                    </button>
+                )}
+            </div>
 
             {error && <p className="error-message">{error}</p>}
             {successMessage && (

@@ -28,6 +28,7 @@ interface SurveyDetailCardProps {
   compact?: boolean // Modo compacto para mostrar dentro de otros componentes
   showResponseForm?: boolean // Mostrar formulario para responder encuesta
   onResponseSubmitted?: () => void // Callback cuando se envía una respuesta
+  onHideResponseForm?: () => void // Callback para ocultar el formulario de respuesta
 }
 
 // ─── Badge helpers ────────────────────────────────────────────────────────────
@@ -69,10 +70,10 @@ export function SurveyDetailCard({
   survey,
   onBack,
   showButtons = true,
-  backButtonLabel = 'Volver a la lista',
   compact = false,
   showResponseForm = false,
   onResponseSubmitted,
+  onHideResponseForm,
 }: SurveyDetailCardProps) {
   const { token, hasRole } = useAuth()
   const [event, setEvent] = useState<EventDTO | null>(null)
@@ -156,14 +157,8 @@ export function SurveyDetailCard({
           Detalle de la encuesta
         </div>
         {showButtons && onBack && (
-          <button
-            type="button"
-            className="button-subtle"
-            onClick={onBack}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
-          >
-            <span style={{ width: '0.9rem', height: '0.9rem', display: 'inline-flex', flexShrink: 0 }}><XMarkIcon /></span>
-            {backButtonLabel}
+          <button type="button" className="button-secondary" onClick={onBack}>
+            <XMarkIcon /> Ocultar
           </button>
         )}
       </div>
@@ -262,6 +257,7 @@ export function SurveyDetailCard({
           <SurveyResponseForm
             survey={survey}
             onResponseSubmitted={onResponseSubmitted}
+            onHide={onHideResponseForm}
           />
         </div>
       )}

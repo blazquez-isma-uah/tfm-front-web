@@ -108,7 +108,7 @@ function DashboardPage() {
                 <dl className="dashboard-card__body">
                   <div className="dashboard-card__pair">
                     <dt className="dashboard-card__term">Fecha</dt>
-                    <dd className="dashboard-card__value">{formatDateTime(event.startAt)}</dd>
+                    <dd className="dashboard-card__value">{formatDateTime(event.start)}</dd>
                   </div>
                   {event.location && (
                     <div className="dashboard-card__pair">

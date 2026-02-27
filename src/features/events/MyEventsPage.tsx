@@ -266,11 +266,15 @@ function MyEventsPage() {
         try {
             setLoading(true)
             setError(null)
-            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-            const lastDay  = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59)
+            const year  = currentMonth.getFullYear()
+            const month = String(currentMonth.getMonth() + 1).padStart(2, '0')
+            const firstDayStr = `${year}-${month}-01T00:00:00.000Z`
+            const lastDayNum  = new Date(year, currentMonth.getMonth() + 1, 0).getDate()
+            const lastDayStr  = `${year}-${month}-${String(lastDayNum).padStart(2, '0')}T23:59:59.999Z`
             const response = await getCalendar(
-                firstDay.toISOString(), lastDay.toISOString(), 0, 100, 'startAt,asc', token
+                firstDayStr, lastDayStr, 0, 100, 'startAt,asc', token
             )
+            console.log('[Calendar] eventos recibidos:', response.content.length, response.content)
             setCalendarEvents(response.content)
         } catch (e: any) {
             console.error('Error loading calendar:', e)
@@ -370,6 +374,7 @@ function MyEventsPage() {
                             calendarEvents={calendarEvents}
                             onPrevMonth={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
                             onNextMonth={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+                            onMonthChange={(date) => setCurrentMonth(date)}
                         />
                     )}
 

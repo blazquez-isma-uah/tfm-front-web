@@ -6,6 +6,7 @@ interface EventCalendarViewProps {
     calendarEvents: CalendarEventItemDTO[]
     onPrevMonth: () => void
     onNextMonth: () => void
+    onMonthChange: (date: Date) => void
 }
 
 /**
@@ -28,16 +29,16 @@ interface EventCalendarViewProps {
  *   del mes en loadCalendarEvents() y los pasa por prop.
  * - La semana empieza en Lunes (ajuste: domingo=0 → posición 6).
  * - Máximo 3 eventos visibles por celda con chip "+N más" para evitar overflow.
- * - Los estilos inline se mantienen por ser específicos de esta vista de
- *   cuadrícula; un CSS separado no aportaría reutilización en otro lugar.
+ * - Las fechas se normalizan a UTC para evitar drift de zona horaria.
+ * - Los estilos se definen en common.css con prefijo .cal-.
  */
 export function EventCalendarView({
     currentMonth,
     calendarEvents,
     onPrevMonth,
     onNextMonth,
+    onMonthChange,
 }: EventCalendarViewProps) {
-    const monthName      = currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })
     const firstDay       = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
     const lastDay        = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
     const daysInMonth    = lastDay.getDate()
@@ -49,60 +50,98 @@ export function EventCalendarView({
     for (let i = 0; i < adjustedStart; i++) days.push(null)
     for (let d = 1; d <= daysInMonth; d++) days.push(d)
 
-    // Agrupar eventos por día del mes
+    // Agrupar eventos por día del mes (UTC-safe: evita drift de zona horaria)
     const eventsByDay: Record<number, CalendarEventItemDTO[]> = {}
     calendarEvents.forEach(event => {
-        const eventDate = new Date(event.startAt)
-        if (
-            eventDate.getMonth()    === currentMonth.getMonth() &&
-            eventDate.getFullYear() === currentMonth.getFullYear()
-        ) {
-            const day = eventDate.getDate()
-            if (!eventsByDay[day]) eventsByDay[day] = []
-            eventsByDay[day].push(event)
+        // Guardia defensiva: el backend puede devolver null/undefined en runtime
+        if (!event.start) return
+
+        // Solo añadir 'Z' si no hay ningún indicador de zona horaria en el string
+        // (evita construir "…+02:00Z" que daría Invalid Date)
+        let rawDate = event.start
+        if (!rawDate.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(rawDate)) {
+            rawDate = rawDate + 'Z'
+        }
+        const eventDate = new Date(rawDate)
+        // Guardia contra Invalid Date
+        if (isNaN(eventDate.getTime())) return
+
+        const eventMonth = eventDate.getUTCMonth()
+        const eventYear  = eventDate.getUTCFullYear()
+        const eventDay   = eventDate.getUTCDate()
+
+        if (eventMonth === currentMonth.getMonth() &&
+            eventYear  === currentMonth.getFullYear()) {
+            if (!eventsByDay[eventDay]) eventsByDay[eventDay] = []
+            eventsByDay[eventDay].push(event)
         }
     })
+
+    // Detección del día actual
+    const today   = new Date()
+    const isToday = (day: number) =>
+        today.getDate()     === day &&
+        today.getMonth()    === currentMonth.getMonth() &&
+        today.getFullYear() === currentMonth.getFullYear()
+
+    // Extrae "HH:MM" de un ISO string (UTC) para mostrarlo como prefijo en el chip
+    const formatChipTime = (isoString: string): string => {
+        const match = isoString.match(/T(\d{2}):(\d{2})/)
+        return match ? `${match[1]}:${match[2]}` : ''
+    }
 
     return (
         <div className="card">
             {/* Navegación de mes */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="cal-nav">
                 <button type="button" className="button-secondary" onClick={onPrevMonth}>← Anterior</button>
-                <h2 style={{ textTransform: 'capitalize', margin: 0 }}>{monthName}</h2>
+                <input
+                    type="month"
+                    className="input-base"
+                    value={`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`}
+                    onChange={(e) => {
+                        if (!e.target.value) return
+                        const [year, month] = e.target.value.split('-').map(Number)
+                        onMonthChange(new Date(year, month - 1, 1))
+                    }}
+                    style={{ textTransform: 'capitalize', width: 'auto' }}
+                />
                 <button type="button" className="button-secondary" onClick={onNextMonth}>Siguiente →</button>
             </div>
 
             {/* Cuadrícula 7 columnas */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', backgroundColor: '#e0e0e0', border: '1px solid #e0e0e0' }}>
+            <div className="cal-grid">
                 {/* Cabecera de días */}
                 {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                    <div key={day} style={{ backgroundColor: '#f5f5f5', padding: '0.5rem', textAlign: 'center', fontWeight: 600 }}>
+                    <div key={day} className="cal-grid__header">
                         {day}
                     </div>
                 ))}
 
                 {/* Celdas de días */}
                 {days.map((day, index) => (
-                    <div key={index} style={{ backgroundColor: 'white', minHeight: '80px', padding: '0.5rem', position: 'relative' }}>
+                    <div key={index} className={`cal-grid__cell${day === null ? ' cal-grid__cell--empty' : ''}`}>
                         {day && (
                             <>
-                                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{day}</div>
+                                <div className={`cal-grid__day${isToday(day) ? ' cal-grid__day--today' : ''}`}>{day}</div>
                                 {eventsByDay[day]?.length > 0 && (
-                                    <div style={{ fontSize: '0.75rem' }}>
+                                    <>
                                         {eventsByDay[day].slice(0, 3).map(event => (
                                             <div
                                                 key={event.id}
-                                                style={{ backgroundColor: '#e3f2fd', padding: '0.15rem 0.25rem', marginBottom: '0.15rem', borderRadius: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                                className="cal-event-chip"
+                                                title={`${formatChipTime(event.start)} · ${event.title}${event.location ? `\n📍 ${event.location}` : ''}`}
                                             >
+                                                <span className="cal-event-chip__time">{formatChipTime(event.start)}</span>
                                                 {event.title}
                                             </div>
                                         ))}
                                         {eventsByDay[day].length > 3 && (
-                                            <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                                            <div className="cal-event-overflow">
                                                 +{eventsByDay[day].length - 3} más
                                             </div>
                                         )}
-                                    </div>
+                                    </>
                                 )}
                             </>
                         )}

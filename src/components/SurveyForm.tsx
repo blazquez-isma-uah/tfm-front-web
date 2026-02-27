@@ -67,9 +67,9 @@ interface SurveyFormProps {
  * DECISIONES DE DISEÑO:
  * - Un solo componente con prop `editing: SurveyDTO | null` en lugar de dos
  *   (SurveyCreateForm / SurveyEditForm). Los campos son estructuralmente
- *   idénticos; la única diferencia es que en modo edición responseType y
- *   eventId quedan deshabilitados (no pueden cambiarse tras crear). Esto no
- *   justifica duplicar el JSX: basta con disabled={editing !== null}.
+ *   idénticos; la única diferencia es que en modo edición responseType solo
+ * puede cambiarse si la encuesta está en estado DRAFT, y eventId queda siempre
+ * deshabilitado tras crear. Esto no justifica duplicar el JSX.
  * - Presentacional controlado: no llama a la API ni gestiona estado propio.
  *   La conversión de fechas datetime-local → ISO Instant se hace en los
  *   handlers del padre (datetimeLocalToISOInstant), manteniéndose agnóstico
@@ -131,7 +131,7 @@ export function SurveyForm({
                     <select
                         value={formPayload.responseType}
                         onChange={e => { clearError('responseType'); setFormPayload({ ...formPayload, responseType: e.target.value }) }}
-                        disabled={isEdit || loadingOptions}
+                        disabled={(isEdit && editing?.status !== 'DRAFT') || loadingOptions}
                         className={`select-base${errors.responseType ? ' input--error' : ''}`}
                     >
                         <option value="">Selecciona tipo</option>

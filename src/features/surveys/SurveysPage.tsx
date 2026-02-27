@@ -421,11 +421,12 @@ function SurveysPage() {
             setSaving(true)
             setError(null)
             const payload: UpdateSurveyRequestDTO = {
-                title:       formPayload.title,
-                description: formPayload.description || undefined,
-                surveyType:  formPayload.surveyType,
-                opensAt:     datetimeLocalToISOInstant(formOpensAt),
-                closesAt:    datetimeLocalToISOInstant(formClosesAt),
+                title:        formPayload.title,
+                description:  formPayload.description || undefined,
+                responseType: formPayload.responseType,
+                surveyType:   formPayload.surveyType,
+                opensAt:      datetimeLocalToISOInstant(formOpensAt),
+                closesAt:     datetimeLocalToISOInstant(formClosesAt),
             }
             const updated = await updateSurvey(selectedSurvey.id, payload, selectedSurvey.version, token)
             setSurveys(prev => prev.map(s => (s.id === updated.id ? updated : s)))

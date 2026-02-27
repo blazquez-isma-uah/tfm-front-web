@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { extractErrorMessage } from '../../utils/errorHandler'
 import {
@@ -84,8 +85,15 @@ function SurveysPage() {
     const confirm      = useConfirmDialog()
     const rowExpansion = useRowExpansion<string>()
 
+    const location   = useLocation()
+    const _navState  = location.state as {
+        action?: string
+        preselectedEventId?: string
+        filterEventId?: string
+    } | null
+
     // ── Estado propio del componente ──────────────────────────────────────────
-    const [mode, setMode]                     = useState<ViewMode>('LIST')
+    const [mode, setMode]                     = useState<ViewMode>(_navState?.action === 'CREATE' ? 'CREATE' : 'LIST')
     const [selectedSurvey, setSelectedSurvey] = useState<SurveyDTO | null>(null)
 
     // Opciones de selectores
@@ -97,7 +105,7 @@ function SurveysPage() {
 
     // Filtros visibles
     const [filterTitle, setFilterTitle]               = useState('')
-    const [filterEventId, setFilterEventId]           = useState('')
+    const [filterEventId, setFilterEventId]           = useState(_navState?.filterEventId ?? '')
     const [filterStatus, setFilterStatus]             = useState<SurveyStatus | ''>('')
     const [filterOpensAtFrom, setFilterOpensAtFrom]   = useState('')
     const [filterOpensAtTo, setFilterOpensAtTo]       = useState('')
@@ -106,7 +114,7 @@ function SurveysPage() {
 
     // Filtros efectivos
     const [searchTitle, setSearchTitle]                   = useState('')
-    const [searchEventId, setSearchEventId]               = useState('')
+    const [searchEventId, setSearchEventId]               = useState(_navState?.filterEventId ?? '')
     const [searchStatus, setSearchStatus]                 = useState<SurveyStatus | undefined>(undefined)
     const [searchOpensAtFrom, setSearchOpensAtFrom]       = useState<string | undefined>(undefined)
     const [searchOpensAtTo, setSearchOpensAtTo]           = useState<string | undefined>(undefined)
@@ -116,7 +124,7 @@ function SurveysPage() {
 
     // Formulario crear/editar
     const [formPayload, setFormPayload] = useState<CreateSurveyRequestDTO>({
-        eventId: '', title: '', description: '', responseType: '', surveyType: '', opensAt: '', closesAt: '',
+        eventId: _navState?.preselectedEventId ?? '', title: '', description: '', responseType: '', surveyType: '', opensAt: '', closesAt: '',
     })
     const [formOpensAt, setFormOpensAt]   = useState('')
     const [formClosesAt, setFormClosesAt] = useState('')
@@ -194,6 +202,13 @@ function SurveysPage() {
     ]
 
     // ── Effects ───────────────────────────────────────────────────────────────
+
+    // Limpiar el state de navegación para que no persista en recargas
+    useEffect(() => {
+        if (location.state) {
+            window.history.replaceState({}, '')
+        }
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     // Cargar opciones de selectores
     useEffect(() => {

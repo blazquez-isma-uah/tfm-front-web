@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import type { EventDTO } from '../types/events'
 import { EventInfoSection } from './EventInfoSection'
 import { XMarkIcon } from './Icons'
@@ -21,6 +22,26 @@ export function EventDetailCard({
     onEdit,
     showButtons = true,
 }: EventDetailCardProps) {
+    const navigate = useNavigate()
+
+    const handleCreateSurvey = () => {
+        navigate('/admin/surveys', {
+            state: {
+                action: 'CREATE',
+                preselectedEventId: event.id,
+                preselectedEventTitle: event.title,
+            }
+        })
+    }
+
+    const handleViewSurveys = () => {
+        navigate('/admin/surveys', {
+            state: {
+                filterEventId: event.id,
+                filterEventTitle: event.title,
+            }
+        })
+    }
 
     return (
         <div className="card" style={{ marginTop: '1rem' }}>
@@ -44,15 +65,23 @@ export function EventDetailCard({
 
             <EventInfoSection event={event} />
 
-            {showButtons && onEdit && (
+            {showButtons && (
                 <div className="button-row-1rem" style={{ marginTop: 'var(--space-5)' }}>
-                    <button
-                        type="button"
-                        className="button-secondary"
-                        onClick={() => onEdit(event)}
-                    >
-                        Editar
+                    <button type="button" className="button-secondary" onClick={handleViewSurveys}>
+                        Ver encuestas
                     </button>
+                    <button type="button" className="button-secondary" onClick={handleCreateSurvey}>
+                        Nueva encuesta
+                    </button>
+                    {onEdit && (
+                        <button
+                            type="button"
+                            className="button-secondary"
+                            onClick={() => onEdit(event)}
+                        >
+                            Editar
+                        </button>
+                    )}
                 </div>
             )}
         </div>

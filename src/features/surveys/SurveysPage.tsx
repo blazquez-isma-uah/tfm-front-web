@@ -25,7 +25,7 @@ import type {
 import { DataTable } from '../../components/DataTable'
 import { PaginationBar } from '../../components/PaginationBar'
 import { SurveyDetailCard } from '../../components/SurveyDetailCard'
-import { SurveyResultsModal } from '../../components/SurveyResultsModal'
+import { SurveyResultsView } from '../../components/SurveyResultsView'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { SurveyFiltersPanel } from '../../components/SurveyFiltersPanel'
 import { SurveyForm } from '../../components/SurveyForm'
@@ -53,7 +53,7 @@ import '../../styles/common.css'
  * - useRowExpansion:  sustituye expandedSurveyId/isClosing
  */
 
-type ViewMode = 'LIST' | 'CREATE' | 'EDIT' | 'DETAIL'
+type ViewMode = 'LIST' | 'CREATE' | 'EDIT' | 'DETAIL' | 'RESULTS'
 
 // ── Helpers de conversión de fechas (a nivel de módulo, son funciones puras) ─
 function datetimeLocalToISOInstant(datetimeLocal: string): string {
@@ -84,10 +84,8 @@ function SurveysPage() {
     const rowExpansion = useRowExpansion<string>()
 
     // ── Estado propio del componente ──────────────────────────────────────────
-    const [mode, setMode]                         = useState<ViewMode>('LIST')
-    const [selectedSurvey, setSelectedSurvey]     = useState<SurveyDTO | null>(null)
-    const [showResultsModal, setShowResultsModal] = useState(false)
-    const [resultsModalSurvey, setResultsModalSurvey] = useState<SurveyDTO | null>(null)
+    const [mode, setMode]                     = useState<ViewMode>('LIST')
+    const [selectedSurvey, setSelectedSurvey] = useState<SurveyDTO | null>(null)
 
     // Opciones de selectores
     const [surveyStatuses, setSurveyStatuses]   = useState<SurveyStatus[]>([])
@@ -348,8 +346,8 @@ function SurveysPage() {
     }
 
     const handleViewResults = (survey: SurveyDTO) => {
-        setResultsModalSurvey(survey)
-        setShowResultsModal(true)
+        setSelectedSurvey(survey)
+        setMode('RESULTS')
     }
 
     const handleCancelForm = () => {
@@ -493,98 +491,106 @@ function SurveysPage() {
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="page-container">
-            <h1 className="page-title">Gestión de encuestas</h1>
 
-            {/* ── Buscador ── */}
-            {!error && (
-            <SurveyFiltersPanel
-                filterTitle={filterTitle}               setFilterTitle={setFilterTitle}
-                filterEventId={filterEventId}           setFilterEventId={setFilterEventId}
-                filterStatus={filterStatus}             setFilterStatus={setFilterStatus}
-                filterOpensAtFrom={filterOpensAtFrom}   setFilterOpensAtFrom={setFilterOpensAtFrom}
-                filterOpensAtTo={filterOpensAtTo}       setFilterOpensAtTo={setFilterOpensAtTo}
-                filterClosesAtFrom={filterClosesAtFrom} setFilterClosesAtFrom={setFilterClosesAtFrom}
-                filterClosesAtTo={filterClosesAtTo}     setFilterClosesAtTo={setFilterClosesAtTo}
-                surveyStatuses={surveyStatuses}
-                availableEvents={availableEvents}
-                loadingOptions={loadingOptions}
-                activeFiltersCount={[
-                    searchTitle, searchEventId, searchStatus,
-                    searchOpensAtFrom, searchOpensAtTo,
-                    searchClosesAtFrom, searchClosesAtTo,
-                ].filter(v => v !== '' && v !== undefined).length}
-                onSubmit={handleSearchSubmit}
-                onReset={handleResetFilters}
-                actionButton={
-                    <button type="button" className="button-secondary" onClick={handleOpenCreateSurvey}>
-                        + Nueva encuesta
-                    </button>
-                }
-            />
+            {/* ── VISTA RESULTADOS ── */}
+            {mode === 'RESULTS' && selectedSurvey && token && (
+                <SurveyResultsView
+                    survey={selectedSurvey}
+                    onBack={() => { setMode('LIST'); setSelectedSurvey(null) }}
+                    token={token}
+                />
             )}
 
-            {loading && <Spinner />}
-            {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
-
-            {/* ── LISTA ── */}
-            {mode === 'LIST' && !loading && !error && (
+            {/* ── VISTAS LISTA / CREAR / EDITAR ── */}
+            {mode !== 'RESULTS' && (
                 <>
-                    <div className="card">
-                        <DataTable<SurveyDTO, SurveySortableField>
-                            columns={surveyColumns}
-                            data={surveys}
-                            sortState={sorting.state}
-                            onSortChange={handleSort}
-                            onRowClick={handleViewDetails}
-                            expandedRowId={rowExpansion.expandedId}
-                            isClosing={rowExpansion.isClosing}
-                            renderExpandedContent={(survey) => (
-                                <SurveyDetailCard
-                                    survey={survey}
-                                    onBack={() => {
-                                        rowExpansion.close()
-                                        setTimeout(() => { setSelectedSurvey(null) }, 250)
-                                    }}
-                                    backButtonLabel="Ocultar"
-                                />
-                            )}
-                        />
-                    </div>
-                    <PaginationBar
-                        {...pagination.barProps}
-                        currentCount={surveys.length}
+                    <h1 className="page-title">Gestión de encuestas</h1>
+
+                    {/* ── Buscador ── */}
+                    {!error && (
+                    <SurveyFiltersPanel
+                        filterTitle={filterTitle}               setFilterTitle={setFilterTitle}
+                        filterEventId={filterEventId}           setFilterEventId={setFilterEventId}
+                        filterStatus={filterStatus}             setFilterStatus={setFilterStatus}
+                        filterOpensAtFrom={filterOpensAtFrom}   setFilterOpensAtFrom={setFilterOpensAtFrom}
+                        filterOpensAtTo={filterOpensAtTo}       setFilterOpensAtTo={setFilterOpensAtTo}
+                        filterClosesAtFrom={filterClosesAtFrom} setFilterClosesAtFrom={setFilterClosesAtFrom}
+                        filterClosesAtTo={filterClosesAtTo}     setFilterClosesAtTo={setFilterClosesAtTo}
+                        surveyStatuses={surveyStatuses}
+                        availableEvents={availableEvents}
+                        loadingOptions={loadingOptions}
+                        activeFiltersCount={[
+                            searchTitle, searchEventId, searchStatus,
+                            searchOpensAtFrom, searchOpensAtTo,
+                            searchClosesAtFrom, searchClosesAtTo,
+                        ].filter(v => v !== '' && v !== undefined).length}
+                        onSubmit={handleSearchSubmit}
+                        onReset={handleResetFilters}
+                        actionButton={
+                            <button type="button" className="button-secondary" onClick={handleOpenCreateSurvey}>
+                                + Nueva encuesta
+                            </button>
+                        }
                     />
+                    )}
+
+                    {loading && <Spinner />}
+                    {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
+
+                    {/* ── LISTA ── */}
+                    {mode === 'LIST' && !loading && !error && (
+                        <>
+                            <div className="card">
+                                <DataTable<SurveyDTO, SurveySortableField>
+                                    columns={surveyColumns}
+                                    data={surveys}
+                                    sortState={sorting.state}
+                                    onSortChange={handleSort}
+                                    onRowClick={handleViewDetails}
+                                    expandedRowId={rowExpansion.expandedId}
+                                    isClosing={rowExpansion.isClosing}
+                                    renderExpandedContent={(survey) => (
+                                        <SurveyDetailCard
+                                            survey={survey}
+                                            onBack={() => {
+                                                rowExpansion.close()
+                                                setTimeout(() => { setSelectedSurvey(null) }, 250)
+                                            }}
+                                            backButtonLabel="Ocultar"
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <PaginationBar
+                                {...pagination.barProps}
+                                currentCount={surveys.length}
+                            />
+                        </>
+                    )}
+
+                    {/* ── FORMULARIO CREAR/EDITAR ── */}
+                    {(mode === 'CREATE' || mode === 'EDIT') && (
+                        <SurveyForm
+                            editing={mode === 'EDIT' ? selectedSurvey : null}
+                            formPayload={formPayload}
+                            setFormPayload={setFormPayload}
+                            formOpensAt={formOpensAt}
+                            setFormOpensAt={setFormOpensAt}
+                            formClosesAt={formClosesAt}
+                            setFormClosesAt={setFormClosesAt}
+                            responseTypes={responseTypes}
+                            surveyTypes={surveyTypes}
+                            availableEvents={availableEvents}
+                            loadingOptions={loadingOptions}
+                            saving={saving}
+                            onSave={mode === 'CREATE' ? handleCreateSurvey : handleUpdateSurvey}
+                            onCancel={handleCancelForm}
+                        />
+                    )}
                 </>
             )}
 
-            {/* ── FORMULARIO CREAR/EDITAR ── */}
-            {(mode === 'CREATE' || mode === 'EDIT') && (
-                <SurveyForm
-                    editing={mode === 'EDIT' ? selectedSurvey : null}
-                    formPayload={formPayload}
-                    setFormPayload={setFormPayload}
-                    formOpensAt={formOpensAt}
-                    setFormOpensAt={setFormOpensAt}
-                    formClosesAt={formClosesAt}
-                    setFormClosesAt={setFormClosesAt}
-                    responseTypes={responseTypes}
-                    surveyTypes={surveyTypes}
-                    availableEvents={availableEvents}
-                    loadingOptions={loadingOptions}
-                    saving={saving}
-                    onSave={mode === 'CREATE' ? handleCreateSurvey : handleUpdateSurvey}
-                    onCancel={handleCancelForm}
-                />
-            )}
-
             <ConfirmDialog {...confirm.dialogProps} />
-
-            {showResultsModal && resultsModalSurvey && (
-                <SurveyResultsModal
-                    survey={resultsModalSurvey}
-                    onClose={() => { setShowResultsModal(false); setResultsModalSurvey(null) }}
-                />
-            )}
         </div>
     )
 }

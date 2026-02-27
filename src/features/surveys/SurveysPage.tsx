@@ -162,7 +162,7 @@ function SurveysPage() {
                             onClick={e => { e.stopPropagation(); handleViewResults(s) }}
                         ><ChartIcon /></button>
                     </span>
-                    {s.status === 'DRAFT' && (
+                    {(s.status === 'DRAFT' || s.status === 'CLOSED' || s.status === 'CANCELLED') && (
                         <span className="tooltip-wrap" data-tooltip="Abrir encuesta">
                             <button
                                 type="button"

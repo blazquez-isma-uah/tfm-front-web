@@ -10,6 +10,7 @@ import {
     openSurvey,
     closeSurvey,
     cancelSurvey,
+    resetSurvey,
     getAvailableSurveyStatuses,
     getAvailableResponseTypes,
     getAvailableSurveyTypes,
@@ -31,7 +32,7 @@ import { SurveyResultsView } from '../../components/SurveyResultsView'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { SurveyFiltersPanel } from '../../components/SurveyFiltersPanel'
 import { SurveyForm } from '../../components/SurveyForm'
-import { EditIcon, TrashIcon, ChartIcon, LockIcon, LockOpenIcon, CancelIcon } from '../../components/Icons'
+import { EditIcon, TrashIcon, ChartIcon, LockIcon, LockOpenIcon, CancelIcon, ArrowPathIcon } from '../../components/Icons'
 import {
     translateSurveyStatus,
     formatSurveyDateTime,
@@ -187,6 +188,15 @@ function SurveysPage() {
                                 className="btn-icon btn-icon-danger"
                                 onClick={e => { e.stopPropagation(); handleCancelSurvey(s) }}
                             ><CancelIcon /></button>
+                        </span>
+                    )}
+                    {(s.status === 'CLOSED' || s.status === 'CANCELLED') && (
+                        <span className="tooltip-wrap" data-tooltip="Reiniciar encuesta">
+                            <button
+                                type="button"
+                                className="btn-icon btn-icon-warning"
+                                onClick={e => { e.stopPropagation(); handleResetSurvey(s) }}
+                            ><ArrowPathIcon /></button>
                         </span>
                     )}
                     <span className="tooltip-wrap" data-tooltip="Eliminar">
@@ -531,6 +541,28 @@ function SurveysPage() {
                 } catch (e: any) {
                     console.error('Error cancelling survey:', e)
                     showToast(extractErrorMessage(e, 'Error cancelando encuesta'), 'error')
+                }
+            },
+        })
+    }
+
+    const handleResetSurvey = (survey: SurveyDTO) => {
+        if (!token) return
+        confirm.open({
+            title:   `Reiniciar encuesta "${survey.title}"`,
+            message: `¿Seguro que quieres reiniciar la encuesta "${survey.title}"?\nSe eliminarán todas las respuestas asociadas. Esta acción no se puede deshacer.`,
+            variant: 'danger',
+            onConfirm: async () => {
+                confirm.close()
+                try {
+                    setError(null)
+                    const updated = await resetSurvey(survey.id, survey.version, token)
+                    setSurveys(prev => prev.map(s => (s.id === updated.id ? updated : s)))
+                    showToast('Encuesta reiniciada correctamente', 'success')
+                    setSelectedSurvey(updated)
+                } catch (e: any) {
+                    console.error('Error resetting survey:', e)
+                    showToast(extractErrorMessage(e, 'Error reiniciando encuesta'), 'error')
                 }
             },
         })

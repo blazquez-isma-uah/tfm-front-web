@@ -1021,6 +1021,15 @@
   background-color: #bbf7d0;
 }
 
+/* Variante advertencia: naranja/ámbar — acciones reversibles pero significativas (reiniciar, etc.) */
+.btn-icon-warning {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+.btn-icon-warning:hover:not(:disabled) {
+  background-color: #fde68a;
+}
+
 /* ----------------------------------------------------------
    TOOLTIP CSS PURO
    Funciona con cualquier elemento que tenga:

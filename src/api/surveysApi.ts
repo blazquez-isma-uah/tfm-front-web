@@ -162,6 +162,24 @@ export async function cancelSurvey(
   return response.data
 }
 
+export async function resetSurvey(
+  surveyId: string,
+  version: number,
+  token: string,
+): Promise<SurveyDTO> {
+  const response = await api.post<SurveyDTO>(
+    `/api/surveys/${surveyId}/reset`,
+    {},
+    {
+      headers: {
+            ...authHeaders(token),
+            'If-Match': `"${version}"`,
+        },
+    },
+  )
+  return response.data
+}
+
 // ==================== Survey Responses ====================
 
 export async function respondToSurvey(

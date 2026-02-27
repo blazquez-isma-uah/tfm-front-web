@@ -6,6 +6,7 @@ import {
     createSurvey,
     updateSurvey,
     deleteSurvey,
+    openSurvey,
     closeSurvey,
     cancelSurvey,
     getAvailableSurveyStatuses,
@@ -29,7 +30,7 @@ import { SurveyResultsView } from '../../components/SurveyResultsView'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { SurveyFiltersPanel } from '../../components/SurveyFiltersPanel'
 import { SurveyForm } from '../../components/SurveyForm'
-import { EditIcon, TrashIcon, ChartIcon, LockIcon, CancelIcon } from '../../components/Icons'
+import { EditIcon, TrashIcon, ChartIcon, LockIcon, LockOpenIcon, CancelIcon } from '../../components/Icons'
 import {
     translateSurveyStatus,
     formatSurveyDateTime,
@@ -153,6 +154,15 @@ function SurveysPage() {
                             onClick={e => { e.stopPropagation(); handleViewResults(s) }}
                         ><ChartIcon /></button>
                     </span>
+                    {s.status === 'DRAFT' && (
+                        <span className="tooltip-wrap" data-tooltip="Abrir encuesta">
+                            <button
+                                type="button"
+                                className="btn-icon btn-icon-success"
+                                onClick={e => { e.stopPropagation(); handleOpenSurvey(s) }}
+                            ><LockOpenIcon /></button>
+                        </span>
+                    )}
                     {s.status === 'OPEN' && (
                         <span className="tooltip-wrap" data-tooltip="Cerrar encuesta">
                             <button
@@ -444,10 +454,33 @@ function SurveysPage() {
         })
     }
 
+    const handleOpenSurvey = (survey: SurveyDTO) => {
+        if (!token) return
+        confirm.open({
+            title:   `Abrir encuesta "${survey.title}"`,
+            message: `¿Seguro que quieres abrir la encuesta "${survey.title}"?\nUna vez abierta, los músicos podrán responderla.`,
+            variant: 'warning',
+            onConfirm: async () => {
+                confirm.close()
+                try {
+                    setError(null)
+                    const updated = await openSurvey(survey.id, survey.version, token)
+                    setSurveys(prev => prev.map(s => (s.id === updated.id ? updated : s)))
+                    showToast('Encuesta abierta correctamente', 'success')
+                    setSelectedSurvey(updated)
+                } catch (e: any) {
+                    console.error('Error opening survey:', e)
+                    showToast(extractErrorMessage(e, 'Error abriendo encuesta'), 'error')
+                }
+            },
+        })
+    }
+
     const handleCloseSurvey = (survey: SurveyDTO) => {
         if (!token) return
         confirm.open({
             title:   `Cerrar encuesta "${survey.title}"`,
+
             message: `¿Seguro que quieres cerrar la encuesta "${survey.title}"?`,
             variant: 'warning',
             onConfirm: async () => {

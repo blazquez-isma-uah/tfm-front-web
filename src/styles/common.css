@@ -1012,6 +1012,15 @@
   background-color: var(--color-gray-200);
 }
 
+/* Variante éxito: verde — acciones habilitadoras (abrir encuesta, etc.) */
+.btn-icon-success {
+  background-color: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+.btn-icon-success:hover:not(:disabled) {
+  background-color: #bbf7d0;
+}
+
 /* ----------------------------------------------------------
    TOOLTIP CSS PURO
    Funciona con cualquier elemento que tenga:

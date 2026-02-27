@@ -161,3 +161,24 @@ export function LockIcon({ className, 'aria-hidden': ariaHidden = true }: IconPr
     </svg>
   )
 }
+
+/**
+ * 🔓 LockOpenIcon — candado abierto, acción de abrir encuesta (DRAFT → OPEN).
+ *
+ * Usa var(--color-success) para comunicar semánticamente que la acción
+ * es positiva/habilitadora, en contraste con LockIcon (cerrar) y CancelIcon (peligro).
+ *
+ * Source: Heroicons outline, path 24x24.
+ */
+export function LockOpenIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
+  return (
+    <svg
+      {...iconBase}
+      className={className}
+      aria-hidden={ariaHidden}
+      style={{ stroke: 'var(--color-success-dark)' }}
+    >
+      <path d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  )
+}

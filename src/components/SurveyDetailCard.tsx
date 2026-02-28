@@ -163,93 +163,99 @@ export function SurveyDetailCard({
         )}
       </div>
 
-      <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-semibold)', margin: '0 0 var(--space-3) 0', color: 'var(--text-primary)', wordBreak: 'break-word' }}>
-        {survey.title}
-      </h2>
-      <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Tipo de encuesta</dt>
-          <dd className="dashboard-card__value">{translateSurveyType(survey.surveyType)}</dd>
-        </div>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Estado</dt>
-          <dd className="dashboard-card__value">
-            <span style={surveyStatusBadgeStyle(survey.status)}>
-              {translateSurveyStatus(survey.status)}
+      <h2 className="detail-title">{survey.title}</h2>
+
+      {/* Primera sección sin título */}
+      <div className="detail-section">
+        <div className="detail-grid">
+          <div className="detail-field">
+            <span className="detail-field__label">Tipo de encuesta</span>
+            <span className="detail-field__value">{translateSurveyType(survey.surveyType)}</span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Tipo de respuesta</span>
+            <span className="detail-field__value">{translateResponseType(survey.responseType)}</span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Estado</span>
+            <span className="detail-field__value">
+              <span style={surveyStatusBadgeStyle(survey.status)}>
+                {translateSurveyStatus(survey.status)}
+              </span>
             </span>
-          </dd>
+          </div>
         </div>
-        <div className="dashboard-card__pair" style={{ gridColumn: '1 / -1' }}>
-          <dt className="dashboard-card__term">Tipo de respuesta</dt>
-          <dd className="dashboard-card__value">{translateResponseType(survey.responseType)}</dd>
-        </div>
-      </dl>
+      </div>
 
-      {/* Grupo: Evento */}
-      <div className="detail-section-divider">Evento</div>
-      <dl className="dashboard-card__body" style={{ marginBottom: 0 }}>
-        <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
-          <dd className="dashboard-card__value">
-            {loadingEvent
-              ? 'Cargando...'
-              : event
-              ? event.title
-              : <span style={mutedValue}>Sin evento asociado</span>}
-          </dd>
+      {/* Sección: Evento */}
+      <div className="detail-section">
+        <div className="detail-grid">
+          <div className="detail-field detail-field--full">
+            <span className="detail-field__label">Evento</span>
+            <span className="detail-field__value">
+              {loadingEvent
+                ? 'Cargando...'
+                : event
+                ? event.title
+                : <span className="detail-field__value--empty">Sin evento asociado</span>}
+            </span>
+          </div>
         </div>
-      </dl>
+      </div>
 
-      {/* Grupo: Fechas */}
-      <div className="detail-section-divider">Fechas</div>
-      <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Fecha apertura</dt>
-          <dd className="dashboard-card__value">{formatSurveyDateTime(survey.opensAt)}</dd>
+      {/* Sección: Fechas */}
+      <div className="detail-section">
+        <div className="detail-grid">
+          <div className="detail-field">
+            <span className="detail-field__label">Fecha apertura</span>
+            <span className="detail-field__value">{formatSurveyDateTime(survey.opensAt)}</span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Fecha cierre</span>
+            <span className="detail-field__value">{formatSurveyDateTime(survey.closesAt)}</span>
+          </div>
         </div>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Fecha cierre</dt>
-          <dd className="dashboard-card__value">{formatSurveyDateTime(survey.closesAt)}</dd>
-        </div>
-      </dl>
+      </div>
 
-      {/* Grupo: Autoría */}
+      {/* Sección: Descripción */}
+      <div className="detail-section">
+        <div className="detail-grid">
+          <div className="detail-field detail-field--full">
+            <span className="detail-field__label">Descripción</span>
+            <span className="detail-field__value" style={{ whiteSpace: 'pre-wrap' }}>
+              {survey.description || <span className="detail-field__value--empty">-</span>}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Sección: Autoría */}
       {(survey.createdBy || survey.createdAt || survey.updatedAt) && (
-        <>
-          <div className="detail-section-divider">Autoría</div>
-          <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
+        <div className="detail-section">
+          <div className="detail-grid">
             {survey.createdAt && (
-              <div className="dashboard-card__pair">
-                <dt className="dashboard-card__term">Fecha creación</dt>
-                <dd className="dashboard-card__value">{formatSurveyDateTime(survey.createdAt)}</dd>
+              <div className="detail-field">
+                <span className="detail-field__label">Fecha creación</span>
+                <span className="detail-field__value">{formatSurveyDateTime(survey.createdAt)}</span>
               </div>
             )}
             {survey.updatedAt && (
-              <div className="dashboard-card__pair">
-                <dt className="dashboard-card__term">Última actualización</dt>
-                <dd className="dashboard-card__value">{formatSurveyDateTime(survey.updatedAt)}</dd>
+              <div className="detail-field">
+                <span className="detail-field__label">Última actualización</span>
+                <span className="detail-field__value">{formatSurveyDateTime(survey.updatedAt)}</span>
               </div>
             )}
             {survey.createdBy && (
-              <div className="dashboard-card__pair">
-                <dt className="dashboard-card__term">Creado por</dt>
-                <dd className="dashboard-card__value">
-                  {loadingCreator ? 'Cargando...' : creator ? creator.username : <span style={mutedValue}>-</span>}
-                </dd>
+              <div className="detail-field">
+                <span className="detail-field__label">Creado por</span>
+                <span className="detail-field__value">
+                  {loadingCreator ? 'Cargando...' : creator ? creator.username : <span className="detail-field__value--empty">-</span>}
+                </span>
               </div>
             )}
-          </dl>
-        </>
-      )}
-
-      {/* Grupo: Descripción */}
-      <div className="detail-section-divider">Descripción</div>
-      <dl className="dashboard-card__body" style={{ marginBottom: 0 }}>
-        <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
-          <dd className="dashboard-card__value" style={{ whiteSpace: 'pre-wrap', ...(survey.description ? {} : mutedValue) }}>
-            {survey.description || '-'}
-          </dd>
+          </div>
         </div>
-      </dl>
+      )}
 
       {/* Formulario para responder encuesta (usuarios con rol MUSICIAN) */}
       {showResponseForm && isMusician && (

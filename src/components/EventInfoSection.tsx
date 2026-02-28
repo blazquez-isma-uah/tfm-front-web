@@ -29,10 +29,6 @@ const badgeCanceled: React.CSSProperties = {
     fontWeight: 'var(--font-weight-medium)',
 }
 
-const mutedValue: React.CSSProperties = {
-    color: 'var(--text-muted)',
-}
-
 function EventStatusBadge({ status }: { status: string }) {
     const style = status === 'SCHEDULED' ? badgeScheduled : badgeCanceled
     return <span style={style}>{translateEventStatus(status)}</span>
@@ -45,58 +41,65 @@ function EventStatusBadge({ status }: { status: string }) {
 export function EventInfoSection({ event }: EventInfoSectionProps) {
     return (
         <>
-            <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-semibold)', margin: '0 0 var(--space-3) 0', color: 'var(--text-primary)', wordBreak: 'break-word' }}>
-                {event.title}
-            </h2>
-            <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
-                <div className="dashboard-card__pair">
-                    <dt className="dashboard-card__term">Tipo</dt>
-                    <dd className="dashboard-card__value">{translateEventType(event.type)}</dd>
-                </div>
-                <div className="dashboard-card__pair">
-                    <dt className="dashboard-card__term">Estado</dt>
-                    <dd className="dashboard-card__value">
-                        <EventStatusBadge status={event.status} />
-                    </dd>
-                </div>
-                <div className="dashboard-card__pair">
-                    <dt className="dashboard-card__term">Visibilidad</dt>
-                    <dd className="dashboard-card__value">{translateEventVisibility(event.visibility)}</dd>
-                </div>
-            </dl>
+            <h2 className="detail-title">{event.title}</h2>
 
-            {/* Grupo: Fechas */}
-            <div className="detail-section-divider">Fechas</div>
-            <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)', marginBottom: 0 }}>
-                <div className="dashboard-card__pair">
-                    <dt className="dashboard-card__term">Fecha inicio</dt>
-                    <dd className="dashboard-card__value">{formatEventDateTime(event.startAt)}</dd>
+            {/* Primera sección sin título */}
+            <div className="detail-section">
+                <div className="detail-grid">
+                    <div className="detail-field">
+                        <span className="detail-field__label">Tipo</span>
+                        <span className="detail-field__value">{translateEventType(event.type)}</span>
+                    </div>
+                    <div className="detail-field">
+                        <span className="detail-field__label">Estado</span>
+                        <span className="detail-field__value">
+                            <EventStatusBadge status={event.status} />
+                        </span>
+                    </div>
+                    <div className="detail-field">
+                        <span className="detail-field__label">Visibilidad</span>
+                        <span className="detail-field__value">{translateEventVisibility(event.visibility)}</span>
+                    </div>
                 </div>
-                <div className="dashboard-card__pair">
-                    <dt className="dashboard-card__term">Fecha fin</dt>
-                    <dd className="dashboard-card__value">{formatEventDateTime(event.endAt)}</dd>
-                </div>
-            </dl>
+            </div>
 
-            {/* Grupo: Lugar */}
-            <div className="detail-section-divider">Lugar</div>
-            <dl className="dashboard-card__body" style={{ marginBottom: 0 }}>
-                <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
-                    <dd className="dashboard-card__value">
-                        {event.location || <span style={mutedValue}>-</span>}
-                    </dd>
+            {/* Sección: Fechas */}
+            <div className="detail-section">
+                <div className="detail-grid">
+                    <div className="detail-field">
+                        <span className="detail-field__label">Fecha inicio</span>
+                        <span className="detail-field__value">{formatEventDateTime(event.startAt)}</span>
+                    </div>
+                    <div className="detail-field">
+                        <span className="detail-field__label">Fecha fin</span>
+                        <span className="detail-field__value">{formatEventDateTime(event.endAt)}</span>
+                    </div>
                 </div>
-            </dl>
+            </div>
 
-            {/* Grupo: Descripción */}
-            <div className="detail-section-divider">Descripción</div>
-            <dl className="dashboard-card__body" style={{ marginBottom: 0 }}>
-                <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
-                    <dd className="dashboard-card__value" style={{ whiteSpace: 'pre-wrap', ...(event.description ? {} : mutedValue) }}>
-                        {event.description || '-'}
-                    </dd>
+            {/* Sección: Lugar */}
+            <div className="detail-section">
+                <div className="detail-grid">
+                    <div className="detail-field detail-field--full">
+                        <span className="detail-field__label">Lugar</span>
+                        <span className="detail-field__value">
+                            {event.location || <span className="detail-field__value--empty">-</span>}
+                        </span>
+                    </div>
                 </div>
-            </dl>
+            </div>
+
+            {/* Sección: Descripción */}
+            <div className="detail-section">
+                <div className="detail-grid">
+                    <div className="detail-field detail-field--full">
+                        <span className="detail-field__label">Descripción</span>
+                        <span className="detail-field__value" style={{ whiteSpace: 'pre-wrap' }}>
+                            {event.description || <span className="detail-field__value--empty">-</span>}
+                        </span>
+                    </div>
+                </div>
+            </div>
         </>
     )
 }

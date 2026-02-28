@@ -93,29 +93,78 @@
   margin: 0 0 var(--space-3) 0;
 }
 
-/* Ruled divider: line — label — line, used in detail cards */
-.detail-section-divider {
+/* ----------------------------------------------------------
+   STAT BOXES — Patrón de tarjeta de detalle
+   Reemplaza dl/dt/dd por boxes independientes con etiqueta arriba
+   y valor abajo. Evita problemas de desalineación.
+---------------------------------------------------------- */
+
+/* Contenedor de una sección dentro de la tarjeta */
+.detail-section {
+  margin-bottom: var(--space-5);
+}
+
+/* Separador visual entre secciones consecutivas */
+.detail-section + .detail-section {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-light);
+}
+
+/* Grid de stat boxes — auto-fill responsive sin breakpoints explícitos */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3) var(--space-4);
+}
+
+/* Cada campo: etiqueta arriba, valor abajo */
+.detail-field {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: var(--space-4) 0 var(--space-3);
-  color: var(--text-secondary);
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0; /* Evita overflow en grid */
+}
+
+/* Etiqueta del campo: pequeña, gris, mayúsculas */
+.detail-field__label {
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: var(--text-muted);
   white-space: nowrap;
 }
-.detail-section-divider::before,
-.detail-section-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border-light);
+
+/* Valor del campo */
+.detail-field__value {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  word-break: break-word;
 }
-/* First divider in a card needs no top rule */
-.detail-section-divider:first-of-type::before {
-  display: none;
+
+/* Valor vacío o no disponible */
+.detail-field__value--empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Campo que ocupa todo el ancho (notas, descripción, instrumentos) */
+.detail-field--full {
+  grid-column: 1 / -1;
+}
+
+/* Campo que ocupa la mitad izquierda en grids de 2+ columnas */
+.detail-field--half {
+  grid-column: span 2;
+}
+
+/* Título principal de detalle (usado en tarjetas de eventos/encuestas) */
+.detail-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--space-4) 0;
+  color: var(--text-primary);
+  word-break: break-word;
 }
 
 /* ----------------------------------------------------------

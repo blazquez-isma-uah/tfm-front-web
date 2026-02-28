@@ -32,10 +32,6 @@ const badgeInactive: React.CSSProperties = {
   fontWeight: 'var(--font-weight-medium)',
 }
 
-const mutedValue: React.CSSProperties = {
-  color: 'var(--text-muted)',
-}
-
 export function UserDetailCard({
   user,
   onBack,
@@ -73,85 +69,89 @@ export function UserDetailCard({
         )}
       </div>
 
-      {/* Grupo: Identidad */}
-      <div className="detail-section-divider">Identidad</div>
-      <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)' }}>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Username</dt>
-          <dd className="dashboard-card__value">{user.username || <span style={mutedValue}>-</span>}</dd>
-        </div>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Nombre</dt>
-          <dd className="dashboard-card__value">{user.firstName || <span style={mutedValue}>-</span>}</dd>
-        </div>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Apellidos</dt>
-          <dd className="dashboard-card__value">{fullLastName || <span style={mutedValue}>-</span>}</dd>
-        </div>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Email</dt>
-          <dd className="dashboard-card__value">{user.email || <span style={mutedValue}>-</span>}</dd>
-        </div>
-      </dl>
-
-      {/* Grupo: Estado */}
-      <div className="detail-section-divider">Estado</div>
-      <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)' }}>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Activo</dt>
-          <dd className="dashboard-card__value">
-            <span style={user.active ? badgeActive : badgeInactive}>
-              {user.active ? 'Activo' : 'Inactivo'}
+      {/* Sección: Identidad */}
+      <div className="detail-section">
+        <div className="detail-grid">
+          <div className="detail-field">
+            <span className="detail-field__label">Username</span>
+            <span className="detail-field__value">{user.username}</span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Nombre</span>
+            <span className="detail-field__value">{user.firstName}</span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Apellidos</span>
+            <span className="detail-field__value">
+              {fullLastName || <span className="detail-field__value--empty">-</span>}
             </span>
-          </dd>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Email</span>
+            <span className="detail-field__value">{user.email}</span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Teléfono</span>
+            <span className="detail-field__value">{user.phone || <span className="detail-field__value--empty">-</span>}</span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Fecha nacimiento</span>
+            <span className="detail-field__value">
+              {formatDate(user.birthDate) !== '-' ? formatDate(user.birthDate) : <span className="detail-field__value--empty">-</span>}
+            </span>
+          </div>
+          <div className="detail-field detail-field--full">
+            <span className="detail-field__label">Instrumentos</span>
+            <span className="detail-field__value">
+              {instrumentsList || <span className="detail-field__value--empty">Sin instrumentos asignados</span>}
+            </span>
+          </div>
         </div>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Roles</dt>
-          <dd className="dashboard-card__value">
-            {(user.roles ?? []).join(', ') || <span style={mutedValue}>-</span>}
-          </dd>
-        </div>
-      </dl>
+      </div>
 
-      {/* Grupo: Banda */}
-      <div className="detail-section-divider">Banda</div>
-      <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)' }}>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Alta en banda</dt>
-          <dd className="dashboard-card__value">{formatDate(user.bandJoinDate) !== '-' ? formatDate(user.bandJoinDate) : <span style={mutedValue}>-</span>}</dd>
+      {/* Sección: Banda */}
+      <div className="detail-section">
+        <div className="detail-grid">
+          <div className="detail-field">
+            <span className="detail-field__label">Alta en banda</span>
+            <span className="detail-field__value">
+              {formatDate(user.bandJoinDate) !== '-' ? formatDate(user.bandJoinDate) : <span className="detail-field__value--empty">-</span>}
+            </span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Alta en sistema</span>
+            <span className="detail-field__value">
+              {formatDate(user.systemSignupDate) !== '-' ? formatDate(user.systemSignupDate) : <span className="detail-field__value--empty">-</span>}
+            </span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Estado</span>
+            <span className="detail-field__value">
+              <span style={user.active ? badgeActive : badgeInactive}>
+                {user.active ? 'Activo' : 'Inactivo'}
+              </span>
+            </span>
+          </div>
+          <div className="detail-field">
+            <span className="detail-field__label">Roles</span>
+            <span className="detail-field__value">
+              {(user.roles ?? []).join(', ') || <span className="detail-field__value--empty">Sin roles</span>}
+            </span>
+          </div>
         </div>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Alta en sistema</dt>
-          <dd className="dashboard-card__value">{formatDate(user.systemSignupDate) !== '-' ? formatDate(user.systemSignupDate) : <span style={mutedValue}>-</span>}</dd>
-        </div>
-        <div className="dashboard-card__pair" style={{ gridColumn: '1 / -1' }}>
-          <dt className="dashboard-card__term">Instrumentos</dt>
-          <dd className="dashboard-card__value">{instrumentsList ?? <span style={mutedValue}>-</span>}</dd>
-        </div>
-      </dl>
+      </div>
 
-      {/* Grupo: Personal */}
-      <div className="detail-section-divider">Personal</div>
-      <dl className="dashboard-card__body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-2) var(--space-4)' }}>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Fecha nacimiento</dt>
-          <dd className="dashboard-card__value">{formatDate(user.birthDate) !== '-' ? formatDate(user.birthDate) : <span style={mutedValue}>-</span>}</dd>
+      {/* Sección: Notas */}
+      <div className="detail-section">
+        <div className="detail-grid">
+          <div className="detail-field detail-field--full">
+            <span className="detail-field__label">Notas</span>
+            <span className="detail-field__value">
+              {user.notes || <span className="detail-field__value--empty">Sin notas</span>}
+            </span>
+          </div>
         </div>
-        <div className="dashboard-card__pair">
-          <dt className="dashboard-card__term">Teléfono</dt>
-          <dd className="dashboard-card__value">{user.phone || <span style={mutedValue}>-</span>}</dd>
-        </div>
-      </dl>
-
-      {/* Grupo: Notas */}
-      <div className="detail-section-divider">Notas</div>
-      <dl className="dashboard-card__body">
-        <div className="dashboard-card__pair" style={{ gridTemplateColumns: '1fr' }}>
-          <dd className="dashboard-card__value" style={user.notes ? { fontStyle: 'italic' } : mutedValue}>
-            {user.notes || 'Sin notas'}
-          </dd>
-        </div>
-      </dl>
+      </div>
 
       {showButtons && (
         <div className="button-row" style={{ marginTop: 'var(--space-5)' }}>

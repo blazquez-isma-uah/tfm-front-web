@@ -202,7 +202,6 @@ export function EventFiltersPanel({
             </div>
 
             <div className="search-actions-row" style={{ justifyContent: 'space-between' }}>
-                <button type="submit" className="button-primary">Buscar</button>
                 <button
                     type="button"
                     className="button-subtle"
@@ -211,6 +210,7 @@ export function EventFiltersPanel({
                 >
                     Resetear filtros
                 </button>
+                <button type="submit" className="button-primary">Buscar</button>
             </div>
         </SearchFiltersPanel>
     )

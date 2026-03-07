@@ -397,13 +397,13 @@ function InstrumentsPage() {
         </div>
 
         <div className="search-actions-row" style={{ justifyContent: 'space-between' }}>
-          <button type="submit" className="button-primary">Buscar</button>
           <button
             type="button" className="button-subtle" onClick={handleResetFilters}
             style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
           >
             Resetear filtros
           </button>
+          <button type="submit" className="button-primary">Buscar</button>
         </div>
       </SearchFiltersPanel>
       )}

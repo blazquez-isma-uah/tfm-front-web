@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { getUpcomingEvents } from '../../api/eventsApi'
-import { getMyNotAnsweredSurveys } from '../../api/surveysApi'
+import { getMyNotAnsweredSurveys, getMyAnsweredSurveys } from '../../api/surveysApi'
 import type { CalendarEventItemDTO } from '../../types/events'
 import type { SurveyDTO } from '../../types/surveys'
 import { formatDateTime } from '../../utils/date'
@@ -30,6 +30,7 @@ function DashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<CalendarEventItemDTO[]>([])
   const [loadingEvents, setLoadingEvents]   = useState(true)
   const [errorEvents, setErrorEvents]       = useState<string | null>(null)
+  const [confirmedEventIds, setConfirmedEventIds] = useState<Set<string>>(new Set())
 
   const [pendingSurveys, setPendingSurveys] = useState<SurveyDTO[]>([])
   const [loadingSurveys, setLoadingSurveys] = useState(true)
@@ -39,11 +40,30 @@ function DashboardPage() {
   // useCallback permite pasarlo como onRetry a ErrorState sin crear una
   // nueva referencia en cada render (evita bucles de re-ejecución).
   const fetchUpcomingEvents = useCallback(async () => {
+    if (!token) return
     try {
       setLoadingEvents(true)
       setErrorEvents(null)
       const events = await getUpcomingEvents(5, 120, token)
       setUpcomingEvents(events)
+
+      // Obtener IDs de eventos donde el usuario ha respondido a encuesta de asistencia
+      try {
+        const answeredResponse = await getMyAnsweredSurveys(
+          { surveyType: 'ATTENDANCE', page: 0, size: 50, sort: ['opensAt,desc'] },
+          token
+        )
+        // Los eventIds de las encuestas respondidas son los eventos confirmados
+        const ids = new Set(
+          answeredResponse.content
+            .map(s => s.eventId)
+            .filter((id): id is string => Boolean(id))
+        )
+        setConfirmedEventIds(ids)
+      } catch {
+        // Si falla, simplemente no mostramos diferenciación — no es error crítico
+        setConfirmedEventIds(new Set())
+      }
     } catch (err) {
       console.error('Error fetching upcoming events:', err)
       setErrorEvents('No se pudieron cargar los próximos eventos')
@@ -103,7 +123,10 @@ function DashboardPage() {
         {!loadingEvents && !errorEvents && upcomingEvents.length > 0 && (
           <div className="dashboard-grid">
             {upcomingEvents.map((event) => (
-              <article key={event.id} className="dashboard-card">
+              <article
+                key={event.id}
+                className={`dashboard-card${confirmedEventIds.has(event.id) ? ' dashboard-card--success' : ''}`}
+              >
                 <h3 className="dashboard-card__title">{event.title}</h3>
                 <dl className="dashboard-card__body">
                   <div className="dashboard-card__pair">

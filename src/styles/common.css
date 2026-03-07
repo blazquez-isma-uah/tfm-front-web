@@ -1445,6 +1445,11 @@
   border-left: 3px solid var(--color-warning);
 }
 
+/* Variante para eventos con asistencia confirmada: borde izquierdo verde */
+.dashboard-card--success {
+  border-left: 4px solid var(--color-success);
+}
+
 .dashboard-card__title {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);

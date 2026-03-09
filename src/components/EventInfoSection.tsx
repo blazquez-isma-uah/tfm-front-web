@@ -11,27 +11,18 @@ interface EventInfoSectionProps {
     event: EventDTO
 }
 
-const badgeScheduled: React.CSSProperties = {
-    background: 'var(--color-info-light)',
-    color: 'var(--color-info-dark)',
-    padding: '2px 8px',
-    borderRadius: 'var(--radius-full)',
-    fontSize: 'var(--font-size-xs)',
-    fontWeight: 'var(--font-weight-medium)',
-}
-
-const badgeCanceled: React.CSSProperties = {
-    background: 'var(--color-gray-100)',
-    color: 'var(--color-gray-600)',
-    padding: '2px 8px',
-    borderRadius: 'var(--radius-full)',
-    fontSize: 'var(--font-size-xs)',
-    fontWeight: 'var(--font-weight-medium)',
-}
-
 function EventStatusBadge({ status }: { status: string }) {
-    const style = status === 'SCHEDULED' ? badgeScheduled : badgeCanceled
-    return <span style={style}>{translateEventStatus(status)}</span>
+    let badgeClass = 'badge badge--neutral'
+    
+    if (status === 'SCHEDULED') {
+        badgeClass = 'badge badge--info'
+    } else if (status === 'POSTPONED') {
+        badgeClass = 'badge badge--warning'
+    } else if (status === 'CANCELED') {
+        badgeClass = 'badge badge--error'
+    }
+    
+    return <span className={badgeClass}>{translateEventStatus(status)}</span>
 }
 
 /**

@@ -14,24 +14,6 @@ interface UserDetailCardProps {
   backButtonLabel?: string
 }
 
-const badgeActive: React.CSSProperties = {
-  background: 'var(--color-success-light)',
-  color: 'var(--color-success-dark)',
-  padding: '2px 8px',
-  borderRadius: 'var(--radius-full)',
-  fontSize: 'var(--font-size-xs)',
-  fontWeight: 'var(--font-weight-medium)',
-}
-
-const badgeInactive: React.CSSProperties = {
-  background: 'var(--color-gray-100)',
-  color: 'var(--color-gray-600)',
-  padding: '2px 8px',
-  borderRadius: 'var(--radius-full)',
-  fontSize: 'var(--font-size-xs)',
-  fontWeight: 'var(--font-weight-medium)',
-}
-
 export function UserDetailCard({
   user,
   onBack,
@@ -127,7 +109,7 @@ export function UserDetailCard({
           <div className="detail-field">
             <span className="detail-field__label">Estado</span>
             <span className="detail-field__value">
-              <span style={user.active ? badgeActive : badgeInactive}>
+              <span className={user.active ? 'badge badge--success' : 'badge badge--neutral'}>
                 {user.active ? 'Activo' : 'Inactivo'}
               </span>
             </span>

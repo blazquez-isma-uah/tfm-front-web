@@ -124,8 +124,8 @@
 }
 
 .badge--error {
-  background: var(--color-error-light);
-  color: var(--color-error-dark);
+  background: var(--color-danger-light);
+  color: var(--color-danger-dark);
 }
 
 .badge--neutral {

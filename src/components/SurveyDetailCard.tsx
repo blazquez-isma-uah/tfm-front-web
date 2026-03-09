@@ -32,38 +32,21 @@ interface SurveyDetailCardProps {
 }
 
 // ─── Badge helpers ────────────────────────────────────────────────────────────
-function surveyStatusBadgeStyle(status: string): React.CSSProperties {
+function surveyStatusBadgeClass(status: string): string {
   if (status === 'OPEN') {
-    return {
-      background: 'var(--color-success-light)',
-      color: 'var(--color-success-dark)',
-      padding: '2px 8px',
-      borderRadius: 'var(--radius-full)',
-      fontSize: 'var(--font-size-xs)',
-      fontWeight: 'var(--font-weight-medium)',
-    }
+    return 'badge badge--success'
   }
   if (status === 'DRAFT') {
-    return {
-      background: 'var(--color-info-light)',
-      color: 'var(--color-info-dark)',
-      padding: '2px 8px',
-      borderRadius: 'var(--radius-full)',
-      fontSize: 'var(--font-size-xs)',
-      fontWeight: 'var(--font-weight-medium)',
-    }
+    return 'badge badge--info'
   }
-  return {
-    background: 'var(--color-gray-100)',
-    color: 'var(--color-gray-600)',
-    padding: '2px 8px',
-    borderRadius: 'var(--radius-full)',
-    fontSize: 'var(--font-size-xs)',
-    fontWeight: 'var(--font-weight-medium)',
+  if (status === 'CLOSED') {
+    return 'badge badge--neutral'
   }
+  if (status === 'CANCELLED') {
+    return 'badge badge--error'
+  }
+  return 'badge badge--neutral'
 }
-
-const mutedValue: React.CSSProperties = { color: 'var(--text-muted)' }
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function SurveyDetailCard({
@@ -132,7 +115,7 @@ export function SurveyDetailCard({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
           <strong style={{ fontSize: '0.95rem' }}>{survey.title}</strong>
-          <span style={surveyStatusBadgeStyle(survey.status)}>
+          <span className={surveyStatusBadgeClass(survey.status)}>
             {translateSurveyStatus(survey.status)}
           </span>
         </div>
@@ -179,7 +162,7 @@ export function SurveyDetailCard({
           <div className="detail-field">
             <span className="detail-field__label">Estado</span>
             <span className="detail-field__value">
-              <span style={surveyStatusBadgeStyle(survey.status)}>
+              <span className={surveyStatusBadgeClass(survey.status)}>
                 {translateSurveyStatus(survey.status)}
               </span>
             </span>

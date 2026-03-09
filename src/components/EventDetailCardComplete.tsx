@@ -126,15 +126,15 @@ export function EventDetailCardComplete({
                                 }}>
                                     {survey.title}
                                 </span>
-                                <span style={{
-                                    background: survey.status === 'OPEN' ? 'var(--color-success-light)' : 'var(--color-gray-100)',
-                                    color: survey.status === 'OPEN' ? 'var(--color-success-dark)' : 'var(--color-gray-600)',
-                                    padding: '2px 8px',
-                                    borderRadius: 'var(--radius-full)',
-                                    fontSize: 'var(--font-size-xs)',
-                                    fontWeight: 'var(--font-weight-medium)',
-                                    flexShrink: 0,
-                                }}>
+                                <span 
+                                    className={
+                                        survey.status === 'OPEN' ? 'badge badge--success' :
+                                        survey.status === 'DRAFT' ? 'badge badge--info' :
+                                        survey.status === 'CANCELLED' ? 'badge badge--error' :
+                                        'badge badge--neutral'
+                                    } 
+                                    style={{ flexShrink: 0 }}
+                                >
                                     {translateSurveyStatus(survey.status)}
                                 </span>
                             </div>

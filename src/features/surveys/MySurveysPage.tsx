@@ -111,6 +111,7 @@ function MySurveysPage() {
     const [loading, setLoading]               = useState(false)
     const [error, setError]                   = useState<string | null>(null)
     const [refreshTrigger, setRefreshTrigger] = useState(0)
+    const [answeredSurveyIds, setAnsweredSurveyIds] = useState<Set<string>>(new Set())
 
     const pagination   = usePagination({ defaultSize: 10 })
     const sorting      = useSorting<SortableField>('closesAt')
@@ -148,6 +149,14 @@ function MySurveysPage() {
         { key: 'title',      header: 'Título',  sortable: true, sortField: 'title'      as SortableField, width: '30%' },
         { key: 'surveyType', header: 'Tipo',    sortable: true, sortField: 'surveyType' as SortableField, width: '15%', render: (s: SurveyDTO) => translateSurveyType(s.surveyType) },
         { key: 'status',     header: 'Estado',  sortable: true, sortField: 'status'     as SortableField, width: '12%', render: (s: SurveyDTO) => translateSurveyStatus(s.status) },
+        ...(activeTab === 'ACTIVE' ? [{
+            key: 'answered',
+            header: 'Respuesta',
+            width: '130px',
+            render: (survey: SurveyDTO) => answeredSurveyIds.has(survey.id)
+                ? <span className="badge badge--success">Respondida</span>
+                : <span className="badge badge--warning">Pendiente</span>
+        }] : []),
         { key: 'opensAt',    header: 'Abre',    sortable: true, sortField: 'opensAt'    as SortableField, width: '18%', render: (s: SurveyDTO) => formatSurveyDateTime(s.opensAt) },
         { key: 'closesAt',   header: 'Cierra',  sortable: true, sortField: 'closesAt'   as SortableField, width: '18%', render: (s: SurveyDTO) => formatSurveyDateTime(s.closesAt) },
     ]
@@ -175,10 +184,20 @@ function MySurveysPage() {
                         token
                     )
                 } else if (activeTab === 'ACTIVE') {
-                    response = await searchSurveysPage(
-                        { status: 'OPEN', opensTo: now, closesFrom: now, page: pagination.page, size: pagination.size, sort: sortParam },
-                        token
-                    )
+                    // Cargar en paralelo encuestas activas y respondidas
+                    const [activeSurveysRes, answeredRes] = await Promise.all([
+                        searchSurveysPage(
+                            { status: 'OPEN', opensTo: now, closesFrom: now, page: pagination.page, size: pagination.size, sort: sortParam },
+                            token
+                        ),
+                        getMyAnsweredSurveys(
+                            { status: 'OPEN', page: 0, size: 100, sort: ['opensAt,desc'] },
+                            token
+                        ).catch(() => ({ content: [] } as any)) // Si falla, devolver vacío sin bloquear
+                    ])
+                    
+                    response = activeSurveysRes
+                    setAnsweredSurveyIds(new Set(answeredRes.content.map((s: SurveyDTO) => s.id)))
                 } else {
                     // HISTORY: encuestas respondidas → filtrar cerradas/canceladas en cliente
                     response = await getMyAnsweredSurveys(

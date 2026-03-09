@@ -94,6 +94,46 @@
 }
 
 /* ----------------------------------------------------------
+   BADGES — Etiquetas de estado
+   Badges pequeños para mostrar estados o información destacada.
+---------------------------------------------------------- */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.badge--success {
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.badge--warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+
+.badge--info {
+  background: var(--color-info-light);
+  color: var(--color-info-dark);
+}
+
+.badge--error {
+  background: var(--color-error-light);
+  color: var(--color-error-dark);
+}
+
+.badge--neutral {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
+/* ----------------------------------------------------------
    STAT BOXES — Patrón de tarjeta de detalle
    Reemplaza dl/dt/dd por boxes independientes con etiqueta arriba
    y valor abajo. Evita problemas de desalineación.

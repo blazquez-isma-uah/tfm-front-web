@@ -1,0 +1,8 @@
+# directorios y archivos a ignorar en el contexto de construcción de Docker
+node_modules
+dist
+build
+.env*.local
+*.md
+.git
+.gitignore

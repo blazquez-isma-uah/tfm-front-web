@@ -6,7 +6,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // TODO: todo lo que empiece por /api se reenvía al gateway
+      // El proxy de VITE replica el comportamiento de Nginx en desarrollo, 
+      // redirigiendo las llamadas a /api al gateway backend en localhost:8085
       '/api': {
         target: 'http://localhost:8085',
         changeOrigin: true,

@@ -479,7 +479,7 @@ function UsersPage() {
                     </button>
                 }
             >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '0.5rem', width: '100%' }}>
                     <div className="search-grid">
                         <div className="form-field">
                             <span className="label-text">Username</span>

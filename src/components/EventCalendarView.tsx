@@ -280,44 +280,42 @@ export function EventCalendarView({
                 </button>
             </div>
 
-            {/* Cuadrícula 7 columnas */}
-            <div className="cal-grid">
-                {/* Cabecera de días */}
-                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                    <div key={day} className="cal-grid__header">
-                        {day}
-                    </div>
-                ))}
-
-                {/* Celdas de días */}
-                {days.map((day, index) => (
-                    <div key={index} className={`cal-grid__cell${day === null ? ' cal-grid__cell--empty' : ''}`}>
-                        {day && (
-                            <>
-                                <div className={`cal-grid__day${isToday(day) ? ' cal-grid__day--today' : ''}`}>{day}</div>
-                                {eventsByDay[day]?.length > 0 && (
-                                    <>
-                                        {eventsByDay[day].slice(0, 3).map(event => (
-                                            <div
-                                                key={event.id}
-                                                className="cal-event-chip"
-                                                title={`${formatChipTime(event.start)} · ${event.title}${event.location ? `\n📍 ${event.location}` : ''}`}
-                                            >
-                                                <span className="cal-event-chip__time">{formatChipTime(event.start)}</span>
-                                                {event.title}
-                                            </div>
-                                        ))}
-                                        {eventsByDay[day].length > 3 && (
-                                            <div className="cal-event-overflow">
-                                                +{eventsByDay[day].length - 3} más
-                                            </div>
+            {/* Vista de lista cronológica */}
+            <div className="cal-list">
+                {Object.entries(eventsByDay)
+                    .sort(([a], [b]) => Number(a) - Number(b))
+                    .map(([day, events]) => (
+                        <div key={day} className="cal-list__day">
+                            <div className={`cal-list__day-header${
+                                isToday(Number(day)) ? ' cal-list__day-header--today' : ''
+                            }`}>
+                                {new Date(
+                                    currentMonth.getFullYear(),
+                                    currentMonth.getMonth(),
+                                    Number(day)
+                                ).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })}
+                            </div>
+                            <div className="cal-list__events">
+                                {events.map(event => (
+                                    <div key={event.id} className="cal-list__event">
+                                        <span className="cal-list__event-time">
+                                            {formatChipTime(event.start)}
+                                        </span>
+                                        <span className="cal-list__event-title">{event.title}</span>
+                                        {event.location && (
+                                            <span className="cal-list__event-location">
+                                                📍 {event.location}
+                                            </span>
                                         )}
-                                    </>
-                                )}
-                            </>
-                        )}
-                    </div>
-                ))}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))
+                }
+                {Object.keys(eventsByDay).length === 0 && (
+                    <p className="cal-list__empty">No hay eventos este mes</p>
+                )}
             </div>
         </div>
     )

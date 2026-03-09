@@ -123,8 +123,8 @@ export function SurveyFiltersPanel({
                 </div>
 
                 {/* Grupo 2: Rangos de fechas de apertura y cierre */}
-                <div className="search-date-row">
-                    <div className="search-date-group">
+                <div className="search-date-group">
+                    <div className="search-date-row">
                         <div className="form-field">
                             <span className="label-text">Fecha apertura (desde)</span>
                             <input
@@ -144,7 +144,7 @@ export function SurveyFiltersPanel({
                             />
                         </div>
                     </div>
-                    <div className="search-date-group">
+                    <div className="search-date-row">
                         <div className="form-field">
                             <span className="label-text">Fecha cierre (desde)</span>
                             <input

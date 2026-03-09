@@ -157,8 +157,8 @@ export function EventFiltersPanel({
                 </div>
 
                 {/* Grupo 2: Rangos de fechas de inicio y fin */}
-                <div className="search-date-row">
-                    <div className="search-date-group">
+                <div className="search-date-group">
+                    <div className="search-date-row">
                         <div className="form-field">
                             <span className="label-text">Fecha inicio (desde)</span>
                             <input
@@ -178,7 +178,7 @@ export function EventFiltersPanel({
                             />
                         </div>
                     </div>
-                    <div className="search-date-group">
+                    <div className="search-date-row">
                         <div className="form-field">
                             <span className="label-text">Fecha fin (desde)</span>
                             <input

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../types/surveys'
-import type { UserDTO } from '../types/users'
 import type { InstrumentDTO } from '../types/instruments'
 import {
   getYesNoMaybeResults,

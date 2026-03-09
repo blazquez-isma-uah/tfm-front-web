@@ -84,7 +84,6 @@ function MyEventsPage() {
     const sorting      = useSorting<SortableField>('startAt')
     const rowExpansion = useRowExpansion<string>()
 
-    const [selectedEvent, setSelectedEvent] = useState<EventDTO | null>(null)
     const [currentMonth, setCurrentMonth]   = useState(new Date())
 
     // Opciones de selectores para la tab BUSQUEDA
@@ -266,15 +265,11 @@ function MyEventsPage() {
         try {
             setLoading(true)
             setError(null)
-            const year  = currentMonth.getFullYear()
-            const month = String(currentMonth.getMonth() + 1).padStart(2, '0')
-            const firstDayStr = `${year}-${month}-01T00:00:00.000Z`
-            const lastDayNum  = new Date(year, currentMonth.getMonth() + 1, 0).getDate()
-            const lastDayStr  = `${year}-${month}-${String(lastDayNum).padStart(2, '0')}T23:59:59.999Z`
+            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+            const lastDay  = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59)
             const response = await getCalendar(
-                firstDayStr, lastDayStr, 0, 100, 'startAt,asc', token
+                firstDay.toISOString(), lastDay.toISOString(), 0, 100, 'startAt,asc', token
             )
-            console.log('[Calendar] eventos recibidos:', response.content.length, response.content)
             setCalendarEvents(response.content)
         } catch (e: any) {
             console.error('Error loading calendar:', e)
@@ -290,16 +285,13 @@ function MyEventsPage() {
         setActiveTab(tab)
         pagination.goToPage(0)
         rowExpansion.forceClose()
-        setSelectedEvent(null)
     }
 
     const handleViewDetails = (event: EventDTO) => {
         if (rowExpansion.expandedId === event.id) {
             rowExpansion.close()
-            setTimeout(() => setSelectedEvent(null), 250)
         } else {
             rowExpansion.toggle(event.id)
-            setSelectedEvent(event)
         }
     }
 
@@ -374,7 +366,7 @@ function MyEventsPage() {
                             calendarEvents={calendarEvents}
                             onPrevMonth={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
                             onNextMonth={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
-                            onMonthChange={(date) => setCurrentMonth(date)}
+                            onMonthChange={setCurrentMonth}
                         />
                     )}
 
@@ -415,7 +407,6 @@ function MyEventsPage() {
                                             event={event}
                                             onBack={() => {
                                                 rowExpansion.close()
-                                                setTimeout(() => setSelectedEvent(null), 250)
                                             }}
                                             backButtonLabel="Ocultar"
                                         />

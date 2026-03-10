@@ -5,8 +5,7 @@ import type {
     ResponseType,
     SurveyType,
 } from '../types/surveys'
-import { useFormValidation, rules } from '../hooks/useFormValidation'
-import { useToast } from '../context/toast/ToastContext'
+import { useFormValidation, rules, type CrossValidateFn } from '../hooks/useFormValidation'
 import type { EventDTO } from '../types/events'
 import {
     translateResponseType,
@@ -30,6 +29,14 @@ const VALIDATION_RULES = {
     responseType: [rules.required('Selecciona un tipo de respuesta')],
     surveyType:   [rules.required('Selecciona un tipo de encuesta')],
     eventId:      [rules.required('Selecciona un evento')],
+}
+
+const CROSS_VALIDATE: CrossValidateFn<SurveyFormFields> = (values, addError) => {
+    const opens = values['opensAt'] as string
+    const closes = values['closesAt'] as string
+    if (opens && closes && new Date(closes) <= new Date(opens)) {
+        addError('closesAt', 'La fecha de cierre debe ser posterior a la de apertura')
+    }
 }
 
 interface SurveyFormProps {
@@ -97,8 +104,10 @@ export function SurveyForm({
 }: SurveyFormProps) {
     const isEdit = editing !== null
 
-    const { errors, validate, clearError } = useFormValidation<SurveyFormFields>(VALIDATION_RULES)
-    const { showToast } = useToast()
+    const { errors, validate, clearError } = useFormValidation<SurveyFormFields>(
+        VALIDATION_RULES,
+        CROSS_VALIDATE
+    )
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
@@ -111,10 +120,6 @@ export function SurveyForm({
             eventId:      formPayload.eventId,
         })
         if (!valid) return
-        if (formOpensAt && formClosesAt && new Date(formClosesAt) <= new Date(formOpensAt)) {
-            showToast('La fecha de cierre debe ser posterior a la de apertura', 'error')
-            return
-        }
         onSave()
     }
 

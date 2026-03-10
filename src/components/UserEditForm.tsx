@@ -18,9 +18,10 @@ import '../styles/common.css'
 
 // Reglas a nivel de módulo — no se recrean en cada render
 const VALIDATION_RULES = {
-  email:     [rules.required('El email es obligatorio'), rules.email('Formato de email no válido')],
-  firstName: [rules.required('El nombre es obligatorio')],
-  lastName:  [rules.required('El primer apellido es obligatorio')],
+  email:              [rules.required('El email es obligatorio'), rules.email('Formato de email no válido')],
+  firstName:          [rules.required('El nombre es obligatorio')],
+  lastName:           [rules.required('El primer apellido es obligatorio')],
+  profilePictureUrl:  [rules.url()],
 }
 
 interface UserEditFormProps {
@@ -40,7 +41,7 @@ export function UserEditForm({
   onCancel,
   saving,
 }: UserEditFormProps) {
-  const { errors, validate, clearError } = useFormValidation<UserUpdatePayload>(VALIDATION_RULES)
+  const { errors, validate, clearError, validateField } = useFormValidation<UserUpdatePayload>(VALIDATION_RULES)
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -66,6 +67,7 @@ export function UserEditForm({
             className={`input-full-width${errors.email ? ' input--error' : ''}`}
             value={editPayload.email}
             onChange={e => handleChange('email', e.target.value)}
+            onBlur={e => validateField('email', e.target.value)}
           />
           {errors.email && <span className="field-error">{errors.email}</span>}
         </div>
@@ -77,6 +79,7 @@ export function UserEditForm({
             className={`input-full-width${errors.firstName ? ' input--error' : ''}`}
             value={editPayload.firstName}
             onChange={e => handleChange('firstName', e.target.value)}
+            onBlur={e => validateField('firstName', e.target.value)}
           />
           {errors.firstName && <span className="field-error">{errors.firstName}</span>}
         </div>
@@ -88,6 +91,7 @@ export function UserEditForm({
             className={`input-full-width${errors.lastName ? ' input--error' : ''}`}
             value={editPayload.lastName}
             onChange={e => handleChange('lastName', e.target.value)}
+            onBlur={e => validateField('lastName', e.target.value)}
           />
           {errors.lastName && <span className="field-error">{errors.lastName}</span>}
         </div>
@@ -140,10 +144,11 @@ export function UserEditForm({
         <div className="form-field grid-full-width">
           <label className="label-text">URL foto de perfil</label>
           <input
-            type="text" className="input-full-width"
+            type="text" className={`input-full-width${errors.profilePictureUrl ? ' input--error' : ''}`}
             value={editPayload.profilePictureUrl ?? ''}
             onChange={e => handleChange('profilePictureUrl', e.target.value)}
           />
+          {errors.profilePictureUrl && <span className="field-error">{errors.profilePictureUrl}</span>}
         </div>
       </div>
 

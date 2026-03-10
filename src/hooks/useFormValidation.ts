@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,11 @@ export type ValidationRules<T> = Partial<Record<keyof T, RuleFn[]>>
 
 export type ValidationErrors<T> = Partial<Record<keyof T, string>>
 
+export type CrossValidateFn<T> = (
+  values: Record<string, unknown>,
+  addError: (field: keyof T, message: string) => void
+) => void
+
 type UseFormValidationReturn<T> = {
   errors: ValidationErrors<T>
   /** Valida todos los campos. Devuelve true si no hay errores. */
@@ -21,6 +26,8 @@ type UseFormValidationReturn<T> = {
   clearError: (field: keyof T) => void
   /** Limpia todos los errores */
   clearAll: () => void
+  /** Valida un único campo. Útil para validar en onBlur. */
+  validateField: (field: keyof T, value: unknown) => void
 }
 
 // ─── Reglas predefinidas reutilizables ───────────────────────────────────────
@@ -34,6 +41,11 @@ export const rules = {
       ? (msg ?? `Mínimo ${n} caracteres`)
       : null,
 
+  maxLength: (n: number, msg?: string): RuleFn =>
+    (v) => v.trim().length > n
+      ? (msg ?? `Máximo ${n} caracteres`)
+      : null,
+
   email: (msg = 'Introduce un email válido'): RuleFn =>
     (v) => v.trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? msg : null,
 
@@ -42,6 +54,19 @@ export const rules = {
 
   pattern: (regex: RegExp, msg: string): RuleFn =>
     (v) => v.trim() !== '' && !regex.test(v) ? msg : null,
+
+  url: (msg = 'Introduce una URL válida'): RuleFn =>
+    (v) => {
+      if (v.trim() === '') return null  // campo vacío: lo gestiona rules.required
+      try {
+        const parsed = new URL(v.trim())
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+          ? null
+          : msg
+      } catch {
+        return msg
+      }
+    },
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -60,7 +85,8 @@ export const rules = {
  *   })
  */
 export function useFormValidation<T extends object>(
-  validationRules: ValidationRules<T>
+  validationRules: ValidationRules<T>,
+  crossValidate?: CrossValidateFn<T>
 ): UseFormValidationReturn<T> {
   const [errors, setErrors] = useState<ValidationErrors<T>>({})
 
@@ -82,9 +108,38 @@ export function useFormValidation<T extends object>(
       }
     }
 
+    if (crossValidate) {
+      crossValidate(values, (field, message) => {
+        if (!newErrors[field]) {  // no sobreescribir errores de campo previos
+          newErrors[field] = message
+        }
+      })
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+
+  const validateField = useCallback((field: keyof T, value: unknown) => {
+    const fieldRules = validationRules[field]
+    if (!fieldRules) return
+
+    const strValue = String(value ?? '')
+    for (const rule of fieldRules) {
+      const error = rule(strValue)
+      if (error) {
+        setErrors(prev => ({ ...prev, [field]: error }))
+        return
+      }
+    }
+    // Sin errores: limpiar si había uno previo
+    setErrors(prev => {
+      if (!prev[field]) return prev
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+  }, [validationRules])
 
   const clearError = (field: keyof T) => {
     setErrors((prev) => {
@@ -97,5 +152,5 @@ export function useFormValidation<T extends object>(
 
   const clearAll = () => setErrors({})
 
-  return { errors, validate, clearError, clearAll }
+  return { errors, validate, clearError, clearAll, validateField }
 }

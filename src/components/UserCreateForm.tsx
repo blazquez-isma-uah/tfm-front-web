@@ -16,11 +16,12 @@ import '../styles/common.css'
  */
 
 const VALIDATION_RULES = {
-  username:  [rules.required('El username es obligatorio'), rules.minLength(3, 'Mínimo 3 caracteres'), rules.noSpaces('No puede contener espacios')],
-  email:     [rules.required('El email es obligatorio'), rules.email('Formato de email no válido')],
-  password:  [rules.required('La contraseña es obligatoria'), rules.minLength(6, 'Mínimo 6 caracteres')],
-  firstName: [rules.required('El nombre es obligatorio')],
-  lastName:  [rules.required('El primer apellido es obligatorio')],
+  username:           [rules.required('El username es obligatorio'), rules.minLength(3, 'Mínimo 3 caracteres'), rules.maxLength(100, 'Máximo 100 caracteres'), rules.noSpaces('No puede contener espacios')],
+  email:              [rules.required('El email es obligatorio'), rules.email('Formato de email no válido')],
+  password:           [rules.required('La contraseña es obligatoria'), rules.minLength(6, 'Mínimo 6 caracteres')],
+  firstName:          [rules.required('El nombre es obligatorio')],
+  lastName:           [rules.required('El primer apellido es obligatorio')],
+  profilePictureUrl:  [rules.url()],
 }
 
 interface UserCreateFormProps {
@@ -42,7 +43,7 @@ export function UserCreateForm({
   onCancel,
   saving,
 }: UserCreateFormProps) {
-  const { errors, validate, clearError } = useFormValidation<UserCreatePayload>(VALIDATION_RULES)
+  const { errors, validate, clearError, validateField } = useFormValidation<UserCreatePayload>(VALIDATION_RULES)
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -69,6 +70,7 @@ export function UserCreateForm({
             className={`input-full-width${errors.username ? ' input--error' : ''}`}
             value={createPayload.username}
             onChange={e => handleChange('username', e.target.value)}
+            onBlur={e => validateField('username', e.target.value)}
           />
           {errors.username && <span className="field-error">{errors.username}</span>}
         </div>
@@ -80,6 +82,7 @@ export function UserCreateForm({
             className={`input-full-width${errors.email ? ' input--error' : ''}`}
             value={createPayload.email}
             onChange={e => handleChange('email', e.target.value)}
+            onBlur={e => validateField('email', e.target.value)}
           />
           {errors.email && <span className="field-error">{errors.email}</span>}
         </div>
@@ -91,6 +94,7 @@ export function UserCreateForm({
             className={`input-full-width${errors.password ? ' input--error' : ''}`}
             value={createPayload.password}
             onChange={e => handleChange('password', e.target.value)}
+            onBlur={e => validateField('password', e.target.value)}
           />
           {errors.password && <span className="field-error">{errors.password}</span>}
         </div>
@@ -103,6 +107,7 @@ export function UserCreateForm({
             className={`input-full-width${errors.firstName ? ' input--error' : ''}`}
             value={createPayload.firstName}
             onChange={e => handleChange('firstName', e.target.value)}
+            onBlur={e => validateField('firstName', e.target.value)}
           />
           {errors.firstName && <span className="field-error">{errors.firstName}</span>}
         </div>
@@ -114,6 +119,7 @@ export function UserCreateForm({
             className={`input-full-width${errors.lastName ? ' input--error' : ''}`}
             value={createPayload.lastName}
             onChange={e => handleChange('lastName', e.target.value)}
+            onBlur={e => validateField('lastName', e.target.value)}
           />
           {errors.lastName && <span className="field-error">{errors.lastName}</span>}
         </div>
@@ -166,10 +172,11 @@ export function UserCreateForm({
         <div className="form-field grid-full-width">
           <label className="label-text">URL foto de perfil</label>
           <input
-            type="text" className="input-full-width"
+            type="text" className={`input-full-width${errors.profilePictureUrl ? ' input--error' : ''}`}
             value={createPayload.profilePictureUrl ?? ''}
             onChange={e => handleChange('profilePictureUrl', e.target.value)}
           />
+          {errors.profilePictureUrl && <span className="field-error">{errors.profilePictureUrl}</span>}
         </div>
 
         {/* ── Roles ── */}

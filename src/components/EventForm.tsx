@@ -6,8 +6,7 @@ import type {
     EventStatus,
     EventVisibility,
 } from '../types/events'
-import { useFormValidation, rules } from '../hooks/useFormValidation'
-import { useToast } from '../context/toast/ToastContext'
+import { useFormValidation, rules, type CrossValidateFn } from '../hooks/useFormValidation'
 import {
     translateEventType,
     translateEventStatus,
@@ -31,6 +30,14 @@ const VALIDATION_RULES = {
     type:       [rules.required('Selecciona un tipo')],
     status:     [rules.required('Selecciona un estado')],
     visibility: [rules.required('Selecciona la visibilidad')],
+}
+
+const CROSS_VALIDATE: CrossValidateFn<EventFormFields> = (values, addError) => {
+    const start = values['startAt'] as string
+    const end = values['endAt'] as string
+    if (start && end && new Date(end) <= new Date(start)) {
+        addError('endAt', 'La fecha de fin debe ser posterior a la de inicio')
+    }
 }
 
 interface EventFormProps {
@@ -92,8 +99,10 @@ export function EventForm({
 }: EventFormProps) {
     const isEdit = editing !== null
 
-    const { errors, validate, clearError } = useFormValidation<EventFormFields>(VALIDATION_RULES)
-    const { showToast } = useToast()
+    const { errors, validate, clearError } = useFormValidation<EventFormFields>(
+        VALIDATION_RULES,
+        CROSS_VALIDATE
+    )
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
@@ -106,10 +115,6 @@ export function EventForm({
             visibility: formPayload.visibility,
         })
         if (!valid) return
-        if (formStartAt && formEndAt && new Date(formEndAt) <= new Date(formStartAt)) {
-            showToast('La fecha de fin debe ser posterior a la de inicio', 'error')
-            return
-        }
         onSave()
     }
 

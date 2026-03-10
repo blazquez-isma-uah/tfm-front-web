@@ -14,15 +14,17 @@ import '../../styles/common.css'
 /**
  * DashboardPage — Página de inicio tras el login.
  *
- * Muestra dos secciones independientes con sus propios estados de carga
- * y error, de modo que un fallo en una no afecta a la otra.
+ * Muestra dos secciones independientes:
+ * 1. Próximos eventos: lista los próximos 5 eventos dentro de 120 días.
+ * 2. Encuestas pendientes: lista las encuestas abiertas que el usuario no ha respondido.
+ *
+ * Cada sección tiene su propio estado de carga y error, de modo que un fallo
+ * en una no afecta a la otra. Esto mejora la experiencia porque el usuario
+ * puede ver los eventos aunque fallen las encuestas, o viceversa.
  *
  * Los errores de carga usan <ErrorState> con botón de reintento, porque
  * son errores persistentes (los datos no están disponibles) y el usuario
- * necesita saberlo mientras dure la situación.
- *
- * Los textos de carga ("Cargando...") son temporales — se sustituirán
- * por skeletons en P12.
+ * necesita saberlo y poder reintentar la carga.
  */
 function DashboardPage() {
   const { token } = useAuth()
@@ -36,24 +38,27 @@ function DashboardPage() {
   const [loadingSurveys, setLoadingSurveys] = useState(true)
   const [errorSurveys, setErrorSurveys]     = useState<string | null>(null)
 
-  // ── Fetch de eventos ────────────────────────────────────────────────────────
-  // useCallback permite pasarlo como onRetry a ErrorState sin crear una
-  // nueva referencia en cada render (evita bucles de re-ejecución).
+  // ── Fetch de eventos próximos ───────────────────────────────────────────────
+  // useCallback memoiza la función para evitar crear una nueva referencia en cada
+  // render. Esto es importante porque fetchUpcomingEvents se pasa como onRetry
+  // a ErrorState, y sin memoización causaría bucles de re-ejecución.
   const fetchUpcomingEvents = useCallback(async () => {
     if (!token) return
     try {
       setLoadingEvents(true)
       setErrorEvents(null)
+      // Obtiene los próximos 5 eventos dentro de 120 días
       const events = await getUpcomingEvents(5, 120, token)
       setUpcomingEvents(events)
 
-      // Obtener IDs de eventos donde el usuario ha respondido a encuesta de asistencia
+      // Obtiene los IDs de eventos donde el usuario ha respondido la encuesta de asistencia.
+      // Esto permite resaltar visualmente los eventos confirmados en la UI.
       try {
         const answeredResponse = await getMyAnsweredSurveys(
           { surveyType: 'ATTENDANCE', page: 0, size: 50, sort: ['opensAt,desc'] },
           token
         )
-        // Los eventIds de las encuestas respondidas son los eventos confirmados
+        // Extrae los eventIds de las encuestas respondidas y los guarda en un Set
         const ids = new Set(
           answeredResponse.content
             .map(s => s.eventId)
@@ -61,7 +66,8 @@ function DashboardPage() {
         )
         setConfirmedEventIds(ids)
       } catch {
-        // Si falla, simplemente no mostramos diferenciación — no es error crítico
+        // Si falla la carga de encuestas respondidas, simplemente no mostramos
+        // diferenciación visual. No es un error crítico que impida mostrar los eventos.
         setConfirmedEventIds(new Set())
       }
     } catch (err) {
@@ -72,13 +78,19 @@ function DashboardPage() {
     }
   }, [token])
 
-  // ── Fetch de encuestas ──────────────────────────────────────────────────────
+  // ── Fetch de encuestas pendientes ───────────────────────────────────────────
   const fetchPendingSurveys = useCallback(async () => {
     if (!token) return
     try {
       setLoadingSurveys(true)
       setErrorSurveys(null)
       const now = new Date().toISOString()
+      // Obtiene las encuestas que cumplen:
+      // - status: 'OPEN' (encuestas activas)
+      // - opensTo: now (ya están abiertas)
+      // - closesFrom: now (aún no han cerrado)
+      // - sort: ['closesAt,asc'] (ordena por fecha de cierre ascendente,
+      //   para mostrar primero las que cierran antes)
       const response = await getMyNotAnsweredSurveys(
         {
           status: 'OPEN',

@@ -6,38 +6,50 @@ import { useAuth } from '../auth/AuthContext'
 /**
  * MainLayout — Estructura principal de la aplicación.
  *
- * En móvil: el sidebar es un drawer (cajón deslizante) controlado
- * por un botón hamburguesa en el header. Un overlay oscuro
- * tapa el contenido cuando el drawer está abierto.
+ * Estructura del layout:
+ * - Header: barra superior con logo, botón hamburguesa (móvil), usuario y logout.
+ * - Sidebar/Drawer: menú de navegación lateral.
+ * - Contenido principal: área donde se renderizan las rutas hijas (Outlet).
  *
- * En tablet (768px+): el sidebar siempre está visible.
- * El botón hamburguesa y el overlay están ocultos por CSS.
+ * Comportamiento responsive:
+ * - Móvil (< 768px): el sidebar es un drawer (cajón deslizante) que se abre
+ *   con el botón hamburguesa. Un overlay oscuro cubre el contenido cuando
+ *   el drawer está abierto.
+ * - Tablet y superior (>= 768px): el sidebar es fijo y siempre visible.
+ *   El botón hamburguesa y el overlay están ocultos por CSS.
  *
- * El drawer se cierra automáticamente al cambiar de ruta,
- * para que el usuario vea el contenido nada más pulsar un link.
+ * El drawer se cierra automáticamente al cambiar de ruta, para que el usuario
+ * vea el contenido inmediatamente tras pulsar un enlace de navegación.
  */
 function MainLayout() {
     const { logout, userName, hasRole } = useAuth()
     const location = useLocation()
     const isAdmin = hasRole('ADMIN')
 
-    // Estado del drawer en móvil
+    // Estado que controla si el drawer está abierto o cerrado en móvil
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-    // Cierra el drawer automáticamente al navegar a otra ruta
+    // Cierra el drawer automáticamente al cambiar de ruta.
+    // Esto garantiza que el usuario vea el nuevo contenido inmediatamente
+    // tras pulsar un enlace de navegación, sin tener que cerrar el menú manualmente.
     useEffect(() => {
         setIsMobileMenuOpen(false)
     }, [location.pathname])
 
-    // Bloquea el scroll del body cuando el drawer está abierto
-    // (evita que el fondo se desplace mientras el usuario usa el menú)
+    // Bloquea el scroll del body mientras el drawer está abierto en móvil.
+    // Esto evita que el fondo de la página se desplace mientras el usuario
+    // navega por el menú, mejorando la experiencia en dispositivos táctiles.
     useEffect(() => {
         if (isMobileMenuOpen) {
+            // Deshabilita el scroll vertical del body
             document.body.style.overflow = 'hidden'
         } else {
+            // Restaura el comportamiento de scroll por defecto
             document.body.style.overflow = ''
         }
-        // Limpieza al desmontar el componente
+        // Limpieza: restaura el overflow al desmontar el componente, para evitar
+        // que el body quede con scroll bloqueado si MainLayout se desmonta mientras
+        // el drawer estaba abierto.
         return () => {
             document.body.style.overflow = ''
         }
@@ -61,7 +73,8 @@ function MainLayout() {
             {/* ── HEADER ─────────────────────────────────────────── */}
             <header className="layout-header">
                 <div className="layout-header-left">
-                    {/* Botón hamburguesa: solo visible en móvil (ocultado por CSS en tablet+) */}
+                    {/* Botón hamburguesa: visible solo en móvil (< 768px).
+                        En tablet y superior se oculta con display: none desde CSS. */}
                     <button
                         className={`layout-hamburger ${isMobileMenuOpen ? 'is-open' : ''}`}
                         onClick={toggleMobileMenu}
@@ -92,8 +105,9 @@ function MainLayout() {
             {/* ── CUERPO (sidebar + contenido) ───────────────────── */}
             <div className="layout-body">
 
-                {/* Overlay: tapa el contenido cuando el drawer está abierto en móvil.
-                    Al hacer click, cierra el menú. */}
+                {/* Overlay: capa semitransparente que cubre el contenido cuando el drawer
+                    está abierto en móvil. Al hacer click en el overlay, se cierra el menú.
+                    En tablet y superior, el overlay está oculto por CSS. */}
                 <div
                     className={`layout-sidebar-overlay ${isMobileMenuOpen ? 'is-visible' : ''}`}
                     onClick={closeMobileMenu}

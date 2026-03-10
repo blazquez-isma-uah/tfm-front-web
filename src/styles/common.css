@@ -1394,6 +1394,22 @@ input[type="date"] {
   }
 }
 
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+}
+
+.toast--removing {
+  animation: toast-out 200ms ease-in forwards;
+  pointer-events: none;
+}
+
 /* ============================================================
    ERROR STATE
    Bloque persistente para errores de carga de datos.

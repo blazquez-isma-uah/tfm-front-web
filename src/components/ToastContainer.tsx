@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import { useEffect, type JSX } from 'react'
 import type { Toast } from '../context/toast/ToastContext'
 
 // ─── Iconos inline ────────────────────────────────────────────────────────────
@@ -36,6 +36,7 @@ const icons: Record<Toast['type'], JSX.Element> = {
 
 type ToastContainerProps = {
   toasts: Toast[]
+  onStartClose: (id: number) => void
   onClose: (id: number) => void
 }
 
@@ -53,7 +54,42 @@ type ToastContainerProps = {
  * El role="status" con aria-live="polite" hace que los lectores de pantalla
  * anuncien los nuevos toasts sin interrumpir al usuario.
  */
-export function ToastContainer({ toasts, onClose }: ToastContainerProps) {
+function ToastItem({ 
+  toast, 
+  onStartClose, 
+  onClose 
+}: { 
+  toast: Toast
+  onStartClose: (id: number) => void
+  onClose: (id: number) => void
+}) {
+  useEffect(() => {
+    if (toast.removing) {
+      const id = setTimeout(() => onClose(toast.id), 200)
+      return () => clearTimeout(id)
+    }
+  }, [toast.removing, toast.id, onClose])
+
+  return (
+    <div
+      key={toast.id}
+      className={`toast toast--${toast.type}${toast.removing ? ' toast--removing' : ''}`}
+      role="alert"
+    >
+      <span className="toast__icon">{icons[toast.type]}</span>
+      <span className="toast__message">{toast.message}</span>
+      <button
+        className="toast__close"
+        onClick={() => onStartClose(toast.id)}
+        aria-label="Cerrar notificación"
+      >
+        ×
+      </button>
+    </div>
+  )
+}
+
+export function ToastContainer({ toasts, onStartClose, onClose }: ToastContainerProps) {
   if (toasts.length === 0) return null
 
   return (
@@ -64,21 +100,12 @@ export function ToastContainer({ toasts, onClose }: ToastContainerProps) {
       aria-atomic="false"
     >
       {toasts.map((toast) => (
-        <div
+        <ToastItem
           key={toast.id}
-          className={`toast toast--${toast.type}`}
-          role="alert"
-        >
-          <span className="toast__icon">{icons[toast.type]}</span>
-          <span className="toast__message">{toast.message}</span>
-          <button
-            className="toast__close"
-            onClick={() => onClose(toast.id)}
-            aria-label="Cerrar notificación"
-          >
-            ×
-          </button>
-        </div>
+          toast={toast}
+          onStartClose={onStartClose}
+          onClose={onClose}
+        />
       ))}
     </div>
   )

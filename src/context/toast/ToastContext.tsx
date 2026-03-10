@@ -9,10 +9,12 @@ export type Toast = {
   id: number
   message: string
   type: ToastType
+  removing?: boolean
 }
 
 type ToastContextValue = {
   showToast: (message: string, type?: ToastType, duration?: number) => void
+  markRemoving: (id: number) => void
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -36,25 +38,37 @@ const ToastContext = createContext<ToastContextValue | null>(null)
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const nextId = useRef(0)
+  const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
 
   const removeToast = useCallback((id: number) => {
+    const timerId = timers.current.get(id)
+    if (timerId !== undefined) {
+      clearTimeout(timerId)
+      timers.current.delete(id)
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
+  const markRemoving = useCallback((id: number) => {
+    setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, removing: true } : t)))
+  }, [])
+
   const showToast = useCallback(
-    (message: string, type: ToastType = 'info', duration = 5000) => {
+    (message: string, type: ToastType = 'info', duration?: number) => {
+      const effectiveDuration = duration ?? (type === 'error' || type === 'warning' ? 5000 : 3000)
       const id = nextId.current++
       setToasts((prev) => [...prev, { id, message, type }])
-      setTimeout(() => removeToast(id), duration)
+      const timerId = setTimeout(() => markRemoving(id), effectiveDuration)
+      timers.current.set(id, timerId)
     },
-    [removeToast]
+    [markRemoving]
   )
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={{ showToast, markRemoving }}>
       {children}
       {/* Renderizado fuera del flujo normal — position: fixed en el componente */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
+      <ToastContainer toasts={toasts} onStartClose={markRemoving} onClose={removeToast} />
     </ToastContext.Provider>
   )
 }

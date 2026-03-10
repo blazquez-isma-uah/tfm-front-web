@@ -7,8 +7,7 @@ Frontend React del sistema de microservicios desarrollado como TFM en el "Máste
 
 - Autenticación y autorización con Keycloak (OIDC/PKCE, roles ADMIN y MUSICIAN)
 - Gestión completa de usuarios, instrumentos, eventos y encuestas (rol ADMIN)
-- Consulta de calendario de eventos con inscripción de asistencia (rol MUSICIAN)
-- Respuesta a encuestas activas y visualización de resultados (rol MUSICIAN)
+- Consulta de calendario de eventos y respuesta a encuestas de asistencia (rol MUSICIAN)
 - Edición de perfil de usuario propio
 - Diseño Mobile First, responsive desde 320px hasta escritorio
 
@@ -35,7 +34,7 @@ npm install
 
 **Configuración:**
 - Editar `src/features/auth/keycloak.ts` con la URL del servidor Keycloak y el realm
-- El backend API debe estar ejecutándose (por defecto en `http://localhost:8080`)
+- El backend API debe estar ejecutándose (por defecto en `http://localhost:8085`)
 
 **Desarrollo:**
 ```bash
@@ -44,23 +43,22 @@ npm run dev
 La aplicación estará disponible en `http://localhost:5173`
 
 **Docker:**
-Este frontend forma parte del `docker-compose.yml` del proyecto raíz. 
+Este frontend forma parte del `docker-compose.yml` del proyecto raíz.
 Se construye con el `Dockerfile` incluido y se sirve con nginx.
 
 ## Estructura de carpetas
-
 ```
 src/
 ├── api/          # Funciones de llamada a la API REST organizadas por dominio
 ├── components/   # Componentes UI genéricos y reutilizables (DataTable, Spinner, ConfirmDialog, etc.)
 ├── context/      # Providers React globales (autenticación, notificaciones toast)
 ├── features/     # Módulos por funcionalidad de negocio
-│   ├── auth/     # Autenticación Keycloak, protección de rutas, página de login
-│   ├── events/   # Gestión y visualización de eventos (calendario, inscripciones)
+│   ├── auth/        # Autenticación Keycloak, protección de rutas, página de login
+│   ├── events/      # Gestión y visualización de eventos (calendario, inscripciones)
 │   ├── instruments/ # CRUD de instrumentos y asignación a usuarios
-│   ├── layout/   # Layout principal, dashboard, navegación
-│   ├── surveys/  # Gestión de encuestas, respuestas y resultados
-│   └── users/    # CRUD de usuarios, perfil, gestión de roles e instrumentos
+│   ├── layout/      # Layout principal, dashboard, navegación
+│   ├── surveys/     # Gestión de encuestas, respuestas y resultados
+│   └── users/       # CRUD de usuarios, perfil, gestión de roles e instrumentos
 ├── hooks/        # Custom hooks reutilizables (paginación, sorting, validación de forms)
 ├── styles/       # Design system: tokens CSS (colores, tipografía, espaciado) y clases utilitarias
 ├── types/        # Tipos TypeScript compartidos organizados por dominio
@@ -69,15 +67,15 @@ src/
 
 ## Roles y acceso
 
-| Rol | Acceso |
-|-----|--------|
-| **ADMIN** | Acceso completo: gestión de usuarios, instrumentos, eventos y encuestas. Dashboard con métricas. |
-| **MUSICIAN** | Consulta y respuesta: calendario de eventos propios, inscripción a eventos, respuesta a encuestas activas, edición de perfil. |
+| Rol | Rutas |
+|-----|-------|
+| **ADMIN** | `/dashboard`, `/admin/users`, `/admin/instruments`, `/admin/events`, `/admin/surveys`, `/profile` |
+| **MUSICIAN** | `/dashboard`, `/events`, `/surveys`, `/profile` |
 
-**Rutas protegidas:**
+**Protección de rutas:**
 - `/login` — acceso público
-- `/dashboard`, `/users`, `/instruments` — solo ADMIN
-- `/events`, `/my-events`, `/surveys`, `/my-surveys`, `/profile` — ADMIN y MUSICIAN
+- Rutas bajo `/` — requieren autenticación (`RequireAuth`)
+- Rutas bajo `/admin/*` — requieren además rol ADMIN (`RequireRole`)
 
 ## Decisiones de diseño destacadas
 

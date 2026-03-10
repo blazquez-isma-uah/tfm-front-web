@@ -1,8 +1,8 @@
 import type { FormEvent } from 'react'
-import type { UserDTO } from '../types/users'
-import type { KeycloakRoleResponse } from '../types/roles'
-import '../styles/common.css'
-import { SaveIcon, CancelIcon } from './Icons'
+import type { UserDTO } from '../../types/users'
+import type { KeycloakRoleResponse } from '../../types/roles'
+import '../../styles/common.css'
+import { SaveIcon, CancelIcon } from '../../components/Icons'
 
 /**
  * UserRolesPanel — Panel para gestionar los roles asignados a un usuario.

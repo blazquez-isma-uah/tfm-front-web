@@ -12,7 +12,7 @@ import MySurveysPage from './features/surveys/MySurveysPage'
 import { AuthProvider } from './features/auth/AuthContext'
 import RequireAuth from './features/auth/RequireAuth'
 import RequireRole from './features/auth/RequireRole'
-import { ToastProvider } from './context/toast/ToastContext'
+import { ToastProvider } from './context/ToastContext'
 
 /**
  * Orden de providers:

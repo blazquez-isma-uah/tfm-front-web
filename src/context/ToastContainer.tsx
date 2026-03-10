@@ -1,5 +1,5 @@
 import { useEffect, type JSX } from 'react'
-import type { Toast } from '../context/toast/ToastContext'
+import type { Toast } from './ToastContext'
 
 // ─── Iconos inline ────────────────────────────────────────────────────────────
 // SVGs mínimos para no depender de una librería de iconos externa.

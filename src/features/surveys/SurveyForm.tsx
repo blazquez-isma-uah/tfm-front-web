@@ -4,14 +4,14 @@ import type {
     CreateSurveyRequestDTO,
     ResponseType,
     SurveyType,
-} from '../types/surveys'
-import { useFormValidation, rules, type CrossValidateFn } from '../hooks/useFormValidation'
-import type { EventDTO } from '../types/events'
+} from '../../types/surveys'
+import { useFormValidation, rules, type CrossValidateFn } from '../../hooks/useFormValidation'
+import type { EventDTO } from '../../types/events'
 import {
     translateResponseType,
     translateSurveyType,
-} from '../utils/surveyTranslations'
-import '../styles/common.css'
+} from '../../utils/surveyTranslations'
+import '../../styles/common.css'
 
 type SurveyFormFields = {
     title: string

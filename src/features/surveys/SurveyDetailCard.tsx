@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react'
-import type { SurveyDTO } from '../types/surveys'
-import type { EventDTO } from '../types/events'
-import type { UserDTO } from '../types/users'
+import type { SurveyDTO } from '../../types/surveys'
+import type { EventDTO } from '../../types/events'
+import type { UserDTO } from '../../types/users'
 import {
   translateSurveyStatus,
   translateResponseType,
   translateSurveyType,
   formatSurveyDateTime,
-} from '../utils/surveyTranslations'
-import { getEventById } from '../api/eventsApi'
-import { getUserByIamId } from '../api/usersApi'
-import { useAuth } from '../features/auth/AuthContext'
+} from '../../utils/surveyTranslations'
+import { getEventById } from '../../api/eventsApi'
+import { getUserByIamId } from '../../api/usersApi'
+import { useAuth } from '../auth/AuthContext'
 import { SurveyResponseForm } from './SurveyResponseForm'
-import { XMarkIcon } from './Icons'
-import '../styles/common.css'
+import { XMarkIcon } from '../../components/Icons'
+import '../../styles/common.css'
 
 interface SurveyDetailCardProps {
   survey: SurveyDTO

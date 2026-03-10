@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { getMyProfile, updateMyProfile, updateMyPassword } from '../../api/usersApi'
 import type { UserDTO, MyProfileUpdateRequestDTO, PasswordUpdateRequestDTO } from '../../types/users'
-import { UserDetailCard } from '../../components/UserDetailCard'
+import { UserDetailCard } from './UserDetailCard'
 import '../../styles/common.css'
 
 /**

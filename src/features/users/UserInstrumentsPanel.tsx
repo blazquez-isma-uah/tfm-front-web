@@ -1,9 +1,9 @@
 import type { FormEvent } from 'react'
-import type { UserDTO } from '../types/users'
-import type { InstrumentDTO } from '../types/instruments'
-import type { InstrumentGroup } from '../utils/instrumentUtils'
-import '../styles/common.css'
-import { SaveIcon, CancelIcon } from './Icons'
+import type { UserDTO } from '../../types/users'
+import type { InstrumentDTO } from '../../types/instruments'
+import type { InstrumentGroup } from '../../utils/instrumentUtils'
+import '../../styles/common.css'
+import { SaveIcon, CancelIcon } from '../../components/Icons'
 
 /**
  * UserInstrumentsPanel — Panel para gestionar los instrumentos asignados

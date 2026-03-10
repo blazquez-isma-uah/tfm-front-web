@@ -1,11 +1,11 @@
-import type { EventDTO } from '../types/events'
+import type { EventDTO } from '../../types/events'
 import {
     translateEventType,
     translateEventStatus,
     translateEventVisibility,
     formatEventDateTime,
-} from '../utils/eventTranslations'
-import '../styles/common.css'
+} from '../../utils/eventTranslations'
+import '../../styles/common.css'
 
 interface EventInfoSectionProps {
     event: EventDTO

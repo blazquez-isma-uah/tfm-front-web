@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react'
-import { ToastContainer } from '../../components/ToastContainer'
+import { ToastContainer } from './ToastContainer'
 
 // ─── Tipos públicos ────────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
-import type { UserDTO } from '../types/users'
-import { XMarkIcon } from './Icons'
-import { formatDate } from '../utils/date'
-import '../styles/common.css'
+import type { UserDTO } from '../../types/users'
+import { XMarkIcon } from '../../components/Icons'
+import { formatDate } from '../../utils/date'
+import '../../styles/common.css'
 
 interface UserDetailCardProps {
   user: UserDTO

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import type { CalendarEventItemDTO } from '../types/events'
-import '../styles/common.css'
+import type { CalendarEventItemDTO } from '../../types/events'
+import '../../styles/common.css'
 
 interface EventCalendarViewProps {
     currentMonth: Date

@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react'
-import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../types/surveys'
-import type { InstrumentDTO } from '../types/instruments'
+import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../../types/surveys'
+import type { InstrumentDTO } from '../../types/instruments'
 import {
   getYesNoMaybeResults,
   getCompleteResults,
-} from '../api/surveysApi'
-import { getUserByIamId } from '../api/usersApi'
-import { getInstrumentById } from '../api/instrumentsApi'
+} from '../../api/surveysApi'
+import { getUserByIamId } from '../../api/usersApi'
+import { getInstrumentById } from '../../api/instrumentsApi'
 import {
   translateYesNoMaybeAnswer,
   formatSurveyDateTime,
-} from '../utils/surveyTranslations'
-import { extractErrorMessage } from '../utils/errorHandler'
-import { DataTable } from './DataTable'
-import type { ColumnDef, SortState } from './DataTable'
-import { PaginationBar } from './PaginationBar'
-import { Spinner } from './Spinner'
-import '../styles/common.css'
+} from '../../utils/surveyTranslations'
+import { extractErrorMessage } from '../../utils/errorHandler'
+import { DataTable } from '../../components/DataTable'
+import type { ColumnDef, SortState } from '../../components/DataTable'
+import { PaginationBar } from '../../components/PaginationBar'
+import { Spinner } from '../../components/Spinner'
+import '../../styles/common.css'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 

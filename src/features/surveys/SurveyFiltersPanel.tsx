@@ -1,9 +1,9 @@
 import type { FormEvent, ReactNode } from 'react'
-import type { SurveyStatus } from '../types/surveys'
-import type { EventDTO } from '../types/events'
-import { SearchFiltersPanel } from './Searchfilterspanel'
-import { translateSurveyStatus } from '../utils/surveyTranslations'
-import '../styles/common.css'
+import type { SurveyStatus } from '../../types/surveys'
+import type { EventDTO } from '../../types/events'
+import { SearchFiltersPanel } from '../../components/SearchFiltersPanel'
+import { translateSurveyStatus } from '../../utils/surveyTranslations'
+import '../../styles/common.css'
 
 interface SurveyFiltersPanelProps {
     // Valores del formulario (lo que el usuario ve mientras edita)

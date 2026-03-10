@@ -27,18 +27,18 @@ import type {
 } from '../../types/surveys'
 import { DataTable } from '../../components/DataTable'
 import { PaginationBar } from '../../components/PaginationBar'
-import { SurveyDetailCard } from '../../components/SurveyDetailCard'
-import { SurveyResultsView } from '../../components/SurveyResultsView'
+import { SurveyDetailCard } from './SurveyDetailCard'
+import { SurveyResultsView } from './SurveyResultsView'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { SurveyFiltersPanel } from '../../components/SurveyFiltersPanel'
-import { SurveyForm } from '../../components/SurveyForm'
+import { SurveyFiltersPanel } from './SurveyFiltersPanel'
+import { SurveyForm } from './SurveyForm'
 import { EditIcon, TrashIcon, ChartIcon, LockIcon, LockOpenIcon, CancelIcon, ArrowPathIcon } from '../../components/Icons'
 import {
     translateSurveyStatus,
     formatSurveyDateTime,
 } from '../../utils/surveyTranslations'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
-import { useToast } from '../../context/toast/ToastContext'
+import { useToast } from '../../context/ToastContext'
 import { ErrorState } from '../../components/ErrorState'
 import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'

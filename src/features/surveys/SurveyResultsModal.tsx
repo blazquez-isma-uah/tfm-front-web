@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react'
-import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../types/surveys'
-import type { InstrumentDTO } from '../types/instruments'
+import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../../types/surveys'
+import type { InstrumentDTO } from '../../types/instruments'
 import {
   getYesNoMaybeResults,
   getCompleteResults,
-} from '../api/surveysApi'
-import { getUserByIamId } from '../api/usersApi'
-import { getInstrumentById } from '../api/instrumentsApi'
-import { useAuth } from '../features/auth/AuthContext'
+} from '../../api/surveysApi'
+import { getUserByIamId } from '../../api/usersApi'
+import { getInstrumentById } from '../../api/instrumentsApi'
+import { useAuth } from '../auth/AuthContext'
 import {
   translateYesNoMaybeAnswer,
   formatSurveyDateTime,
-} from '../utils/surveyTranslations'
-import { extractErrorMessage } from '../utils/errorHandler'
-import '../styles/common.css'
+} from '../../utils/surveyTranslations'
+import { extractErrorMessage } from '../../utils/errorHandler'
+import '../../styles/common.css'
 
 interface SurveyResultsModalProps {
   survey: SurveyDTO

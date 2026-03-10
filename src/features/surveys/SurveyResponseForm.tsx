@@ -1,19 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../types/surveys'
-import type { InstrumentDTO } from '../types/instruments'
+import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../../types/surveys'
+import type { InstrumentDTO } from '../../types/instruments'
 import { 
     respondToSurvey, 
     getMyResponse, 
     updateMyResponse, 
     deleteMyResponse 
-} from '../api/surveysApi'
-import { getMyProfile } from '../api/usersApi'
-import { useAuth } from '../features/auth/AuthContext'
-import { extractErrorMessage } from '../utils/errorHandler'
-import { translateYesNoMaybeAnswer } from '../utils/surveyTranslations'
-import { ConfirmDialog } from './ConfirmDialog'
-import { XMarkIcon } from './Icons'
-import '../styles/common.css'
+} from '../../api/surveysApi'
+import { getMyProfile } from '../../api/usersApi'
+import { useAuth } from '../auth/AuthContext'
+import { extractErrorMessage } from '../../utils/errorHandler'
+import { translateYesNoMaybeAnswer } from '../../utils/surveyTranslations'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { XMarkIcon } from '../../components/Icons'
+import '../../styles/common.css'
 
 interface SurveyResponseFormProps {
     survey: SurveyDTO

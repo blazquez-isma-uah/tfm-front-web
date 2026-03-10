@@ -1,12 +1,12 @@
 import type { FormEvent, ReactNode } from 'react'
-import type { EventType, EventStatus, EventVisibility } from '../types/events'
-import { SearchFiltersPanel } from './Searchfilterspanel'
+import type { EventType, EventStatus, EventVisibility } from '../../types/events'
+import { SearchFiltersPanel } from '../../components/SearchFiltersPanel'
 import {
     translateEventType,
     translateEventStatus,
     translateEventVisibility,
-} from '../utils/eventTranslations'
-import '../styles/common.css'
+} from '../../utils/eventTranslations'
+import '../../styles/common.css'
 
 interface EventFiltersPanelProps {
     // Valores del formulario (lo que el usuario ve mientras edita)

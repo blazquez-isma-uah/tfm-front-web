@@ -1,8 +1,8 @@
 import type { FormEvent } from 'react'
-import type { InstrumentRequestDTO } from '../types/instruments'
-import type { InstrumentDTO } from '../types/instruments'
-import { useFormValidation, rules } from '../hooks/useFormValidation'
-import '../styles/common.css'
+import type { InstrumentRequestDTO } from '../../types/instruments'
+import type { InstrumentDTO } from '../../types/instruments'
+import { useFormValidation, rules } from '../../hooks/useFormValidation'
+import '../../styles/common.css'
 
 const VALIDATION_RULES = {
   instrumentName: [rules.required('El nombre es obligatorio')]

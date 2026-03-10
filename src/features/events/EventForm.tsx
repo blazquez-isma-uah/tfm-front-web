@@ -5,14 +5,14 @@ import type {
     EventType,
     EventStatus,
     EventVisibility,
-} from '../types/events'
-import { useFormValidation, rules, type CrossValidateFn } from '../hooks/useFormValidation'
+} from '../../types/events'
+import { useFormValidation, rules, type CrossValidateFn } from '../../hooks/useFormValidation'
 import {
     translateEventType,
     translateEventStatus,
     translateEventVisibility,
-} from '../utils/eventTranslations'
-import '../styles/common.css'
+} from '../../utils/eventTranslations'
+import '../../styles/common.css'
 
 type EventFormFields = {
     title: string

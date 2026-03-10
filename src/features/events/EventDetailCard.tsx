@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import type { EventDTO } from '../types/events'
+import type { EventDTO } from '../../types/events'
 import { EventInfoSection } from './EventInfoSection'
-import { XMarkIcon } from './Icons'
-import '../styles/common.css'
+import { XMarkIcon } from '../../components/Icons'
+import '../../styles/common.css'
 
 interface EventDetailCardProps {
     event: EventDTO

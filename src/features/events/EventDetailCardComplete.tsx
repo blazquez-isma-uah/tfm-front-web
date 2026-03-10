@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { EventDTO } from '../types/events'
-import type { SurveyDTO } from '../types/surveys'
+import type { EventDTO } from '../../types/events'
+import type { SurveyDTO } from '../../types/surveys'
 import { EventInfoSection } from './EventInfoSection'
-import { searchSurveysPage, getMyResponse } from '../api/surveysApi'
-import { useAuth } from '../features/auth/AuthContext'
-import { translateSurveyStatus } from '../utils/surveyTranslations'
-import { Spinner } from './Spinner'
-import { XMarkIcon } from './Icons'
-import '../styles/common.css'
+import { searchSurveysPage, getMyResponse } from '../../api/surveysApi'
+import { useAuth } from '../auth/AuthContext'
+import { translateSurveyStatus } from '../../utils/surveyTranslations'
+import { Spinner } from '../../components/Spinner'
+import { XMarkIcon } from '../../components/Icons'
+import '../../styles/common.css'
 
 interface EventDetailCardCompleteProps {
     event: EventDTO

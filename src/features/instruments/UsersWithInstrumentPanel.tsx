@@ -1,9 +1,9 @@
-import type { UserDTO } from '../types/users'
-import type { InstrumentDTO } from '../types/instruments'
-import { DataTable } from './DataTable'
-import { UserDetailCard } from './UserDetailCard'
-import { formatDate } from '../utils/date'
-import '../styles/common.css'
+import type { UserDTO } from '../../types/users'
+import type { InstrumentDTO } from '../../types/instruments'
+import { DataTable } from '../../components/DataTable'
+import { UserDetailCard } from '../users/UserDetailCard'
+import { formatDate } from '../../utils/date'
+import '../../styles/common.css'
 
 /**
  * UsersWithInstrumentPanel — Muestra la lista de usuarios que tocan

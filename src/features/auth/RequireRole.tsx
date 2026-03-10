@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
-import { useToast } from '../../context/toast/ToastContext'
+import { useToast } from '../../context/ToastContext'
 
 type RequireRoleProps = {
   role: string

@@ -4,44 +4,19 @@ import '../styles/common.css'
 
 /**
  * SearchFiltersPanel — Contenedor colapsable para formularios de búsqueda.
- *
- * PROBLEMA QUE RESUELVE:
- * Los formularios de filtros de todas las páginas admin (Usuarios, Eventos,
- * Encuestas, Instrumentos) ocupan mucho espacio vertical incluso cuando el
- * usuario no los necesita activamente. En móvil esto es especialmente grave:
- * el usuario tiene que hacer scroll largo para llegar a los datos.
- *
- * SOLUCIÓN — Panel colapsable con badge de filtros activos:
- * - Por defecto: collapsed (oculto) en móvil, expandido en tablet+
- *   (defaultOpen=true en pantallas grandes).
- * - Cuando hay filtros activos y el panel está cerrado, un badge numérico
- *   indica cuántos filtros están aplicados. Así el usuario sabe que hay
- *   filtros activos aunque no los vea.
- * - El borde inferior cambia a azul cuando hay filtros activos (feedback visual).
- *
- * DECISIÓN — Animación por max-height en lugar de JS:
- * La alternativa "correcta" sería medir la altura real con useRef y
- * asignarla dinámicamente. Max-height tiene el problema de que la transición
- * de "apertura" puede parecer lenta si el valor máximo es muy grande.
- * Para este caso (formularios de filtros con altura máxima ~200-300px)
- * el valor de 9999px es suficiente y la diferencia no es perceptible.
- * Se elige max-height por simplicidad y eliminación de efectos secundarios
- * (un useEffect para medir alturas añade complejidad sin beneficio real aquí).
- *
- * PROPS:
- * @param children          Contenido del formulario de filtros (campos + botones)
- * @param activeFiltersCount Número de filtros activos. Controla el badge y el
- *                           borde de acento. El padre lo calcula contando cuántos
- *                           filtros efectivos son != '' o != undefined.
- * @param title             Texto del header (default: "Filtros de búsqueda")
- * @param defaultOpen       Si el panel empieza abierto (default: false en móvil,
- *                          true en tablet+). Nota: el componente usa un valor
- *                          fijo para simplicidad; el valor responsive correcto
- *                          requeriría matchMedia, que añade complejidad innecesaria.
- * @param actionButton      Botón opcional que aparece a la derecha del header
- *                          (ej: "+ Nuevo usuario"). Se coloca aquí para que
- *                          siempre sea visible, incluso con el panel cerrado.
- * @param onSubmit          Handler del submit del formulario de filtros.
+ * 
+ * Por defecto collapsed en móvil, expandido en tablet+. Cuando hay filtros activos
+ * y el panel está cerrado, un badge numérico indica cuántos filtros están aplicados.
+ * El borde inferior cambia a azul cuando hay filtros activos (feedback visual).
+ * 
+ * La animación usa max-height en lugar de medir la altura real con useRef para
+ * simplicidad. Para formularios de ~200-300px el valor de 9999px es suficiente y
+ * la diferencia no es perceptible.
+ * 
+ * @param activeFiltersCount Número de filtros activos. Controla el badge y el borde.
+ *                           El padre lo calcula contando filtros efectivos != '' o != undefined.
+ * @param actionButton Botón opcional (ej: "+ Nuevo") que aparece en el header,
+ *                     visible incluso con el panel cerrado.
  */
 interface SearchFiltersPanelProps {
   children: ReactNode
@@ -78,7 +53,7 @@ export function SearchFiltersPanel({
         <div className="filter-panel-header-left">
           <FilterIcon className="filter-chevron" />
           <span className="filter-panel-title">{title}</span>
-          {/* Badge: solo visible cuando hay filtros activos */}
+          {/* Badge numérico: solo visible cuando hay filtros activos */}
           {hasFilters && (
             <span className="filter-badge" title={`${activeFiltersCount} filtro${activeFiltersCount !== 1 ? 's' : ''} activo${activeFiltersCount !== 1 ? 's' : ''}`}>
               {activeFiltersCount}
@@ -87,18 +62,20 @@ export function SearchFiltersPanel({
         </div>
 
         <div className="filter-panel-header-right">
-          {/* El botón de acción (ej: "+ Nuevo") se detiene la propagación
-              para que el click no colapse/expanda el panel */}
+          {/* El botón de acción (ej: "+ Nuevo") detiene la propagación del click
+              para que no colapse/expanda el panel al hacer click en él */}
           {actionButton && (
             <div onClick={e => e.stopPropagation()}>
               {actionButton}
             </div>
           )}
+          {/* Chevron que rota cuando el panel está abierto (transición CSS) */}
           <ChevronDownIcon className={`filter-chevron${isOpen ? ' open' : ''}`} />
         </div>
       </div>
 
-      {/* Cuerpo colapsable: el formulario de filtros */}
+      {/* Cuerpo colapsable: usa max-height con transición CSS para animación.
+          El valor 9999px es suficiente para formularios de hasta ~300px de altura. */}
       <div className={`filter-panel-body${isOpen ? ' open' : ''}`}>
         <form onSubmit={onSubmit}>
           {children}

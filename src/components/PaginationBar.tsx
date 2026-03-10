@@ -1,13 +1,10 @@
 /**
- * PaginationBar — Barra de paginación reutilizable.
- *
- * CAMBIOS RESPECTO AL ORIGINAL:
- * - Reemplaza todos los estilos inline por clases CSS del design system
- * - Diseño Mobile First: en móvil se apila verticalmente, en tablet+ en fila
- * - Los botones usan las clases .btn .btn-secondary para consistencia
- * - Se añaden atributos aria para accesibilidad (los botones disabled
- *   ya son semánticamente correctos, pero añadimos aria-label descriptivo)
- * - Se unifica el componente con el tipo que espera el hook usePagination
+ * PaginationBar — Barra de paginación reutilizable con diseño responsive.
+ * 
+ * Mobile First: en móvil se apila verticalmente, en tablet+ en fila horizontal.
+ * Los botones usan las clases del design system para consistencia.
+ * 
+ * @param currentCount Opcional: número de elementos en la página actual
  */
 
 import './PaginationBar.css'
@@ -33,11 +30,13 @@ export function PaginationBar({
     pageSizeOptions = [5, 10, 20, 50],
 }: PaginationBarProps) {
 
+    // Handlers de navegación: aseguran que no salgamos de los límites (0 a totalPages-1)
     const handlePrev = () => onPageChange(Math.max(0, page - 1))
     const handleNext = () => {
         if (totalPages > 0) onPageChange(Math.min(totalPages - 1, page + 1))
     }
 
+    // Cambia el tamaño de página y notifica al padre
     const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newSize = Number(e.target.value)
         if (onPageSizeChange && !Number.isNaN(newSize)) {
@@ -45,16 +44,17 @@ export function PaginationBar({
         }
     }
 
+    // Cálculo del rango visible (ej: "11–20 de 150")
     const from = totalElements === 0 ? 0 : page * pageSize + 1
     const to   = totalElements === 0 ? 0 : Math.min(totalElements, (page + 1) * pageSize)
 
+    // Deshabilitamos botones en los extremos
     const isFirstPage = page === 0
     const isLastPage  = totalPages === 0 || page >= totalPages - 1
 
     return (
         <div className="pagination-bar">
 
-            {/* ── Navegación de páginas ── */}
             <div className="pagination-nav">
                 <button
                     className="btn btn-secondary pagination-btn"
@@ -79,7 +79,6 @@ export function PaginationBar({
                 </button>
             </div>
 
-            {/* ── Resumen y selector de tamaño ── */}
             <div className="pagination-meta">
                 <span className="pagination-range">
                     {from}–{to} de {totalElements}

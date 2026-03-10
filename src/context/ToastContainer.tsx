@@ -1,10 +1,6 @@
 import { useEffect, type JSX } from 'react'
 import type { Toast } from './ToastContext'
 
-// ─── Iconos inline ────────────────────────────────────────────────────────────
-// SVGs mínimos para no depender de una librería de iconos externa.
-// Tamaño fijo 16px para que no rompan el alineado vertical.
-
 const icons: Record<Toast['type'], JSX.Element> = {
   success: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -63,6 +59,8 @@ function ToastItem({
   onStartClose: (id: number) => void
   onClose: (id: number) => void
 }) {
+  // Efecto: cuando el toast se marca como removing, esperamos 200ms (duración de la animación CSS)
+  // antes de eliminarlo completamente del DOM
   useEffect(() => {
     if (toast.removing) {
       const id = setTimeout(() => onClose(toast.id), 200)

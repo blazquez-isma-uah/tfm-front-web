@@ -2,41 +2,14 @@ import { useState, useCallback } from 'react'
 
 /**
  * useConfirmDialog — Encapsula el estado y la lógica del modal de confirmación.
- *
- * PROBLEMA QUE RESUELVE:
- * Este bloque aparecía IDÉNTICO en las 4 páginas principales:
- *
- *   const [confirmDialog, setConfirmDialog] = useState({
- *       isOpen: false, title: '', message: '',
- *       variant: 'danger', onConfirm: () => {},
- *   })
- *   const openConfirmDialog = (title, message, variant, onConfirm) => {
- *       setConfirmDialog({ isOpen: true, title, message, variant, onConfirm })
- *   }
- *   const closeConfirmDialog = () => {
- *       setConfirmDialog(prev => ({ ...prev, isOpen: false }))
- *   }
- *
- * Con este hook: 1 línea por página.
- *
- * USO:
+ * 
+ * Reduce el boilerplate de gestión del modal de confirmación que se repetía
+ * idénticamente en todas las páginas principales.
+ * 
+ * Uso:
  *   const confirm = useConfirmDialog()
- *
- *   // Para abrir el diálogo:
- *   confirm.open({
- *       title: '¿Eliminar usuario?',
- *       message: 'Esta acción no se puede deshacer.',
- *       variant: 'danger',
- *       onConfirm: () => handleDeleteUser(userId),
- *   })
- *
- *   // Para el componente ConfirmDialog:
+ *   confirm.open({ title: '¿Eliminar?', message: '...', variant: 'danger', onConfirm: () => {...} })
  *   <ConfirmDialog {...confirm.dialogProps} />
- *
- * NOTA SOBRE useCallback:
- * Las funciones `open` y `close` están memoizadas con useCallback.
- * Esto evita que se re-creen en cada render, lo que podría causar
- * re-renders innecesarios en componentes hijos que las reciban como prop.
  */
 
 export type ConfirmDialogVariant = 'danger' | 'warning' | 'info'
@@ -57,11 +30,8 @@ type ConfirmDialogStateInternal = {
 }
 
 export type ConfirmDialogControl = {
-    /** Abre el diálogo con la configuración indicada */
     open: (options: OpenConfirmOptions) => void
-    /** Cierra el diálogo */
     close: () => void
-    /** Props listos para pasar a <ConfirmDialog> con spread */
     dialogProps: {
         isOpen: boolean
         title: string
@@ -73,6 +43,7 @@ export type ConfirmDialogControl = {
 }
 
 export function useConfirmDialog(): ConfirmDialogControl {
+    // Estado interno del diálogo: título, mensaje, variant y callback de confirmación
     const [state, setState] = useState<ConfirmDialogStateInternal>({
         isOpen: false,
         title: '',
@@ -81,10 +52,13 @@ export function useConfirmDialog(): ConfirmDialogControl {
         onConfirm: () => {},
     })
 
+    // Abre el diálogo con la configuración proporcionada.
+    // useCallback evita que se recree en cada render, optimizando re-renders de hijos
     const open = useCallback(({ title, message, variant = 'danger', onConfirm }: OpenConfirmOptions) => {
         setState({ isOpen: true, title, message, variant, onConfirm })
     }, [])
 
+    // Cierra el diálogo manteniendo el resto del estado intacto
     const close = useCallback(() => {
         setState(prev => ({ ...prev, isOpen: false }))
     }, [])

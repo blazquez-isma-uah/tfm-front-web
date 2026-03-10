@@ -1,14 +1,11 @@
 /**
  * ErrorState — Bloque visual para errores de carga persistentes.
  *
- * A diferencia de un toast (feedback transiente de operación), este
- * componente vive en el flujo normal de la página y permanece visible
- * mientras el error no se resuelva. El usuario sabe que hay datos
- * que no se pudieron cargar.
+ * A diferencia de un toast (feedback transiente), este componente permanece
+ * visible en el flujo de la página hasta que el error se resuelva.
  *
- * onRetry es opcional: si se proporciona, aparece el botón "Reintentar"
- * que permite al usuario volver a disparar la llamada a la API sin
- * recargar la página entera.
+ * @param onRetry Opcional: si se proporciona, aparece el botón "Reintentar"
+ *                que permite volver a disparar la llamada a la API sin recargar.
  */
 type ErrorStateProps = {
   message: string

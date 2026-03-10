@@ -1,6 +1,19 @@
 import { Fragment, type ReactNode } from 'react'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 
+/**
+ * DataTable — Tabla genérica paginada con vista responsive adaptativa.
+ * 
+ * En pantallas < 768px renderiza cada fila como una tarjeta vertical.
+ * En pantallas >= 768px renderiza una tabla HTML estándar.
+ * 
+ * La decisión entre vistas se toma con useMediaQuery para evitar renderizar
+ * DOM duplicado y mantener sincronizada la lógica de expansión entre ambas vistas.
+ * 
+ * @param getRowId Función para extraer el ID único de cada fila. Fallback a row.id
+ * @param getRowTitle Texto tooltip nativo que aparece al hacer hover sobre la fila
+ */
+
 // ─── Tipos públicos ────────────────────────────────────────────────────────────
 
 export type SortDirection = 'asc' | 'desc'
@@ -14,9 +27,7 @@ export type ColumnDef<T, F extends string> = {
   key: string
   header: string
   sortable?: boolean
-  /** Nombre del campo que el backend espera para ordenar */
   sortField?: F
-  /** Cómo renderizar la celda. Por defecto: (row as Record<string,unknown>)[key] */
   render?: (row: T) => ReactNode
   width?: string | number
 }
@@ -30,16 +41,7 @@ type DataTableProps<T, F extends string> = {
   expandedRowId?: string | number | null
   renderExpandedContent?: (row: T) => ReactNode
   isClosing?: boolean
-  /**
-   * Extrae el identificador único de cada fila.
-   * Si no se proporciona, hace fallback a (row as any).id — compatible con
-   * todas las entidades actuales del proyecto sin necesitar cambios en las páginas.
-   */
   getRowId?: (row: T) => string | number
-  /**
-   * Texto que aparece como tooltip nativo del navegador al hacer hover sobre la fila.
-   * Se aplica al atributo `title` del <tr> (desktop) y del <article> (móvil).
-   */
   getRowTitle?: (row: T) => string
 }
 
@@ -65,34 +67,45 @@ export function DataTable<T, F extends string>({
   getRowId,
   getRowTitle,
 }: DataTableProps<T, F>) {
-  // El punto de corte 480px coincide con el breakpoint 'sm' de design-tokens.css
-  // y con el umbral definido en el handoff de Fase 3.
+  // Decidimos qué vista renderizar según el ancho de la pantalla.
+  // 767px es el breakpoint entre móvil y tablet en el design system.
   const isMobile = useMediaQuery('(max-width: 767px)')
 
+  // Resuelve el ID único de cada fila, usando getRowId si se proporciona
+  // o cayendo a row.id como fallback.
   const resolveId = (row: T, idx: number) =>
     getRowId ? getRowId(row) : defaultGetRowId(row, idx)
 
+  // Comprueba si una fila específica está expandida comparando su ID
+  // con expandedRowId (que viene del hook useRowExpansion en el componente padre).
   const isRowExpanded = (row: T, idx: number) => {
     if (expandedRowId == null) return false
     return resolveId(row, idx) === expandedRowId
   }
 
+  // Renderiza el valor de una celda: usa la función render personalizada
+  // si existe, o accede directamente a la propiedad del objeto.
   const renderCellValue = (col: ColumnDef<T, F>, row: T): ReactNode =>
     col.render
       ? col.render(row)
       : (row as Record<string, unknown>)[col.key] as ReactNode
 
+  // Renderiza el marcador de ordenación (▲ o ▼) si la columna está ordenada.
   const renderSortMarker = (col: ColumnDef<T, F>) => {
     if (!sortState || !col.sortable || !col.sortField) return null
+    // Solo mostramos el marcador si esta columna es la que está ordenada actualmente
     if (sortState.field !== col.sortField) return null
     return sortState.direction === 'asc' ? ' ▲' : ' ▼'
   }
 
-  // ── Vista móvil: cada fila → tarjeta ──────────────────────────────────────
+  // ========== VISTA MÓVIL: Cards verticales ==========
   if (isMobile) {
+    // Separamos las columnas de datos de la columna de acciones.
+    // En móvil, las acciones se renderizan al final de la card, visualmente separadas.
     const dataColumns = columns.filter((c) => c.key !== 'actions')
     const actionsColumn = columns.find((c) => c.key === 'actions')
 
+    // Mensaje cuando no hay datos que mostrar
     if (data.length === 0) {
       return (
         <p className="dt-card-empty">
@@ -109,22 +122,21 @@ export function DataTable<T, F extends string>({
 
           return (
             <li key={rowId}>
-              {/*
-               * Usamos <article> porque cada tarjeta es una unidad de contenido
-               * semánticamente autónoma (un usuario, un evento, etc.).
-               * Ref: HTML spec §4.3.2
-               */}
+              {/* Usamos <article> porque cada card es una unidad de contenido
+                  semánticamente autónoma (un usuario, evento, etc.). */}
               <article
                 id={String(rowId)}
                 className={`dt-card${expanded ? ' dt-card--expanded' : ''}`}
                 title={getRowTitle ? getRowTitle(row) : undefined}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                // Accesibilidad: si la fila es interactiva, debe ser operable con teclado
+                // role="button" hace que lectores de pantalla anuncien que es interactivo
                 role={onRowClick ? 'button' : undefined}
+                // tabIndex={0} permite que usuarios de teclado puedan navegar a la card
                 tabIndex={onRowClick ? 0 : undefined}
                 onKeyDown={
                   onRowClick
                     ? (e) => {
+                        // Enter o Espacio activan el click (estándar de accesibilidad)
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault()
                           onRowClick(row)
@@ -133,7 +145,7 @@ export function DataTable<T, F extends string>({
                     : undefined
                 }
               >
-                {/* Pares etiqueta:valor con <dl> — semánticamente correcto para este patrón */}
+                {/* <dl> (definition list) es semánticamente correcto para pares etiqueta:valor */}
                 <dl className="dt-card__body">
                   {dataColumns.map((col) => (
                     <div key={col.key} className="dt-card__pair">
@@ -143,7 +155,8 @@ export function DataTable<T, F extends string>({
                   ))}
                 </dl>
 
-                {/* Acciones al final de la tarjeta, separadas visualmente */}
+                {/* Las acciones se renderizan al final de la card,
+                    visualmente separadas de los datos del registro */}
                 {actionsColumn && (
                   <div className="dt-card__actions">
                     {renderCellValue(actionsColumn, row)}
@@ -151,7 +164,8 @@ export function DataTable<T, F extends string>({
                 )}
               </article>
 
-              {/* Contenido expandido — misma lógica que en la tabla */}
+              {/* Contenido expandido: se renderiza fuera del <article> para que
+                  tenga su propio contexto de diseño (altura máxima, animación, etc.) */}
               {expanded && renderExpandedContent && (
                 <div className={`expanded-row-content ${isClosing ? 'closing' : ''}`}>
                   {renderExpandedContent(row)}
@@ -164,7 +178,7 @@ export function DataTable<T, F extends string>({
     )
   }
 
-  // ── Vista tablet/desktop: tabla normal ────────────────────────────────────
+  // ========== VISTA TABLET/DESKTOP: Tabla HTML estándar ==========
   return (
     <div className="data-table-wrapper">
       <table className="dt-table">
@@ -177,15 +191,18 @@ export function DataTable<T, F extends string>({
                   key={col.key}
                   className={`dt-table__th${isSortable ? ' dt-table__th--sortable' : ''}`}
                   style={{ width: col.width }}
+                  // Si la columna es ordenable, el click cambia la ordenación
                   onClick={
                     isSortable
                       ? () => onSortChange!(col.sortField as F)
                       : undefined
                   }
+                  // tabIndex={0} permite navegar a la columna con teclado
                   tabIndex={isSortable ? 0 : undefined}
                   onKeyDown={
                     isSortable
                       ? (e) => {
+                          // Enter o Espacio activan la ordenación
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault()
                             onSortChange!(col.sortField as F)
@@ -193,7 +210,7 @@ export function DataTable<T, F extends string>({
                         }
                       : undefined
                   }
-                  // Accesibilidad: indica el estado de ordenación al lector de pantalla
+                  // aria-sort indica el estado de ordenación a lectores de pantalla
                   aria-sort={
                     isSortable && sortState && sortState.field === col.sortField
                       ? sortState.direction === 'asc'
@@ -210,6 +227,7 @@ export function DataTable<T, F extends string>({
           </tr>
         </thead>
         <tbody>
+          {/* Mensaje cuando no hay datos */}
           {data.length === 0 && (
             <tr>
               <td colSpan={columns.length} className="dt-table__empty">
@@ -222,10 +240,8 @@ export function DataTable<T, F extends string>({
             const expanded = isRowExpanded(row, idx)
 
             return (
-              /*
-               * CORRECCIÓN: la key debe estar en el Fragment, no en el <tr> hijo.
-               * Con <> shorthand no se puede poner key; hay que usar React.Fragment explícito.
-               */
+              // Usamos Fragment con key para poder renderizar tanto el <tr> principal
+              // como el <tr> de contenido expandido (si aplica) bajo la misma key.
               <Fragment key={rowId}>
                 <tr
                   id={String(rowId)}
@@ -238,8 +254,9 @@ export function DataTable<T, F extends string>({
                     onRowClick
                       ? (e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
-                            // No activar si el evento viene de un elemento interactivo
                             const target = e.target as HTMLElement
+                            // No activamos el click si el evento viene de un elemento
+                            // ya interactivo (botón, enlace, input) para no interferir
                             const isInteractive = target.tagName === 'BUTTON' || 
                                                   target.tagName === 'A' || 
                                                   target.tagName === 'INPUT' ||
@@ -261,6 +278,8 @@ export function DataTable<T, F extends string>({
                   ))}
                 </tr>
 
+                {/* Fila de contenido expandido: ocupa todas las columnas.
+                    isClosing aplica la animación de cierre (collapseRow en CSS) */}
                 {expanded && renderExpandedContent && (
                   <tr>
                     <td colSpan={columns.length} className="dt-table__expanded-td">

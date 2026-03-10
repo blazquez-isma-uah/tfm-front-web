@@ -1,20 +1,12 @@
 /**
  * Icons.tsx — Iconos SVG inline reutilizables.
  *
- * DECISIÓN DE DISEÑO: ¿Por qué no usar una librería de iconos (Lucide, HeroIcons)?
+ * Se definen los 8 iconos necesarios en lugar de importar una librería
+ * completa (Lucide, HeroIcons) para evitar añadir ~50-100KB de bundle
+ * innecesarios. Los SVG son de Heroicons (MIT License, Tailwind Labs),
+ * paths copiados del set outline 24x24.
  *
- * Las librerías de iconos como Lucide-React tienen entre 1.000 y 5.000 iconos.
- * Esta aplicación usa exactamente 8. Importar la librería entera para 8 iconos
- * añade ~50-100KB al bundle final sin tree-shaking agresivo. Para un TFM
- * que se va a defender, justificar "importé una librería de 1.000 iconos para
- * usar 8" es más difícil que "definí los 8 SVG que necesito, eliminando
- * la dependencia externa".
- *
- * Los SVG son de Heroicons (MIT License, Tailwind Labs) — paths copiados
- * directamente del set de iconos outline 24x24.
- *
- * NOTA: Todos los componentes aceptan className para que el consumidor
- * pueda controlar el tamaño y color vía CSS (width/height/color).
+ * Todos los componentes aceptan className para control de tamaño/color vía CSS.
  * El color se hereda del padre via currentColor, salvo excepciones documentadas.
  */
 
@@ -23,7 +15,6 @@ interface IconProps {
   'aria-hidden'?: boolean
 }
 
-// Utilidad para el viewBox y atributos comunes
 const iconBase = {
   xmlns:         'http://www.w3.org/2000/svg',
   viewBox:       '0 0 24 24',
@@ -36,7 +27,7 @@ const iconBase = {
   strokeLinejoin:'round' as const,
 }
 
-/** ✏️ Lápiz — acción de editar */
+/** Editar */
 export function EditIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -45,7 +36,7 @@ export function EditIcon({ className, 'aria-hidden': ariaHidden = true }: IconPr
   )
 }
 
-/** 🗑️ Papelera — acción de eliminar */
+/** Eliminar */
 export function TrashIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -54,7 +45,7 @@ export function TrashIcon({ className, 'aria-hidden': ariaHidden = true }: IconP
   )
 }
 
-/** ⬇️ Chevron hacia abajo — toggle de panel colapsable */
+/** Toggle de panel colapsable */
 export function ChevronDownIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -63,7 +54,7 @@ export function ChevronDownIcon({ className, 'aria-hidden': ariaHidden = true }:
   )
 }
 
-/** 🔍 Embudo — icono de filtros */
+/** Icono de filtros */
 export function FilterIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -72,7 +63,7 @@ export function FilterIcon({ className, 'aria-hidden': ariaHidden = true }: Icon
   )
 }
 
-/** ✅ Check — acción de activar/confirmar */
+/** Activar/confirmar */
 export function CheckIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -81,7 +72,7 @@ export function CheckIcon({ className, 'aria-hidden': ariaHidden = true }: IconP
   )
 }
 
-/** ✕ XMark — acción neutra de cerrar o desactivar */
+/** Cerrar o desactivar (acción neutra) */
 export function XMarkIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -90,7 +81,7 @@ export function XMarkIcon({ className, 'aria-hidden': ariaHidden = true }: IconP
   )
 }
 
-/** 👁️ Ojo — ver resultados / detalles */
+/** Ver resultados/detalles */
 export function EyeIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -101,16 +92,9 @@ export function EyeIcon({ className, 'aria-hidden': ariaHidden = true }: IconPro
 }
 
 /**
- * ❌ CancelIcon — X en color de peligro.
- *
- * DIFERENCIA con XMarkIcon:
- * - XMarkIcon hereda currentColor — para acciones neutras (cerrar panel, ocultar)
- * - CancelIcon usa var(--color-danger) explícitamente — para acciones destructivas
- *   o irreversibles (cancelar encuesta, cerrar proceso permanente) donde el color
- *   rojo comunica semánticamente la naturaleza de la acción.
- *
- * Se usa style en lugar de stroke="red" para respetar el sistema de tokens:
- * si --color-danger cambia en design-tokens.css, este icono se actualiza solo.
+ * X en color de peligro para acciones destructivas.
+ * Usa var(--color-danger) en lugar de currentColor para comunicar
+ * semánticamente la naturaleza destructiva de la acción.
  */
 export function CancelIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
@@ -125,16 +109,7 @@ export function CancelIcon({ className, 'aria-hidden': ariaHidden = true }: Icon
   )
 }
 
-/**
- * 💾 SaveIcon — Disquete, acción de guardar.
- *
- * Tres elementos que componen el disquete:
- *   1. Cuerpo exterior con esquina cortada superior-derecha (forma característica)
- *   2. Etiqueta superior (zona donde va la ranura de escritura)
- *   3. Área de almacenamiento interior inferior
- *
- * Source: Heroicons outline, path 24x24.
- */
+/** Guardar */
 export function SaveIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -145,7 +120,7 @@ export function SaveIcon({ className, 'aria-hidden': ariaHidden = true }: IconPr
   )
 }
 
-/** 📊 ChartIcon — gráfico de barras, ver resultados/estadísticas */
+/** Ver resultados/estadísticas */
 export function ChartIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -155,7 +130,7 @@ export function ChartIcon({ className, 'aria-hidden': ariaHidden = true }: IconP
   )
 }
 
-/** 🔒 LockIcon — candado cerrado, acción de cerrar encuesta */
+/** Cerrar encuesta (candado cerrado) */
 export function LockIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg {...iconBase} className={className} aria-hidden={ariaHidden}>
@@ -164,7 +139,7 @@ export function LockIcon({ className, 'aria-hidden': ariaHidden = true }: IconPr
   )
 }
 
-/** 🔄 ArrowPathIcon — flechas en círculo, acción de reiniciar/resetear. */
+/** Reiniciar/resetear */
 export function ArrowPathIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg
@@ -179,12 +154,8 @@ export function ArrowPathIcon({ className, 'aria-hidden': ariaHidden = true }: I
 }
 
 /**
- * 🔓 LockOpenIcon — candado abierto, acción de abrir encuesta (DRAFT → OPEN).
- *
- * Usa var(--color-success) para comunicar semánticamente que la acción
- * es positiva/habilitadora, en contraste con LockIcon (cerrar) y CancelIcon (peligro).
- *
- * Source: Heroicons outline, path 24x24.
+ * Abrir encuesta (candado abierto).
+ * Usa var(--color-success) para comunicar que la acción es positiva/habilitadora.
  */
 export function LockOpenIcon({ className, 'aria-hidden': ariaHidden = true }: IconProps) {
   return (

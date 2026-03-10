@@ -182,6 +182,17 @@ export function DataTable<T, F extends string>({
                       ? () => onSortChange!(col.sortField as F)
                       : undefined
                   }
+                  tabIndex={isSortable ? 0 : undefined}
+                  onKeyDown={
+                    isSortable
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            onSortChange!(col.sortField as F)
+                          }
+                        }
+                      : undefined
+                  }
                   // Accesibilidad: indica el estado de ordenación al lector de pantalla
                   aria-sort={
                     isSortable && sortState && sortState.field === col.sortField
@@ -221,6 +232,27 @@ export function DataTable<T, F extends string>({
                   className={`dt-table__row${expanded ? ' dt-table__row--expanded' : ''}${onRowClick ? ' dt-table__row--clickable' : ''}`}
                   title={getRowTitle ? getRowTitle(row) : undefined}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  role={onRowClick ? 'button' : undefined}
+                  onKeyDown={
+                    onRowClick
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            // No activar si el evento viene de un elemento interactivo
+                            const target = e.target as HTMLElement
+                            const isInteractive = target.tagName === 'BUTTON' || 
+                                                  target.tagName === 'A' || 
+                                                  target.tagName === 'INPUT' ||
+                                                  target.tagName === 'SELECT' ||
+                                                  target.tagName === 'TEXTAREA'
+                            if (isInteractive) return
+                            
+                            e.preventDefault()
+                            onRowClick(row)
+                          }
+                        }
+                      : undefined
+                  }
                 >
                   {columns.map((col) => (
                     <td key={col.key} className="dt-table__td">

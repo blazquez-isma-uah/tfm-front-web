@@ -14,7 +14,11 @@ function RequireAuth({ children }: RequireAuthProps) {
   }
 
   if (!isAuthenticated) {
-    // guardamos dónde quería ir para un posible uso futuro
+    // Guardamos dónde quería ir en sessionStorage porque el redirect externo
+    // de Keycloak perderá el location.state
+    if (location.pathname !== '/login') {
+      sessionStorage.setItem('redirectAfterLogin', location.pathname)
+    }
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

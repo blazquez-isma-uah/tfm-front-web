@@ -13,9 +13,17 @@ function LoginPage() {
         if (isLoading) return
         if (!isAuthenticated) return
 
-        // Si venía de una ruta concreta, podríamos usarla:
-        const from = location.state?.from?.pathname as string | undefined
+        // Primero intentamos recuperar la URL guardada en sessionStorage
+        // (sobrevive al redirect externo de Keycloak)
+        const savedRedirect = sessionStorage.getItem('redirectAfterLogin')
+        if (savedRedirect && savedRedirect !== '/login') {
+            sessionStorage.removeItem('redirectAfterLogin')
+            navigate(savedRedirect, { replace: true })
+            return
+        }
 
+        // Si no hay savedRedirect, intentamos usar location.state
+        const from = location.state?.from?.pathname as string | undefined
         if (from && from !== '/login') {
             navigate(from, { replace: true })
             return

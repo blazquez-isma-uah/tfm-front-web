@@ -300,15 +300,6 @@ function SurveysPage() {
         searchTrigger,
     ])
 
-    // ── Guard de permisos ─────────────────────────────────────────────────────
-    if (!isAdmin) {
-        return (
-            <div className="page-container">
-                <h1 className="page-title">Gestión de encuestas</h1>
-                <p>No tienes permisos para ver esta sección.</p>
-            </div>
-        )
-    }
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 

@@ -231,13 +231,6 @@ function UsersPage() {
         sorting.field, sorting.direction, searchTrigger,
     ])
 
-    if (!isAdmin) return (
-        <div className="page-container">
-            <h1 className="page-title">Gestión de usuarios</h1>
-            <p>No tienes permisos para ver esta sección.</p>
-        </div>
-    )
-
     // ── Handlers de búsqueda ──────────────────────────────────────────────────
 
     const handleResetFilters = () => {

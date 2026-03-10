@@ -11,6 +11,7 @@ import SurveysPage from './features/surveys/SurveysPage'
 import MySurveysPage from './features/surveys/MySurveysPage'
 import { AuthProvider } from './features/auth/AuthContext'
 import RequireAuth from './features/auth/RequireAuth'
+import RequireRole from './features/auth/RequireRole'
 import { ToastProvider } from './context/toast/ToastContext'
 
 /**
@@ -52,10 +53,10 @@ function App() {
             <Route path="profile"    element={<ProfilePage />} />
 
             {/* Zona administrador — solo usuarios con rol ADMIN */}
-            <Route path="admin/users"       element={<UsersPage />} />
-            <Route path="admin/instruments" element={<InstrumentsPage />} />
-            <Route path="admin/events"      element={<EventsPage />} />
-            <Route path="admin/surveys"     element={<SurveysPage />} />
+            <Route path="admin/users"       element={<RequireRole role="ADMIN"><UsersPage /></RequireRole>} />
+            <Route path="admin/instruments" element={<RequireRole role="ADMIN"><InstrumentsPage /></RequireRole>} />
+            <Route path="admin/events"      element={<RequireRole role="ADMIN"><EventsPage /></RequireRole>} />
+            <Route path="admin/surveys"     element={<RequireRole role="ADMIN"><SurveysPage /></RequireRole>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

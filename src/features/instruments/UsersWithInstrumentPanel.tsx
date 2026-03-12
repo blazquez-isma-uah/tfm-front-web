@@ -6,29 +6,10 @@ import { formatDate } from '../../utils/date'
 import '../../styles/common.css'
 
 /**
- * UsersWithInstrumentPanel — Muestra la lista de usuarios que tocan
- * un instrumento concreto, con expansión de fila para ver el detalle.
+ * UsersWithInstrumentPanel — Lista de usuarios por instrumento con expansión.
  *
- * RESPONSABILIDAD:
- * Solo renderiza. Toda la lógica (carga de usuarios, expansión de filas,
- * ordenación local) vive en InstrumentsPage y llega como props.
- *
- * DECISIÓN — Ordenación local (client-side) en lugar de server-side:
- * Los usuarios de un instrumento se cargan de una sola vez (page=0, size=100).
- * La ordenación se hace en memoria porque:
- * 1. El número de usuarios por instrumento es acotado (una banda tiene
- *    entre 10 y 100 miembros, no miles).
- * 2. Añadir parámetros de ordenación a la llamada requeriría un useEffect
- *    adicional o recargar datos, con latencia de red visible.
- * 3. La ordenación local es instantánea y suficiente para este dominio.
- * Esta decisión es diferente a la de UsersPage (server-side) porque allí
- * el total de usuarios puede ser grande y la paginación es obligatoria.
- *
- * DECISIÓN — Carga del detalle de usuario al expandir:
- * La lista inicial viene de searchUsersPage con datos básicos.
- * Al expandir, se hace getUserById para obtener el perfil completo
- * (instrumentos, roles, foto). Esto añade una llamada extra pero evita
- * cargar datos pesados para todas las filas de golpe.
+ * Componente presentacional: recibe datos, estado de expansión y callbacks
+ * desde el contenedor, sin llamadas directas a la API.
  */
 
 type UserSortableField = 'username' | 'firstName' | 'lastName' | 'email' | 'bandJoinDate'

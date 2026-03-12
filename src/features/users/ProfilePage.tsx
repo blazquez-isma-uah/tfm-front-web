@@ -8,17 +8,8 @@ import '../../styles/common.css'
 /**
  * ProfilePage — Perfil del usuario autenticado.
  *
- * NOTA: Esta página NO usa los hooks usePagination/useSorting/useRowExpansion
- * porque no tiene tabla paginada ni lista expandible.
- * Sí podría usar useConfirmDialog en el futuro si se añade confirmación
- * para el cambio de contraseña, pero actualmente no es necesario.
- *
- * CAMBIOS respecto al original:
- * - Añadido .page-container y .page-title para consistencia visual
- * - Reemplazado el bloque de successMessage inline por clase .success-message
- *   (definida en common.css, equivalente al .error-message pero en verde)
- * - Eliminados marginBottom inline en form-grid (ya los gestiona el grid gap)
- * - Corregido: textarea usaba "input-full-width" en lugar de "textarea-base"
+ * Permite visualizar datos personales y editar el perfil o la contraseña
+ * con validaciones básicas en el cliente.
  */
 
 type ViewMode = 'VIEW' | 'EDIT_PROFILE' | 'CHANGE_PASSWORD'
@@ -281,7 +272,6 @@ function ProfilePage() {
                         </div>
                         <div className="form-field grid-full-width">
                             <label className="label-text">Notas</label>
-                            {/* Corregido: era "input-full-width", debe ser "textarea-base" */}
                             <textarea
                                 value={formProfile.notes}
                                 onChange={(e) => setFormProfile({ ...formProfile, notes: e.target.value })}

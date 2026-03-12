@@ -5,19 +5,10 @@ import '../../styles/common.css'
 import { SaveIcon, CancelIcon } from '../../components/Icons'
 
 /**
- * UserRolesPanel — Panel para gestionar los roles asignados a un usuario.
+ * UserRolesPanel — Panel para gestionar roles asignados a un usuario.
  *
- * RESPONSABILIDAD: Renderizar la lista de roles disponibles con checkboxes
- * que reflejan los roles actualmente asignados al usuario seleccionado.
- *
- * NOTA SOBRE EL ORIGEN DE LOS ROLES:
- * Los roles disponibles (roles: KeycloakRoleResponse[]) se cargan una sola
- * vez al montar UsersPage (en el useEffect de roles). No se vuelven a cargar
- * al abrir este panel porque los roles del sistema raramente cambian durante
- * una sesión. Pasarlos como prop evita una llamada a la API redundante.
- *
- * Los roles actuales del usuario (selectedRoleNames) sí se calculan en
- * UsersPage al abrir el panel, desde user.roles que viene del servidor.
+ * Renderiza la lista de roles y emite cambios al contenedor sin gestionar
+ * estado propio ni realizar llamadas a la API.
  */
 
 interface UserRolesPanelProps {

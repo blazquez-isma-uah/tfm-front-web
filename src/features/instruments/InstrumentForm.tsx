@@ -9,24 +9,15 @@ const VALIDATION_RULES = {
 }
 
 /**
- * InstrumentForm — Formulario compartido para crear y editar instrumentos.
+ * InstrumentForm — Formulario único para crear y editar instrumentos.
  *
- * DECISIÓN — Un único componente para create y edit:
- * El formulario de instrumento tiene exactamente 2 campos: instrumentName y voice.
- * La única diferencia entre crear y editar es el título y el texto del botón.
- * Duplicar el componente solo para cambiar esas dos cadenas sería over-engineering.
- * En cambio, para UsersPage se usaron componentes separados (UserEditForm /
- * UserCreateForm) porque las diferencias eran estructurales: el formulario de
- * creación incluía credenciales (username, password) y roles, que no existen
- * en edición.
+ * Se usa un solo componente porque los campos son idénticos; solo cambian
+ * el título y el texto del botón según el modo. Esto contrasta con
+ * `UserCreateForm`/`UserEditForm`, donde existen diferencias estructurales
+ * (credenciales y roles en alta, no en edición).
  *
- * PATRÓN — Modo controlado con payload externo:
- * El estado del formulario (payload) vive en InstrumentsPage, no aquí.
- * Este componente solo renderiza y notifica cambios vía onFieldChange.
- * Justificación: el padre necesita el payload para construir la llamada a API,
- * así que elevarlo evita sincronización innecesaria.
- *
- * @param editing  null → modo CREATE, InstrumentDTO → modo EDIT
+ * Componente controlado: el payload vive en el contenedor y se propaga
+ * mediante `onFieldChange`, sin llamadas directas a la API.
  */
 interface InstrumentFormProps {
   editing: InstrumentDTO | null
@@ -50,12 +41,14 @@ export function InstrumentForm({
   const { errors, validate, clearError } = useFormValidation<InstrumentRequestDTO>(VALIDATION_RULES)
 
   const handleChange = (field: keyof InstrumentRequestDTO, value: string) => {
+    // Limpiamos el error del campo al escribir para feedback inmediato.
     clearError(field)
     onFieldChange(field, value)
   }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
+    // Validamos antes de delegar al padre el submit.
     if (validate(payload as unknown as Record<string, unknown>)) {
       onSubmit(e)
     }

@@ -31,22 +31,16 @@ import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
 
 /**
- * UsersPage — Gestión de usuarios (solo ADMIN).
+ * UsersPage — Orquesta el CRUD completo de usuarios (solo ADMIN).
  *
- * FASE 2 — Descomposición en componentes:
- * Los cuatro bloques de JSX más grandes se extraen a componentes propios:
- *   - UserEditForm         (~80 líneas JSX)
- *   - UserCreateForm       (~120 líneas JSX)
- *   - UserRolesPanel       (~40 líneas JSX)
- *   - UserInstrumentsPanel (~50 líneas JSX)
+ * Centraliza todo el estado y los handlers de API; los subcomponentes son
+ * presentacionales y solo reciben datos y callbacks.
  *
- * Nuevos componentes genéricos:
- *   - SearchFiltersPanel   colapsable con badge de filtros activos
- *   - Botones btn-icon + tooltip-wrap en la columna de acciones
- *
- * UsersPage conserva toda la lógica de negocio (API, estado, handlers).
- * Los componentes extraídos son presentacionales controlados: reciben datos
- * y callbacks, no gestionan estado propio ni acceden a la API directamente.
+ * Patrón de doble estado `filter*` y `search*`:
+ * - `filter*` refleja lo que el usuario escribe en el formulario.
+ * - `search*` son los filtros efectivos que disparan la búsqueda.
+ * El badge de filtros activos cuenta `search*` para mostrar lo realmente aplicado,
+ * no lo que todavía está escrito pero sin enviar.
  */
 
 type ViewMode = 'LIST' | 'EDIT' | 'CREATE'
@@ -119,8 +113,7 @@ function UsersPage() {
     })
 
     // Badge: cuenta los filtros efectivos (search*), no los del formulario (filter*).
-    // Razón: el badge debe reflejar lo que está realmente aplicado, no lo que
-    // el usuario ha escrito pero todavía no ha enviado con "Buscar".
+    // Así el indicador refleja lo aplicado en la búsqueda, no lo pendiente de enviar.
     const activeFiltersCount =
         [searchUsername, searchFirstName, searchLastName, searchSecondLastName, searchEmail].filter(Boolean).length
         + (searchActive !== undefined ? 1 : 0)
@@ -181,6 +174,8 @@ function UsersPage() {
 
     // ── Effects ───────────────────────────────────────────────────────────────
 
+    // Cargamos la lista de roles al montar y cuando cambian token/isAdmin.
+    // Si no hay autorización, salimos sin hacer llamadas a la API.
     useEffect(() => {
         if (!token || !isAdmin) return
         let cancelled = false
@@ -197,6 +192,8 @@ function UsersPage() {
         return () => { cancelled = true }
     }, [token, isAdmin])
 
+    // Cargamos usuarios cada vez que cambia paginación, ordenación o search*.
+    // Estas dependencias son las que realmente alteran el resultado del listado.
     useEffect(() => {
         if (!token || !isAdmin) return
         const load = async () => {
@@ -218,6 +215,8 @@ function UsersPage() {
                 setUsers(data.content ?? [])
                 pagination.setTotals(data.totalPages ?? 1, data.totalElements ?? 0)
             } catch (e: any) {
+                // Capturamos errores de red, validación o concurrencia y mostramos
+                // un mensaje consistente en la UI sin romper el render.
                 setError(extractErrorMessage(e, 'Error cargando usuarios'))
             } finally { setLoading(false) }
         }
@@ -234,6 +233,7 @@ function UsersPage() {
     // ── Handlers de búsqueda ──────────────────────────────────────────────────
 
     const handleResetFilters = () => {
+        // Limpiamos filtros visibles y filtros efectivos para volver al estado base.
         setFilterUsername(''); setFilterFirstName(''); setFilterLastName('')
         setFilterSecondLastName(''); setFilterEmail(''); setFilterActive('all')
         setFilterRole(''); setFilterBirthDateFrom(''); setFilterBirthDateTo('')
@@ -243,13 +243,18 @@ function UsersPage() {
         setSearchRoleName(undefined); setSearchBirthDateFrom(undefined)
         setSearchBirthDateTo(undefined); setSearchBandJoinDateFrom(undefined)
         setSearchBandJoinDateTo(undefined)
+        // Reseteamos a la primera página para evitar quedarnos en una página vacía.
         pagination.goToPage(0); setMode('LIST'); setSelectedUser(null)
+        // Forzamos recarga aunque los filtros ya estuvieran vacíos.
         setSearchTrigger(prev => prev + 1)
     }
 
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault()
+        // Reseteamos a la primera página para evitar mostrar resultados incompletos.
         pagination.goToPage(0)
+        // Copiamos los valores del formulario de filtros a los estados de búsqueda
+        // efectiva. Este paso es el que realmente dispara la recarga de datos.
         setSearchUsername(filterUsername.trim()); setSearchFirstName(filterFirstName.trim())
         setSearchLastName(filterLastName.trim()); setSearchSecondLastName(filterSecondLastName.trim())
         setSearchEmail(filterEmail.trim())
@@ -264,6 +269,7 @@ function UsersPage() {
     }
 
     const handleSort = (field: SortableField) => {
+        // Reseteamos a la primera página porque la ordenación cambia el conjunto visible.
         pagination.goToPage(0); sorting.handleSortChange(field)
     }
 
@@ -281,6 +287,7 @@ function UsersPage() {
     // ── CRUD usuario ──────────────────────────────────────────────────────────
 
     const handleOpenCreateUser = () => {
+        // Preparamos el formulario de alta con un payload limpio.
         setSelectedUser(null); setManagingInstruments(false); setManagingRoles(false)
         setMode('CREATE')
         setCreatePayload({
@@ -293,6 +300,7 @@ function UsersPage() {
     const handleSubmitCreateUser = async (e: FormEvent) => {
         e.preventDefault(); if (!token) return
         try {
+            // Creamos el usuario con valores opcionales normalizados a undefined.
             setSaving(true); setError(null)
             await createUser({
                 ...createPayload,
@@ -307,13 +315,17 @@ function UsersPage() {
                 roles: createPayload.roles ?? [],
             }, token)
             showToast('Usuario creado correctamente', 'success')
+            // Volvemos al listado y a la primera página para ver el nuevo registro.
             setMode('LIST'); pagination.goToPage(0)
             setSearchTrigger(prev => prev + 1)
-        } catch (e) { showToast(extractErrorMessage(e, 'Error creando usuario'), 'error')
+        } catch (e) {
+            // Mostramos el error devuelto por la API (incluida concurrencia si aplica).
+            showToast(extractErrorMessage(e, 'Error creando usuario'), 'error')
         } finally { setSaving(false) }
     }
 
     const handleEditUser = (user: UserDTO) => {
+        // Cargamos en el formulario los datos actuales del usuario seleccionado.
         setSelectedUser(user); setManagingInstruments(false); setManagingRoles(false)
         setEditPayload({
             email: user.email ?? '', firstName: user.firstName ?? '',
@@ -330,6 +342,7 @@ function UsersPage() {
         if (!selectedUser?.id || selectedUser.version == null || !token) return
         setSaving(true); setError(null)
         try {
+            // Persistimos cambios y actualizamos tanto la lista como el detalle.
             const updated = await updateUser(selectedUser.id, {
                 ...editPayload,
                 secondLastName: editPayload.secondLastName || undefined,
@@ -343,11 +356,14 @@ function UsersPage() {
             showToast('Usuario actualizado correctamente', 'success')
             setSelectedUser(updated); setMode('LIST')
             setSearchTrigger(prev => prev + 1)
-        } catch (e: any) { showToast(extractErrorMessage(e, 'Error actualizando usuario'), 'error')
+        } catch (e: any) {
+            // Capturamos errores de validación o concurrencia y avisamos al usuario.
+            showToast(extractErrorMessage(e, 'Error actualizando usuario'), 'error')
         } finally { setSaving(false) }
     }
 
     const handleCancelForm = () => {
+        // Volvemos al listado y cerramos paneles secundarios.
         setMode('LIST'); setSelectedUser(null)
         setManagingInstruments(false); setManagingRoles(false)
     }
@@ -356,6 +372,7 @@ function UsersPage() {
 
     const handleToggleActive = (user: UserDTO) => {
         if (!user.id || user.version == null || !token) return
+        // Flujo: confirmación -> cambio de estado -> recarga del usuario.
         confirm.open({
             title: user.active ? `Desactivar "${user.username}"` : `Activar "${user.username}"`,
             message: `¿Seguro que quieres ${user.active ? 'desactivar' : 'activar'} al usuario "${user.username}"?`,
@@ -371,13 +388,17 @@ function UsersPage() {
                     setUsers(prev => prev.map(u => u.id === refreshed.id ? refreshed : u))
                     if (selectedUser?.id === refreshed.id) setSelectedUser(refreshed)
                     showToast(user.active ? 'Usuario desactivado' : 'Usuario activado', 'success')
-                } catch (e: any) { showToast(extractErrorMessage(e, 'Error cambiando estado del usuario'), 'error') }
+                } catch (e: any) {
+                    // Errores de API (incluida concurrencia) se muestran en un toast.
+                    showToast(extractErrorMessage(e, 'Error cambiando estado del usuario'), 'error')
+                }
             },
         })
     }
 
     const handleDeleteUser = (user: UserDTO) => {
         if (!user.id || user.version == null || !token) return
+        // Flujo: confirmación -> borrado -> recarga del listado.
         confirm.open({
             title: `Eliminar usuario "${user.username}"`,
             message: `¿Seguro que quieres eliminar a "${user.username}"?\nEsta acción no se puede deshacer.`,
@@ -388,10 +409,14 @@ function UsersPage() {
                     setError(null)
                     await deleteUser(user.id, user.version, token)
                     showToast('Usuario eliminado correctamente', 'success')
+                    // Reseteamos a la primera página para evitar huecos en la tabla.
                     pagination.goToPage(0); setMode('LIST')
                     setSearchTrigger(prev => prev + 1)
                     if (selectedUser?.id === user.id) setSelectedUser(null)
-                } catch (e: any) { showToast(extractErrorMessage(e, 'Error eliminando usuario'), 'error') }
+                } catch (e: any) {
+                    // Mostramos el error de API sin alterar el estado de la UI.
+                    showToast(extractErrorMessage(e, 'Error eliminando usuario'), 'error')
+                }
             },
         })
     }
@@ -400,6 +425,7 @@ function UsersPage() {
 
     const openManageInstruments = async (user: UserDTO) => {
         if (!token) return
+        // Abrimos el panel y cargamos datos solo cuando el admin lo solicita.
         setError(null); setManagingInstruments(true); setInstrumentsLoading(true)
         try {
             const fullUser = await getUserById(user.id, token)
@@ -415,6 +441,7 @@ function UsersPage() {
                 .filter((id): id is number => id != null) ?? []
             setSelectedInstrumentIds(currentIds)
         } catch (e) {
+            // Si falla la carga, cerramos el panel y avisamos al usuario.
             showToast(extractErrorMessage(e, 'Error cargando instrumentos del usuario'), 'error')
             setManagingInstruments(false)
         } finally { setInstrumentsLoading(false) }
@@ -423,6 +450,7 @@ function UsersPage() {
     const handleSaveUserInstruments = async (e: FormEvent) => {
         e.preventDefault(); if (!token || !selectedUser?.id) return
         try {
+            // Persistimos la asignación de instrumentos y refrescamos el usuario.
             setSaving(true); setError(null)
             const refreshed = await setUserInstruments(
                 selectedUser.id, selectedInstrumentIds, selectedUser.version, token,
@@ -430,7 +458,9 @@ function UsersPage() {
             setUsers(prev => prev.map(u => u.id === refreshed.id ? refreshed : u))
             showToast('Instrumentos guardados correctamente', 'success')
             setSelectedUser(refreshed); setManagingInstruments(false)
-        } catch (e) { showToast(extractErrorMessage(e, 'Error guardando instrumentos'), 'error')
+        } catch (e) {
+            // Errores de API se muestran en un toast para que el usuario actúe.
+            showToast(extractErrorMessage(e, 'Error guardando instrumentos'), 'error')
         } finally { setSaving(false) }
     }
 
@@ -438,6 +468,7 @@ function UsersPage() {
 
     const openManageRoles = (user: UserDTO) => {
         if (!token) return
+        // Abrimos el panel y clonamos los roles actuales para edición local.
         setError(null); setManagingRoles(true); setSelectedUser(user)
         setSelectedRoleNames(user.roles ?? [])
     }
@@ -445,6 +476,7 @@ function UsersPage() {
     const handleSaveUserRoles = async (e: FormEvent) => {
         e.preventDefault(); if (!token || !selectedUser?.id) return
         try {
+            // Persistimos roles y actualizamos listado y detalle.
             setSaving(true); setError(null)
             const refreshed = await setUserRoles(
                 selectedUser.id, selectedRoleNames, selectedUser.version, token,
@@ -453,7 +485,9 @@ function UsersPage() {
             showToast('Roles guardados correctamente', 'success')
             setSelectedUser(refreshed); setManagingRoles(false)
             setSearchTrigger(prev => prev + 1)
-        } catch (e) { showToast(extractErrorMessage(e, 'Error guardando roles'), 'error')
+        } catch (e) {
+            // Mostramos errores de API (incluida concurrencia) al usuario.
+            showToast(extractErrorMessage(e, 'Error guardando roles'), 'error')
         } finally { setSaving(false) }
     }
 

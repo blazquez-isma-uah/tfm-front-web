@@ -14,6 +14,12 @@ interface UserDetailCardProps {
   backButtonLabel?: string
 }
 
+/**
+ * UserDetailCard — Tarjeta de detalle de usuario.
+ *
+ * Muestra información completa y opcionalmente botones de acciones
+ * delegadas al contenedor.
+ */
 export function UserDetailCard({
   user,
   onBack,

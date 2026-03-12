@@ -6,25 +6,10 @@ import '../../styles/common.css'
 import { SaveIcon, CancelIcon } from '../../components/Icons'
 
 /**
- * UserInstrumentsPanel — Panel para gestionar los instrumentos asignados
- * a un usuario.
+ * UserInstrumentsPanel — Panel para gestionar instrumentos asignados.
  *
- * DIFERENCIA RESPECTO A UserRolesPanel:
- * Los instrumentos SÍ se cargan al abrir el panel (en openManageInstruments
- * dentro de UsersPage) porque la lista de instrumentos puede ser larga y
- * no tendría sentido cargarla al iniciar la página si el admin puede que
- * nunca abra este panel. Es un caso clásico de "lazy loading" de datos.
- *
- * Los instrumentos vienen agrupados por letra inicial (InstrumentGroup[])
- * por la función groupInstrumentsByInitial del utils. Esta agrupación
- * se hace en UsersPage y se pasa ya procesada para que el componente
- * solo se ocupe del renderizado.
- *
- * TIPADO DE inst:
- * El campo instruments del DTO puede devolver objetos con distintas
- * formas según la versión del backend (número, {id}, {instrumentId}).
- * La normalización se hace en UsersPage al calcular selectedInstrumentIds,
- * así que este componente trabaja siempre con number[].
+ * Recibe los instrumentos ya agrupados por letra inicial y los IDs
+ * seleccionados; el componente se limita a renderizar y emitir cambios.
  */
 
 interface UserInstrumentsPanelProps {

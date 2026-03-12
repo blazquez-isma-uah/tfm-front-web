@@ -24,28 +24,10 @@ import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
 
 /**
- * InstrumentsPage — Gestión de instrumentos (solo ADMIN).
+ * InstrumentsPage — Orquesta el CRUD de instrumentos (solo ADMIN).
  *
- * FASE 2 — Componentes extraídos:
- *   - InstrumentForm              formulario create/edit compartido (2 campos)
- *   - UsersWithInstrumentPanel    vista de usuarios por instrumento con expansión
- *
- * Componentes genéricos reutilizados de la refactorización de UsersPage:
- *   - SearchFiltersPanel          filtros colapsables con badge de activos
- *   - Icons                       botones icono con tooltip CSS puro
- *
- * HOOKS aplicados:
- *   - usePagination               tabla principal de instrumentos
- *   - useSorting<SortableField>   ordenación server-side de instrumentos
- *   - useSorting<UserSortField>   ordenación client-side de usuarios del panel
- *   - useConfirmDialog            confirmación de borrado
- *   - useRowExpansion<number>     expansión de fila en el panel de usuarios
- *
- * NOTA — Dos instancias de useSorting con comportamiento distinto:
- * La primera (sorting) pasa su campo a la API como parámetro de ordenación.
- * La segunda (userSorting) solo dispara un useEffect que ordena el array
- * en memoria, sin llamada a la API, porque la lista de usuarios por
- * instrumento se carga completa de una sola vez (tamaño acotado a ~100).
+ * Centraliza estado, llamadas a API y handlers; los subcomponentes son
+ * presentacionales y reciben datos/callbacks.
  */
 
 type ViewMode        = 'LIST' | 'CREATE' | 'EDIT' | 'USERS'
@@ -91,7 +73,7 @@ function InstrumentsPage() {
   const [formPayload, setFormPayload] = useState<InstrumentRequestDTO>(EMPTY_PAYLOAD)
   const [editing, setEditing]         = useState<InstrumentDTO | null>(null)
 
-  // Badge: cuántos filtros efectivos están activos
+  // Badge: cuenta filtros efectivos para reflejar lo realmente aplicado.
   const activeFiltersCount = [searchName, searchVoice].filter(Boolean).length
 
   // ── Columnas de instrumentos ──────────────────────────────────────────────
@@ -146,6 +128,8 @@ function InstrumentsPage() {
 
   // ── Effects ───────────────────────────────────────────────────────────────
 
+  // Cargamos instrumentos cuando cambian paginación, ordenación o search*.
+  // Si no hay autorización, salimos sin hacer llamadas a la API.
   useEffect(() => {
     if (!token || !isAdmin) return
     const load = async () => {
@@ -166,6 +150,7 @@ function InstrumentsPage() {
         setInstruments(data.content ?? [])
         pagination.setTotals(data.totalPages ?? 1, data.totalElements ?? 0)
       } catch (e: any) {
+        // Capturamos errores de red/validación y los mostramos en la UI.
         setError(extractErrorMessage(e, 'Error cargando instrumentos'))
       } finally {
         setLoading(false)
@@ -221,7 +206,9 @@ function InstrumentsPage() {
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault()
+    // Reseteamos a la primera página para evitar páginas vacías.
     pagination.goToPage(0)
+    // Copiamos filtros visibles a filtros efectivos que disparan la recarga.
     setSearchName(filterName.trim())
     setSearchVoice(filterVoice.trim())
     switchToList()
@@ -229,24 +216,29 @@ function InstrumentsPage() {
   }
 
   const handleResetFilters = () => {
+    // Limpiamos filtros visibles y efectivos para volver al estado base.
     setFilterName(''); setFilterVoice('')
     setSearchName(''); setSearchVoice('')
+    // Reseteamos a la primera página para evitar huecos en la tabla.
     pagination.goToPage(0)
     switchToList()
     setSearchTrigger(prev => prev + 1)
   }
 
   const handleSort = (field: SortableField) => {
+    // Reseteamos a la primera página porque cambia el orden de resultados.
     pagination.goToPage(0); sorting.handleSortChange(field)
   }
 
   // ── CRUD instrumento ──────────────────────────────────────────────────────
 
   const handleOpenCreate = () => {
+    // Preparamos el formulario con un payload limpio.
     setMode('CREATE'); setFormPayload(EMPTY_PAYLOAD); setEditing(null)
   }
 
   const handleOpenEdit = (inst: InstrumentDTO) => {
+    // Cargamos los datos del instrumento seleccionado en el formulario.
     setMode('EDIT'); setEditing(inst)
     setFormPayload({ instrumentName: inst.instrumentName, voice: inst.voice ?? '' })
   }
@@ -257,12 +249,15 @@ function InstrumentsPage() {
   const handleCreateSubmit = async (e: FormEvent) => {
     e.preventDefault(); if (!token) return
     try {
+      // Creamos el instrumento y recargamos el listado desde la primera página.
       setLoading(true); setError(null)
       await createInstrument(formPayload, token)
       showToast('Instrumento creado correctamente', 'success')
+      // Volvemos al listado y a la primera página para ver el nuevo registro.
       switchToList(); pagination.goToPage(0)
       setSearchTrigger(prev => prev + 1)
     } catch (err) {
+      // Mostramos errores de API en un toast sin romper la UI.
       showToast(extractErrorMessage(err, 'Error creando instrumento'), 'error')
     } finally { setLoading(false) }
   }
@@ -270,6 +265,7 @@ function InstrumentsPage() {
   const handleEditSubmit = async (e: FormEvent) => {
     e.preventDefault(); if (!token || !editing) return
     try {
+      // Guardamos cambios y actualizamos la fila en memoria.
       setLoading(true); setError(null)
       const updated = await updateInstrument(editing.id, formPayload, editing.version, token)
       setInstruments(prev => prev.map(i => i.id === updated.id ? updated : i))
@@ -278,6 +274,8 @@ function InstrumentsPage() {
       setSearchTrigger(prev => prev + 1)
     } catch (e: any) {
       const s = e?.response?.status
+      // Si el servidor devuelve 412/428, hubo conflicto de concurrencia.
+      // Pedimos recargar en lugar de sobreescribir silenciosamente.
       showToast(
         s === 412 || s === 428
           ? 'El instrumento ha sido modificado. Recarga la lista antes de editar.'
@@ -290,6 +288,7 @@ function InstrumentsPage() {
   const handleDelete = (inst: InstrumentDTO) => {
     if (!token) return
     const name = inst.instrumentName + (inst.voice ? ` — ${inst.voice}` : '')
+    // Flujo: confirmación -> borrado -> refresco del listado.
     confirm.open({
       title:   `Eliminar "${name}"`,
       message: `¿Seguro que quieres borrar "${name}"?\nEsta acción no se puede deshacer.`,
@@ -304,6 +303,7 @@ function InstrumentsPage() {
           setSearchTrigger(prev => prev + 1)
         } catch (e: any) {
           const s = e?.response?.status
+          // Si el servidor devuelve 412/428, el registro cambió en paralelo.
           showToast(
             s === 412 || s === 428
               ? 'El instrumento ha cambiado. Recarga la lista antes de borrar.'
@@ -319,6 +319,7 @@ function InstrumentsPage() {
 
   const handleViewUsers = async (inst: InstrumentDTO) => {
     if (!token) return
+    // Cargamos la lista de usuarios del instrumento y abrimos el panel.
     setSelectedInstrument(inst); setMode('USERS')
     setUsersLoading(true); setError(null)
     setSelectedUserDetail(null); rowExpansion.forceClose()
@@ -326,6 +327,7 @@ function InstrumentsPage() {
       const data = await searchUsersPage({ instrumentId: inst.id, page: 0, size: 100 }, token)
       setUsersWithInstrument(data.content ?? [])
     } catch (e) {
+      // Mostramos errores de API en un toast sin interrumpir la navegación.
       showToast(extractErrorMessage(e, 'Error cargando usuarios del instrumento'), 'error')
     } finally { setUsersLoading(false) }
   }
@@ -337,16 +339,19 @@ function InstrumentsPage() {
       setTimeout(() => setSelectedUserDetail(null), 250)
       return
     }
+    // Al expandir, pedimos el detalle completo del usuario para mostrarlo.
     rowExpansion.toggle(user.id ?? null)
     setUserDetailLoading(true)
     try {
       setSelectedUserDetail(await getUserById(user.id, token))
     } catch (e) {
+      // Si falla el detalle, mantenemos la lista y notificamos el error.
       showToast(extractErrorMessage(e, 'Error cargando detalles del usuario'), 'error')
     } finally { setUserDetailLoading(false) }
   }
 
   const handleBackToUsersList = () => {
+    // Cerramos el detalle expandido sin abandonar el panel de usuarios.
     rowExpansion.close()
     setTimeout(() => setSelectedUserDetail(null), 250)
   }

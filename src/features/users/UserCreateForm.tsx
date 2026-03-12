@@ -5,14 +5,13 @@ import { useFormValidation, rules } from '../../hooks/useFormValidation'
 import '../../styles/common.css'
 
 /**
- * UserCreateForm — Formulario de creación de nuevo usuario.
+ * UserCreateForm — Formulario de alta de usuario.
  *
- * VALIDACIÓN FRONTEND:
- * Reglas más estrictas que en edición porque incluye credenciales:
- * - username: requerido, mínimo 3 caracteres, sin espacios
- * - password: requerido, mínimo 8 caracteres
- * - email: requerido, formato válido
- * - firstName, lastName: requeridos
+ * Se separa de `UserEditForm` porque la creación incluye credenciales y roles,
+ * mientras que la edición solo permite modificar datos de perfil.
+ *
+ * Componente presentacional y controlado: no llama a la API ni gestiona
+ * estado propio; recibe el payload y notifica cambios al contenedor.
  */
 
 const VALIDATION_RULES = {
@@ -47,12 +46,14 @@ export function UserCreateForm({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
+    // Validamos antes de propagar al padre para evitar submits incompletos.
     if (validate(createPayload as unknown as Record<string, unknown>)) {
       onSubmit(e)
     }
   }
 
   const handleChange = (field: keyof UserCreatePayload, value: string) => {
+    // Limpiamos el error del campo en cuanto el usuario escribe para feedback inmediato.
     clearError(field)
     onFieldChange(field, value)
   }
@@ -65,6 +66,7 @@ export function UserCreateForm({
         {/* ── Credenciales ── */}
         <div className="form-field">
           <label className="label-text">Username *</label>
+          {/* Validamos también al perder el foco para guiar antes del submit. */}
           <input
             type="text"
             className={`input-full-width${errors.username ? ' input--error' : ''}`}

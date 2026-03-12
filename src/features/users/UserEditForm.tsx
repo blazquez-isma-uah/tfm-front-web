@@ -5,15 +5,13 @@ import { useFormValidation, rules } from '../../hooks/useFormValidation'
 import '../../styles/common.css'
 
 /**
- * UserEditForm — Formulario de edición de los datos de un usuario.
+ * UserEditForm — Formulario de edición de datos de usuario.
  *
- * VALIDACIÓN FRONTEND:
- * Se usa useFormValidation con reglas definidas a nivel de módulo
- * (fuera del componente) para evitar recrearlas en cada render.
+ * Se separa de `UserCreateForm` porque en edición no existen credenciales
+ * ni asignación de roles; solo se modifican campos de perfil.
  *
- * El submit intercepta el evento, valida, y solo propaga al padre
- * si todos los campos son válidos. Los errores se limpian campo a
- * campo en el onChange para dar feedback inmediato al usuario.
+ * Componente presentacional y controlado: no llama a la API ni gestiona
+ * estado propio; recibe el payload y notifica cambios al contenedor.
  */
 
 // Reglas a nivel de módulo — no se recrean en cada render
@@ -45,12 +43,14 @@ export function UserEditForm({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
+    // Validamos antes de propagar al padre para evitar submits incompletos.
     if (validate(editPayload as unknown as Record<string, unknown>)) {
       onSubmit(e)
     }
   }
 
   const handleChange = (field: keyof UserUpdatePayload, value: string) => {
+    // Limpiamos el error del campo en cuanto el usuario escribe para feedback inmediato.
     clearError(field)
     onFieldChange(field, value)
   }
@@ -62,6 +62,7 @@ export function UserEditForm({
       <div className="form-grid">
         <div className="form-field">
           <label className="label-text">Email *</label>
+          {/* Validamos también al perder el foco para guiar antes del submit. */}
           <input
             type="email"
             className={`input-full-width${errors.email ? ' input--error' : ''}`}

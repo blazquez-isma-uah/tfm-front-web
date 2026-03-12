@@ -39,16 +39,27 @@ import '../../styles/common.css'
 /**
  * EventsPage — Administración de eventos (solo ADMIN).
  *
- * Responsabilidad única: CRUD completo de eventos con filtros y tabla.
- * No contiene lógica de vista de usuario (tabs, mis eventos, pendientes).
- * Esa lógica vive en MyEventsPage.
+ * RESPONSABILIDAD ÚNICA:
+ * Interfaz de administración (CRUD completo) de eventos. Permite crear, leer,
+ * actualizar y eliminar eventos. Incluye filtros avanzados, ordenamiento,
+ * paginación y validación de fechas (la de fin debe ser posterior a la inicio).
+ *
+ * SEPARACIÓN DE RESPONSABILIDADES:
+ * - EventsPage: administración completa (ADMIN)
+ * - MyEventsPage: vista del músico (lectura, consulta de encuestas, respuestas)
  *
  * Ruta: /admin/events
+ * Requiere: Rol ADMIN
  */
 
 type ViewMode = 'LIST' | 'EDIT' | 'CREATE'
 type SortableField = 'title' | 'type' | 'status' | 'startAt' | 'location'
 
+/**
+ * Convierte el valor del input datetime-local (formato "YYYY-MM-DDTHH:MM")
+ * al formato ISO 8601 que espera el backend ("YYYY-MM-DDTHH:MM:00.000Z").
+ * Sin esta conversión, el servidor rechazaría la petición por formato inválido.
+ */
 function datetimeLocalToISOInstant(datetimeLocal: string): string {
     return `${datetimeLocal}:00.000Z`
 }
@@ -144,6 +155,9 @@ function EventsPage() {
 
     // ── Effects ───────────────────────────────────────────────────────────────
 
+    // Cargar opciones de tipos, estados y visibilidades al montar el componente.
+    // Se hace una única vez por token. Las opciones son necesarias para los
+    // selectores de filtros y para el formulario de creación/edición.
     useEffect(() => {
         if (!token) return
         const loadOptions = async () => {
@@ -179,6 +193,12 @@ function EventsPage() {
 
     // ── Carga ─────────────────────────────────────────────────────────────────
 
+    /**
+     * Carga la página de eventos con filtros, ordenamiento y paginación actuales.
+     * Realiza una solicitud GET a searchEventsPage() con los parámetros de búsqueda,
+     * actualiza el estado de eventos, y maneja errores. Se llama automáticamente
+     * siempre que cambien los filtros, página, tamaño o campo de ordenamiento.
+     */
     const loadEvents = async () => {
         if (!token) return
         try {
@@ -211,6 +231,12 @@ function EventsPage() {
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
+    /**
+     * Maneja el envío del formulario de filtros. Traslada los valores del
+     * formulario (filter*) a los filtros efectivos (search*), convierte las
+     * fechas datetime-local a ISO Instant, resetea la paginación a página 0
+     * para mostrar resultados desde el principio, y dispara una nueva carga.
+     */
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault()
         setSearchTitle(filterTitle)
@@ -284,6 +310,12 @@ function EventsPage() {
         setSelectedEvent(null)
     }
 
+    /**
+     * Crea un evento nuevo. Valida que los campos obligatorios estén rellenos,
+     * convierte las fechas datetime-local a ISO Instant, envía la solicitud POST
+     * a createEvent(), muestra un toast de éxito, y resetea la vista a LIST.
+     * Si falla, muestra un toast con el mensaje de error.
+     */
     const handleCreateEvent = async () => {
         if (!token) return
         try {
@@ -303,6 +335,12 @@ function EventsPage() {
         }
     }
 
+    /**
+     * Actualiza un evento existente. Similar a handleCreateEvent pero usa PUT
+     * updateEvent() con el ID y versión del evento actual (control de concurrencia
+     * optimista). Detecta conflictos (status 412/428) y muestra mensaje específico.
+     * Cierra la fila expandida y resetea el formulario tras guardar.
+     */
     const handleUpdateEvent = async () => {
         if (!token || !selectedEvent) return
         try {
@@ -318,6 +356,9 @@ function EventsPage() {
             rowExpansion.forceClose()
             setSelectedEvent(null)
         } catch (e: any) {
+            // Manejo específico de errores de concurrencia optimista (412/428).
+            // El servidor rechaza la actualización porque otro cliente modificó
+            // el evento. Se pide al usuario que recargue los datos.
             const status = e?.response?.status
             if (status === 412 || status === 428) {
                 showToast('El evento ha sido modificado. Recarga los datos.', 'error')
@@ -329,6 +370,13 @@ function EventsPage() {
         }
     }
 
+    /**
+     * Abre un diálogo de confirmación para eliminar un evento. Si el usuario
+     * confirma, envía DELETE con el ID y versión (control de concurrencia).
+     * Si la operación falla por conflicto (412/428), muestra el mensaje específico.
+     * Tras el borrado, recarga la lista de eventos y cierra la fila expandida
+     * si era el evento que estaba expandido.
+     */
     const handleDeleteEvent = (event: EventDTO) => {
         if (!token) return
         confirm.open({
@@ -347,6 +395,7 @@ function EventsPage() {
                         setSelectedEvent(null)
                     }
                 } catch (e: any) {
+                    // Manejo específico de errores de concurrencia optimista (412/428).
                     const status = e?.response?.status
                     if (status === 412 || status === 428) {
                         showToast('El evento ha sido modificado. Recarga los datos.', 'error')

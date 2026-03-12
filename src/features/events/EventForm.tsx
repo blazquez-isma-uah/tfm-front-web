@@ -61,26 +61,27 @@ interface EventFormProps {
  * EventForm — Formulario compartido para crear y editar eventos.
  *
  * RESPONSABILIDAD:
- * Renderiza los 6 campos del evento (título, localización, tipo, estado,
+ * Renderiza los campos del evento (título, localización, tipo, estado,
  * visibilidad, descripción) más las dos fechas (inicio y fin) con su botonera
- * de guardar/cancelar. Adaptado a modo creación o edición según la prop editing.
+ * de guardar/cancelar. Adaptado automáticamente a modo creación o edición
+ * según la prop `editing`.
  *
- * POR QUÉ SE EXTRAE:
- * El bloque inline del formulario en EventsPage ocupaba ~72 líneas JSX.
- * Extraerlo reduce EventsPage a su responsabilidad de orquestación (estado,
- * efectos, handlers de API) y hace el formulario testeable de forma aislada.
+ * POR QUÉ UN SOLO COMPONENTE:
+ * Los campos son estructuralmente idénticos en ambos modos (create/edit).
+ * Solo el título y el texto del botón cambian, lo que no justifica duplicar
+ * el JSX en dos componentes (EventCreateForm / EventEditForm).
  *
+ * VALIDACIÓN DE FECHAS:
+ * La validación cruzada de fechas usa crossValidate (del hook useFormValidation),
+ * no lógica manual con showToast. Ventaja: el error aparece inline bajo el campo
+ * (field-error), no como notificación flotante. Así el usuario tiene feedback
+ * inmediato y contextualizado.\n *
  * DECISIONES DE DISEÑO:
- * - Un solo componente con prop `editing: EventDTO | null` en lugar de dos
- *   componentes separados (EventCreateForm / EventEditForm). Los campos son
- *   estructuralmente idénticos en ambos modos; solo cambia el título y el
- *   texto del botón de guardar, lo que no justifica duplicar el JSX.
  * - Presentacional controlado: no llama a la API ni gestiona estado propio.
- *   El flujo de error/saving está centralizado en EventsPage para que el
- *   mensaje de error aparezca siempre en la misma posición en la página.
+ *   El flujo de error/saving viene del padre (EventsPage) para que el mensaje
+ *   de error aparezca siempre en la misma posición en la página.
  * - setFormPayload recibe el objeto completo (con spread) en lugar de un setter
- *   por campo, para mantener la misma API que el estado original del padre y
- *   evitar proliferación de callbacks.
+ *   por campo, para mantener la misma API que el estado original del padre.
  */
 export function EventForm({
     editing,
@@ -104,6 +105,12 @@ export function EventForm({
         CROSS_VALIDATE
     )
 
+    /**
+     * Maneja el envío del formulario. Realiza dos pasos de validación:
+     * 1. Validación de campos individuales (requeridos, formato)
+     * 2. Validación cruzada de fechas (start < end) mediante crossValidate
+     * Si pasa ambas, llama onSave(). Si falla, los errores aparecen inline.
+     */
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
         const valid = validate({
@@ -119,6 +126,10 @@ export function EventForm({
     }
 
     return (
+        // noValidate desactiva la validación nativa del navegador (HTML5 constraint validation).
+        // Usamos nuestra propia validación con useFormValidation para tener control total
+        // sobre los mensajes de error, su posición (inline bajo el campo), y el momento
+        // de mostrarlos (al hacer submit, no al perder el foco).
         <form className="form-card" noValidate onSubmit={handleSubmit}>
             <h2 className="section-title">
                 {isEdit ? 'Editar evento' : 'Crear evento'}

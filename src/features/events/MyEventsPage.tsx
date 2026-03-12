@@ -35,18 +35,31 @@ import { ErrorState } from '../../components/ErrorState'
 import '../../styles/common.css'
 
 /**
- * MyEventsPage — Vista de eventos para usuarios autenticados.
+ * MyEventsPage — Vista de eventos para usuarios autenticados (MUSICIAN).
  *
- * Responsabilidad única: consulta de eventos propios con cuatro modos
- * de visualización (tabs). No contiene lógica CRUD.
+ * RESPONSABILIDAD ÚNICA:
+ * Consulta de eventos propios con cuatro modos de visualización (tabs).
+ * No contiene lógica CRUD (crear, editar, eliminar). El usuario solo puede
+ * ver eventos, responder encuestas de asistencia, y consultar resultados.
  *
- * Tabs:
- *   - MIS_EVENTOS: eventos futuros con encuesta de asistencia respondida
- *   - PENDIENTES:  eventos futuros con encuesta de asistencia sin responder
- *   - CALENDARIO:  vista mensual de todos los eventos
+ * TABS DISPONIBLES:
+ *   - MIS_EVENTOS: eventos futuros donde el usuario ya respondió a encuesta
+ *   - PENDIENTES:  eventos futuros con encuesta abierta sin responder aún
+ *   - CALENDARIO:  vista mensual de todos los eventos del mes
  *   - BUSQUEDA:    búsqueda libre con filtros avanzados
  *
+ * QUÉ PUEDE HACER EL MÚSICO:
+ * - Ver detalles de un evento (información básica, encuestas asociadas)
+ * - Responder o actualizar su respuesta a encuestas de asistencia
+ * - Cambiar el mes en el calendario
+ * - Filtrar y buscar eventos por título, tipo, estado, fecha
+ *
+ * QUÉ NO PUEDE HACER:
+ * - Crear, editar o eliminar eventos (solo ADMIN)
+ * - Ver eventos con visibilidad PRIVATE (solo ADMIN y creator)
+ *
  * Ruta: /events
+ * Requiere: Rol MUSICIAN
  */
 
 type TabType = 'MIS_EVENTOS' | 'PENDIENTES' | 'CALENDARIO' | 'BUSQUEDA'

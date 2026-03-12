@@ -47,6 +47,26 @@ const TAB_LABELS: Record<ResultsTab, string> = {
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
+/**
+ * SurveyResultsView — Vista de resultados agregados de una encuesta.
+ *
+ * RESPONSABILIDAD:
+ * Renderiza tres pestañas de resultados:
+ * 1. SUMMARY: agregación Sí/No/Quizás (cantidad de cada respuesta)
+ * 2. INSTRUMENTS: desglose por instrumento (solo YES y MAYBE)
+ * 3. DETAILED: tabla paginada de todas las respuestas (usuario, respuesta, instrumento, fecha)
+ *
+ * CÁLCULO DE RESULTADOS:
+ * - Resumen: llamada a getYesNoMaybeResults() que devuelve { YES: N, NO: N, MAYBE: N }
+ * - Instrumentos: cálculo local en computeInstrumentSummary() desde responses enriquecidas
+ * - Detallados: llamada a getCompleteResults() con paginación, enriquecimiento paralelo
+ *   de usuario (getUserByIamId) e instrumento (getInstrumentById)
+ *
+ * ENRIQUECIMIENTO DE DATOS:
+ * Las respuestas del servidor incluyen IDs (userIamId, instrumentId). Se enriquecen
+ * en paralelo cargando usuario e instrumento para mostrar nombres legibles.
+ */
+
 export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewProps) {
   const hasInstrument = survey.responseType === 'YES_NO_MAYBE_WITH_INSTRUMENT'
 
@@ -76,6 +96,8 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
 
   // ── Cargar resumen ────────────────────────────────────────────────────────
 
+  // Carga el resumen agregado Sí/No/Quizás. Se ejecuta una única vez
+  // al montar el componente. Los resultados se guardan en estado summary.
   useEffect(() => {
     const loadSummary = async () => {
       try {
@@ -93,8 +115,12 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
     loadSummary()
   }, [survey.id, token])
 
-  // ── Cargar respuestas completas ───────────────────────────────────────────
+  // ── Cargar respuestas completas con enriquecimiento ────────────────────────
 
+  // Carga la página actual de respuestas detalladas. Se ejecuta cuando cambia
+  // la página o tamaño. Enriquece cada respuesta cargando el usuario (username)
+  // e instrumento (name) en paralelo, para mostrar información legible en lugar
+  // de IDs crudos.
   useEffect(() => {
     const loadResponses = async () => {
       try {
@@ -112,9 +138,10 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
         setTotalPages(data.totalPages ?? 1)
         setTotalElements(data.totalElements ?? 0)
 
-        // Enriquecer con usuario e instrumento en paralelo
+        // Enriquecer con usuario e instrumento en paralelo (no esperar uno tras otro).
+        // Cada forEach lanza un Promise que actualiza el estado cuando finaliza.
         enriched.forEach(async (response, index) => {
-          // Usuario
+          // Cargar usuario: convertir userIamId (ID del IdP) a username
           try {
             const user = await getUserByIamId(response.userIamId, token)
             setResponses(prev => {
@@ -123,6 +150,7 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
               return updated
             })
           } catch {
+            // Si falla, mostrar el ID crudamente
             setResponses(prev => {
               const updated = [...prev]
               updated[index] = { ...updated[index], username: response.userIamId, loadingUsername: false }
@@ -130,7 +158,7 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
             })
           }
 
-          // Instrumento
+          // Cargar instrumento: convertir instrumentId (string) a objeto Instrument con nombre
           if (hasInstrument && response.instrumentId) {
             try {
               const instrumentId = parseInt(response.instrumentId)
@@ -149,6 +177,7 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
                 return updated
               })
             } catch {
+              // Si falla, dejar undefined
               setResponses(prev => {
                 const updated = [...prev]
                 updated[index] = { ...updated[index], instrument: undefined, loadingInstrument: false }
@@ -169,6 +198,9 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
 
   // ── Resumen por instrumentos ──────────────────────────────────────────────
 
+  // Calcula el resumen agregado por instrumento. Itera responses enriquecidas,
+  // agrupa por instrumento, y suma YES/MAYBE separadamente (NO no se incluye
+  // porque NO implica que no irá, luego no necesita instrumento).
   const computeInstrumentSummary = () => {
     const yesSummary:   Record<string, number> = {}
     const maybeSummary: Record<string, number> = {}

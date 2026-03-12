@@ -46,24 +46,48 @@ import '../../styles/common.css'
 /**
  * SurveysPage — Administración de encuestas (solo ADMIN).
  *
- * HOOKS APLICADOS:
- * - usePagination:    sustituye page/size/totalPages/totalElements
- * - useSorting:       sustituye sortField/sortDirection/sortState
- * - useConfirmDialog: sustituye el estado confirmDialog inline.
- *   NOTA: Esta página es la que más veces llama a confirm.open() (4 acciones:
- *   eliminar, abrir, cerrar, cancelar). Con el hook, cada llamada es uniforme
- *   y no hay riesgo de olvidar campos al construir el objeto manualmente.
- * - useRowExpansion:  sustituye expandedSurveyId/isClosing
+ * RESPONSABILIDAD ÚNICA:
+ * Interfaz de administración (CRUD completo) de encuestas. Permite crear,
+ * leer, actualizar, eliminar, abrir, cerrar y cancelar encuestas.
+ * Incluye filtros avanzados, ordenamiento, paginación y validación de fechas
+ * (apertura debe ser anterior al cierre).
+ *
+ * ESTADO DE ENCUESTA:
+ * - DRAFT:     Borrador, solo el admin puede editar propiedades
+ * - OPEN:      Abierta, usuarios pueden responder
+ * - CLOSED:    Cerrada, no se aceptan más respuestas
+ * - CANCELLED: Cancelada, no se puede reaperturar
+ *
+ * ACCIONES DE CRUD CON DIÁLOGOS DE CONFIRMACIÓN:
+ * - Eliminar: solo en estado DRAFT
+ * - Abrir: transición DRAFT → OPEN
+ * - Cerrar: transición OPEN → CLOSED (las respuestas quedan guardadas)
+ * - Cancelar: transición DRAFT/OPEN → CANCELLED (irreversible)
+ *
+ * Ruta: /admin/surveys
+ * Requiere: Rol ADMIN
  */
 
 type ViewMode = 'LIST' | 'CREATE' | 'EDIT' | 'DETAIL' | 'RESULTS'
 
-// ── Helpers de conversión de fechas (a nivel de módulo, son funciones puras) ─
+// ── Helpers de conversión de fechas ──────────────────────────────────────────
+// Funciones puras a nivel de módulo para convertir entre formatos.
+
+/**
+ * Convierte el valor del input datetime-local (formato "YYYY-MM-DDTHH:MM")
+ * al formato ISO 8601 que espera el backend ("YYYY-MM-DDTHH:MM:00.000Z").
+ * Sin esta conversión, el servidor rechazaría la petición por formato inválido.
+ */
 function datetimeLocalToISOInstant(datetimeLocal: string): string {
     if (!datetimeLocal) return ''
     return `${datetimeLocal}:00.000Z`
 }
 
+/**
+ * Convierte un string ISO 8601 (ej. "2025-03-15T10:30:00.000Z") al formato
+ * datetime-local esperado por el input HTML5 (ej. "2025-03-15T10:30").
+ * Extrae solo la parte "YYYY-MM-DDTHH:MM", ignorando segundos y zona horaria.
+ */
 function toDateTimeLocal(isoString?: string): string {
     if (!isoString) return ''
     const match = isoString.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/)

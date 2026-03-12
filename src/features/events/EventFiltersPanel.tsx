@@ -90,7 +90,10 @@ export function EventFiltersPanel({
             actionButton={actionButton}
         >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-                {/* Grupo 1: Título, Localización, Tipo, Estado, Visibilidad */}
+                {/* Grupo 1: Campos de búsqueda básica (Título, Localización, selectores) */}
+                {/* El usuario rellena estos campos con valores sin enviar aún. Los valores se almacenan
+                    en filter* (estado del formulario). Solo se aplican al hacer clic en "Buscar"
+                    (onSubmit), momento en el que se copian a search* en el padre (EventsPage). */}
                 <div className="search-grid">
                     <div className="form-field">
                         <span className="label-text">Título</span>
@@ -156,7 +159,9 @@ export function EventFiltersPanel({
                     </div>
                 </div>
 
-                {/* Grupo 2: Rangos de fechas de inicio y fin */}
+                {/* Grupo 2: Rangos de fechas. Cada rango tiene dos inputs: "desde" y "hasta".
+                    El usuario puede dejar ambos vacíos, solo "desde", solo "hasta", o ambos rellenos.
+                    El padre convierte estos valores datetime-local a ISO Instant antes de enviar a la API. */}
                 <div className="search-date-group">
                     <div className="search-date-row">
                         <div className="form-field">

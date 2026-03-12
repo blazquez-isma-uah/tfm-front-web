@@ -31,7 +31,11 @@ interface SurveyDetailCardProps {
   onHideResponseForm?: () => void // Callback para ocultar el formulario de respuesta
 }
 
-// ─── Badge helpers ────────────────────────────────────────────────────────────
+// ── Badge helpers ────────────────────────────────────────────────────────────
+/**
+ * Retorna la clase CSS del badge de estado de la encuesta.
+ * Los estilos están definidos en common.css con prefijo .badge-.
+ */
 function surveyStatusBadgeClass(status: string): string {
   if (status === 'OPEN') {
     return 'badge badge--success'
@@ -49,6 +53,22 @@ function surveyStatusBadgeClass(status: string): string {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * SurveyDetailCard — Tarjeta de detalle de encuesta.
+ *
+ * RESPONSABILIDAD:
+ * Muestra la información completa de una encuesta (título, tipo, estado, fechas,
+ * evento vinculado, creador, descripción) y proporciona botones de acción según
+ * el contexto (admin o usuario).
+ *
+ * MODOS DE USO:
+ * - Admin: editar, ver resultados, abrir, cerrar, cancelar, eliminar
+ * - Musician: responder encuesta si está abierta, ver detalles
+ *
+ * FLUJO DE RESPUESTA:
+ * Si showResponseForm=true, renderiza SurveyResponseForm dentro de esta tarjeta,
+ * permitiendo al usuario responder o actualizar su respuesta inline.
+ */
 export function SurveyDetailCard({
   survey,
   onBack,

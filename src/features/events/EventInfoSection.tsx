@@ -26,8 +26,19 @@ function EventStatusBadge({ status }: { status: string }) {
 }
 
 /**
- * Componente compartido que muestra la información básica de un evento.
- * Usado tanto en EventDetailCard (admin) como en EventDetailCardComplete (general).
+ * EventInfoSection — Componente compartido que muestra la información básica de un evento.
+ *
+ * RESPONSABILIDAD:
+ * Renderiza las secciones de información estructurada de un evento:
+ * - Título y badge de estado (SCHEDULED, POSTPONED, CANCELED)
+ * - Tipo, estado y visibilidad
+ * - Fechas de inicio y fin
+ * - Ubicación
+ * - Descripción (con soporte para líneas múltiples)
+ *
+ * USO:
+ * Se reutiliza tanto en EventDetailCard (admin) como en EventDetailCardComplete (usuario).
+ * Evita duplicación de la lógica de renderizado de campos y estilos de detalle.
  */
 export function EventInfoSection({ event }: EventInfoSectionProps) {
     return (

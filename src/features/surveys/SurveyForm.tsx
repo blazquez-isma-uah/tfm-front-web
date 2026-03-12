@@ -62,27 +62,27 @@ interface SurveyFormProps {
  *
  * RESPONSABILIDAD:
  * Renderiza los campos de la encuesta: tipo de respuesta, tipo de encuesta,
- * evento vinculado, título, fechas de apertura/cierre y descripción,
- * junto a la botonera de guardar/cancelar.
+ * evento vinculado, título, fechas de apertura/cierre, descripción, y botonera
+ * de guardar/cancelar. Adaptado automáticamente a modo creación o edición
+ * según la prop `editing`.
  *
- * POR QUÉ SE EXTRAE:
- * El bloque <form> inline en SurveysPage ocupaba ~65 líneas JSX, superando el
- * umbral de 40. Extraerlo deja SurveysPage centrado en la orquestación de
- * estado, efectos y llamadas a la API, y hace el formulario testeable de
- * forma aislada.
+ * POR QUÉ UN SOLO COMPONENTE:
+ * Los campos son estructuralmente idénticos en ambos modos (create/edit).
+ * Solo cambia que en modo edición el campo responseType es de solo lectura si
+ * el estado es CLOSED/CANCELLED, y eventId siempre es de solo lectura tras crear.\n * Esto no justifica duplicar el JSX en dos componentes (SurveyCreateForm / SurveyEditForm).
+ *
+ * VALIDACIÓN DE FECHAS:
+ * La validación cruzada usa crossValidate (del hook useFormValidation), no
+ * lógica manual con showToast. Ventaja: el error aparece inline bajo el campo
+ * (field-error), no como notificación flotante. Así el usuario tiene feedback
+ * inmediato y contextualizado.
  *
  * DECISIONES DE DISEÑO:
- * - Un solo componente con prop `editing: SurveyDTO | null` en lugar de dos
- *   (SurveyCreateForm / SurveyEditForm). Los campos son estructuralmente
- *   idénticos; la única diferencia es que en modo edición responseType solo
- * puede cambiarse si la encuesta está en estado DRAFT, y eventId queda siempre
- * deshabilitado tras crear. Esto no justifica duplicar el JSX.
  * - Presentacional controlado: no llama a la API ni gestiona estado propio.
- *   La conversión de fechas datetime-local → ISO Instant se hace en los
- *   handlers del padre (datetimeLocalToISOInstant), manteniéndose agnóstico
- *   del formato de la API.
- * - setFormPayload recibe el objeto completo con spread para mantener la
- *   misma API que el estado del padre y evitar proliferación de callbacks.
+ *   El flujo de error/saving viene del padre (SurveysPage) para mantener
+ *   los mensajes de error en la misma posición.
+ * - setFormPayload recibe el objeto completo (con spread) en lugar de setters
+ *   individuales, para mantener la misma API que el estado del padre.
  * - El trigger del save es type="button" onClick en lugar de form onSubmit,
  *   consistente con EventForm y con el patrón del resto de páginas.
  */
@@ -109,6 +109,12 @@ export function SurveyForm({
         CROSS_VALIDATE
     )
 
+    /**
+     * Maneja el envío del formulario. Realiza dos pasos de validación:
+     * 1. Validación de campos individuales (requeridos, formato)
+     * 2. Validación cruzada de fechas (opensAt < closesAt) mediante crossValidate
+     * Si pasa ambas, llama onSave(). Si falla, los errores aparecen inline.
+     */
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
         const valid = validate({
@@ -124,6 +130,10 @@ export function SurveyForm({
     }
 
     return (
+        // noValidate desactiva la validación nativa del navegador (HTML5 constraint validation).
+        // Usamos nuestra propia validación con useFormValidation para tener control total
+        // sobre los mensajes de error, su posición (inline bajo el campo), y el momento
+        // de mostrarlos (al hacer submit, no al perder el foco).
         <form className="form-card" noValidate onSubmit={handleSubmit}>
             <h2 className="section-title">
                 {isEdit ? 'Editar encuesta' : 'Crear encuesta'}

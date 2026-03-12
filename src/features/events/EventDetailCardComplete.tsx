@@ -17,8 +17,20 @@ interface EventDetailCardCompleteProps {
 }
 
 /**
- * Componente completo para mostrar el detalle de un evento con encuestas y partituras asociadas.
- * Usado principalmente en la zona común de eventos.
+ * EventDetailCardComplete — Tarjeta completa de evento para usuarios.
+ *
+ * RESPONSABILIDAD:
+ * Muestra la información completa de un evento (datos básicos mediante EventInfoSection)
+ * más las encuestas asociadas al evento. Carga dinámicamente las encuestas del evento
+ * y comprueba cuáles ya han sido respondidas por el usuario actual.
+ *
+ * USO:
+ * Se renderiza en la fila expandida de MyEventsPage cuando el usuario (MUSICIAN)
+ * hace clic en un evento. Diferente de EventDetailCard en que incluye encuestas.
+ *
+ * DIFERENCIA CON EventDetailCard:
+ * - EventDetailCard: solo detalles del evento + botones de admin (editar, crear encuesta)
+ * - EventDetailCardComplete: detalles + lista de encuestas del evento
  */
 export function EventDetailCardComplete({
     event,

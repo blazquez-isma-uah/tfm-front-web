@@ -80,7 +80,10 @@ export function SurveyFiltersPanel({
             actionButton={actionButton}
         >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-                {/* Grupo 1: Título, Evento, Estado */}
+                {/* Grupo 1: Campos de búsqueda básica (Título, Evento, Estado)
+                    El usuario rellena estos campos con valores sin enviar aún. Los valores se almacenan
+                    en filter* (estado del formulario). Solo se aplican al hacer clic en "Buscar"
+                    (onSubmit), momento en el que se copian a search* en el padre (SurveysPage). */}
                 <div className="search-grid">
                     <div className="form-field">
                         <span className="label-text">Título</span>
@@ -122,7 +125,10 @@ export function SurveyFiltersPanel({
                     </div>
                 </div>
 
-                {/* Grupo 2: Rangos de fechas de apertura y cierre */}
+                {/* Grupo 2: Rangos de fechas de apertura y cierre
+                    Cada rango tiene dos inputs: "desde" y "hasta". El usuario puede dejar ambos vacíos,
+                    solo "desde", solo "hasta", o ambos rellenos. El padre convierte estos valores
+                    datetime-local a ISO Instant antes de enviar a la API. */}
                 <div className="search-date-group">
                     <div className="search-date-row">
                         <div className="form-field">

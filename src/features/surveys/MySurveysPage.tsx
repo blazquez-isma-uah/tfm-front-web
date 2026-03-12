@@ -15,15 +15,33 @@ import '../../styles/common.css'
 /**
  * MySurveysPage — Encuestas del músico autenticado (vista no-admin).
  *
+ * RESPONSABILIDAD ÚNICA:
+ * Interfaz de consulta de encuestas del usuario actual (MUSICIAN). Permite
+ * ver, responder, actualizar y eliminar sus propias respuestas a encuestas.
+ * No hay lógica CRUD de encuestas (crear, editar, eliminar encuestas).
+ *
+ * TABS DISPONIBLES:
+ *   - PENDING: encuestas abiertas sin responder aún (status OPEN)
+ *   - ACTIVE:  todas las encuestas actualmente abiertas (respondidas o no)
+ *   - HISTORY: encuestas cerradas o canceladas donde el usuario participó
+ *
+ * QUÉ PUEDE HACER EL MÚSICO:
+ * - Ver detalles de una encuesta (información, evento vinculado, tipo)
+ * - Responder a encuesta si está abierta
+ * - Actualizar su respuesta si ya respondió
+ * - Eliminar su respuesta antes de que la encuesta se cierre
+ * - Ver el estado de su respuesta (respondida o no)
+ *
+ * QUÉ NO PUEDE HACER:
+ * - Crear, editar o eliminar encuestas (solo ADMIN)
+ * - Ver encuestas privadas de otros (solo ADMIN y creator)
+ * - Ver resultados agregados de las encuestas
+ *
+ * NOTA: useConfirmDialog NO se usa porque esta página no tiene acciones destructivas
+ * que requieran confirmación. El usuario solo puede responder, actualizar o eliminar
+ * sus propias respuestas (no encuestas completas).\n *
  * Ruta: /surveys
- *
- * Tabs:
- *   - PENDING: encuestas abiertas sin responder
- *   - ACTIVE:  todas las encuestas actualmente abiertas
- *   - HISTORY: encuestas cerradas o canceladas en las que participó el usuario
- *
- * useConfirmDialog NO se usa: esta página no tiene acciones destructivas.
- * El usuario solo puede ver y responder encuestas.
+ * Requiere: Rol MUSICIAN
  */
 
 type TabType = 'PENDING' | 'ACTIVE' | 'HISTORY'

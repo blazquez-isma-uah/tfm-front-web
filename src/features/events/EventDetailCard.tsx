@@ -13,8 +13,18 @@ interface EventDetailCardProps {
 }
 
 /**
- * Componente para mostrar el detalle de un evento (solo información básica).
- * Usado principalmente en la zona de administración.
+ * EventDetailCard — Tarjeta de detalle de evento para administración.
+ *
+ * RESPONSABILIDAD:
+ * Muestra la información básica de un evento (tipo, estado, visibilidad, fechas,
+ * ubicación, descripción) y proporciona botones de acción:
+ * - Ver encuestas vinculadas al evento
+ * - Crear nueva encuesta para este evento
+ * - Editar el evento (llamada a onEdit)
+ *
+ * USO:
+ * Se renderiza dentro de la fila expandida de EventsPage cuando el administrador
+ * hace clic en un evento de la tabla. Usado principalmente en contextos de admin.
  */
 export function EventDetailCard({
     event,

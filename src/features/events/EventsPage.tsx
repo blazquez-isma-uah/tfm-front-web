@@ -1,228 +1,165 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { extractErrorMessage } from '../../utils/errorHandler'
 import {
     searchEventsPage,
-    getEventById,
     createEvent,
     updateEvent,
     deleteEvent,
     getAvailableEventTypes,
     getAvailableEventStatuses,
     getAvailableEventVisibilities,
-    getCalendar,
     type EventSearchParams,
 } from '../../api/eventsApi'
-import {
-    getMyAnsweredSurveys,
-    getMyNotAnsweredSurveys,
-} from '../../api/surveysApi'
 import type {
     EventDTO,
     EventCreateRequestDTO,
     EventType,
     EventStatus,
     EventVisibility,
-    CalendarEventItemDTO,
 } from '../../types/events'
 import {
     translateEventType,
     translateEventStatus,
-    translateEventVisibility,
     formatEventDateTime,
 } from '../../utils/eventTranslations'
 import { PaginationBar } from '../../components/PaginationBar'
-import { DataTable, type SortState } from '../../components/DataTable'
-import { EventDetailCard } from '../../components/EventDetailCard'
-import { EventDetailCardComplete } from '../../components/EventDetailCardComplete'
+import { DataTable } from '../../components/DataTable'
+import { EventDetailCard } from './EventDetailCard'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { EventFiltersPanel } from './EventFiltersPanel'
+import { EventForm } from './EventForm'
+import { EditIcon, TrashIcon } from '../../components/Icons'
+import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
+import { useToast } from '../../context/ToastContext'
+import { ErrorState } from '../../components/ErrorState'
+import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
 
-type ViewMode = 'LIST' | 'DETAIL' | 'EDIT' | 'CREATE'
-type TabType = 'MIS_EVENTOS' | 'PENDIENTES' | 'CALENDARIO' | 'BUSQUEDA'
+/**
+ * EventsPage — Administración de eventos (solo ADMIN).
+ *
+ * RESPONSABILIDAD ÚNICA:
+ * Interfaz de administración (CRUD completo) de eventos. Permite crear, leer,
+ * actualizar y eliminar eventos. Incluye filtros avanzados, ordenamiento,
+ * paginación y validación de fechas (la de fin debe ser posterior a la inicio).
+ *
+ * SEPARACIÓN DE RESPONSABILIDADES:
+ * - EventsPage: administración completa (ADMIN)
+ * - MyEventsPage: vista del músico (lectura, consulta de encuestas, respuestas)
+ *
+ * Ruta: /admin/events
+ * Requiere: Rol ADMIN
+ */
 
+type ViewMode = 'LIST' | 'EDIT' | 'CREATE'
 type SortableField = 'title' | 'type' | 'status' | 'startAt' | 'location'
 
+/**
+ * Convierte el valor del input datetime-local (formato "YYYY-MM-DDTHH:MM")
+ * al formato ISO 8601 que espera el backend ("YYYY-MM-DDTHH:MM:00.000Z").
+ * Sin esta conversión, el servidor rechazaría la petición por formato inválido.
+ */
+function datetimeLocalToISOInstant(datetimeLocal: string): string {
+    return `${datetimeLocal}:00.000Z`
+}
+
+function toDateTimeLocal(isoString: string): string {
+    try {
+        const match = isoString.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/)
+        return match ? match[1] : ''
+    } catch {
+        return ''
+    }
+}
+
 function EventsPage() {
-    const location = useLocation()
-    const { token, hasRole } = useAuth()
-    
-    // Determinar si estamos en la zona de administración
-    const isAdminView = location.pathname.startsWith('/admin/events')
+    const { token } = useAuth()
+    const { showToast } = useToast()
 
-    // Tab activo: admin solo ve BUSQUEDA, usuarios generales ven las 4 tabs
-    const [activeTab, setActiveTab] = useState<TabType>(isAdminView ? 'BUSQUEDA' : 'MIS_EVENTOS')
-
-    const [events, setEvents] = useState<EventDTO[]>([])
-    const [calendarEvents, setCalendarEvents] = useState<CalendarEventItemDTO[]>([])
+    const [events, setEvents]   = useState<EventDTO[]>([])
     const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const [error, setError]     = useState<string | null>(null)
+    const [saving, setSaving]   = useState(false)
 
-    const [page, setPage] = useState(0)
-    const [size, setSize] = useState(10)
-    const [totalPages, setTotalPages] = useState(0)
-    const [totalElements, setTotalElements] = useState(0)
+    const pagination   = usePagination({ defaultSize: 10 })
+    const sorting      = useSorting<SortableField>('startAt')
+    const confirm      = useConfirmDialog()
+    const rowExpansion = useRowExpansion<string>()
 
-    const [mode, setMode] = useState<ViewMode>('LIST')
+    const [mode, setMode]                   = useState<ViewMode>('LIST')
     const [selectedEvent, setSelectedEvent] = useState<EventDTO | null>(null)
-    const [saving, setSaving] = useState(false)
-    const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
-    const [isClosing, setIsClosing] = useState(false)
 
-    // Tipos, estados y visibilidades disponibles
-    const [eventTypes, setEventTypes] = useState<EventType[]>([])
-    const [eventStatuses, setEventStatuses] = useState<EventStatus[]>([])
+    const [eventTypes, setEventTypes]               = useState<EventType[]>([])
+    const [eventStatuses, setEventStatuses]         = useState<EventStatus[]>([])
     const [eventVisibilities, setEventVisibilities] = useState<EventVisibility[]>([])
-    const [loadingOptions, setLoadingOptions] = useState(false)
-
-    // Modal de confirmación
-    const [confirmDialog, setConfirmDialog] = useState<{
-        isOpen: boolean
-        title: string
-        message: string
-        variant: 'danger' | 'warning' | 'info'
-        onConfirm: () => void
-    }>({
-        isOpen: false,
-        title: '',
-        message: '',
-        variant: 'danger',
-        onConfirm: () => {},
-    })
+    const [loadingOptions, setLoadingOptions]       = useState(false)
 
     // Filtros visibles
-    const [filterTitle, setFilterTitle] = useState('')
-    const [filterLocation, setFilterLocation] = useState('')
-    const [filterType, setFilterType] = useState<EventType | ''>('')
-    const [filterStatus, setFilterStatus] = useState<EventStatus | ''>('')
-    const [filterVisibility, setFilterVisibility] = useState<EventVisibility | ''>('')
+    const [filterTitle, setFilterTitle]             = useState('')
+    const [filterLocation, setFilterLocation]       = useState('')
+    const [filterType, setFilterType]               = useState<EventType | ''>('')
+    const [filterStatus, setFilterStatus]           = useState<EventStatus | ''>('')
+    const [filterVisibility, setFilterVisibility]   = useState<EventVisibility | ''>('')
     const [filterStartAtFrom, setFilterStartAtFrom] = useState('')
-    const [filterStartAtTo, setFilterStartAtTo] = useState('')
-    const [filterEndAtFrom, setFilterEndAtFrom] = useState('')
-    const [filterEndAtTo, setFilterEndAtTo] = useState('')
+    const [filterStartAtTo, setFilterStartAtTo]     = useState('')
+    const [filterEndAtFrom, setFilterEndAtFrom]     = useState('')
+    const [filterEndAtTo, setFilterEndAtTo]         = useState('')
 
     // Filtros efectivos
-    const [searchTitle, setSearchTitle] = useState('')
-    const [searchLocation, setSearchLocation] = useState('')
-    const [searchType, setSearchType] = useState<EventType | undefined>(undefined)
-    const [searchStatus, setSearchStatus] = useState<EventStatus | undefined>(undefined)
-    const [searchVisibility, setSearchVisibility] = useState<EventVisibility | undefined>(undefined)
+    const [searchTitle, setSearchTitle]             = useState('')
+    const [searchLocation, setSearchLocation]       = useState('')
+    const [searchType, setSearchType]               = useState<EventType | undefined>(undefined)
+    const [searchStatus, setSearchStatus]           = useState<EventStatus | undefined>(undefined)
+    const [searchVisibility, setSearchVisibility]   = useState<EventVisibility | undefined>(undefined)
     const [searchStartAtFrom, setSearchStartAtFrom] = useState<string | undefined>(undefined)
-    const [searchStartAtTo, setSearchStartAtTo] = useState<string | undefined>(undefined)
-    const [searchEndAtFrom, setSearchEndAtFrom] = useState<string | undefined>(undefined)
-    const [searchEndAtTo, setSearchEndAtTo] = useState<string | undefined>(undefined)
+    const [searchStartAtTo, setSearchStartAtTo]     = useState<string | undefined>(undefined)
+    const [searchEndAtFrom, setSearchEndAtFrom]     = useState<string | undefined>(undefined)
+    const [searchEndAtTo, setSearchEndAtTo]         = useState<string | undefined>(undefined)
+    const [searchTrigger, setSearchTrigger]         = useState(0)
 
-    const [searchTrigger, setSearchTrigger] = useState(0)
-
-    // Ordenación
-    const [sortField, setSortField] = useState<SortableField | null>('startAt')
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-
-    const sortState: SortState<SortableField> = {
-        field: sortField,
-        direction: sortDirection,
-    }
-
-    // Formulario creación/edición (usamos datetime-local internamente, se convertirá a Instant)
-    const [formStartAt, setFormStartAt] = useState('') // datetime-local format
-    const [formEndAt, setFormEndAt] = useState('') // datetime-local format
+    // Formulario
+    const [formStartAt, setFormStartAt] = useState('')
+    const [formEndAt, setFormEndAt]     = useState('')
     const [formPayload, setFormPayload] = useState<Omit<EventCreateRequestDTO, 'startAt' | 'endAt'>>({
-        title: '',
-        description: '',
-        location: '',
-        type: '',
-        status: '',
-        visibility: '',
+        title: '', description: '', location: '', type: '', status: '', visibility: '',
     })
 
-    // Estado para calendario
-    const [currentMonth, setCurrentMonth] = useState(new Date())
+    // ── Columnas ──────────────────────────────────────────────────────────────
 
-    // Columnas base (comunes para todas las vistas)
-    const baseColumns = [
+    const eventColumns = [
+        { key: 'title',   header: 'Título',       sortable: true, sortField: 'title'   as SortableField, width: '30%' },
+        { key: 'type',    header: 'Tipo',         sortable: true, sortField: 'type'    as SortableField, width: '16%', render: (e: EventDTO) => translateEventType(e.type) },
+        { key: 'status',  header: 'Estado',       sortable: true, sortField: 'status'  as SortableField, width: '15%', render: (e: EventDTO) => translateEventStatus(e.status) },
+        { key: 'startAt', header: 'Fecha inicio', sortable: true, sortField: 'startAt' as SortableField, width: '22%', render: (e: EventDTO) => formatEventDateTime(e.startAt) },
         {
-            key: 'title',
-            header: 'Título',
-            sortable: true,
-            sortField: 'title' as SortableField,
-            width: isAdminView ? '25%' : '30%',
-        },
-        {
-            key: 'type',
-            header: 'Tipo',
-            sortable: true,
-            sortField: 'type' as SortableField,
-            width: isAdminView ? '15%' : '18%',
-            render: (e: EventDTO) => translateEventType(e.type),
-        },
-        {
-            key: 'status',
-            header: 'Estado',
-            sortable: true,
-            sortField: 'status' as SortableField,
-            width: isAdminView ? '12%' : '15%',
-            render: (e: EventDTO) => translateEventStatus(e.status),
-        },
-        {
-            key: 'startAt',
-            header: 'Fecha inicio',
-            sortable: true,
-            sortField: 'startAt' as SortableField,
-            width: isAdminView ? '18%' : '20%',
-            render: (e: EventDTO) => formatEventDateTime(e.startAt),
-        },
-        {
-            key: 'location',
-            header: 'Localización',
-            sortable: true,
-            sortField: 'location' as SortableField,
-            width: isAdminView ? '15%' : '17%',
-            render: (e: EventDTO) => e.location || '-',
+            key: 'actions', header: 'Acciones', sortable: false, width: '17%',
+            render: (e: EventDTO) => (
+                <div className="actions-container">
+                    <span className="tooltip-wrap" data-tooltip="Editar">
+                        <button type="button" className="btn-icon btn-icon-edit"
+                            onClick={(ev) => { ev.stopPropagation(); handleEditEvent(e) }}>
+                            <EditIcon />
+                        </button>
+                    </span>
+                    <span className="tooltip-wrap" data-tooltip="Eliminar">
+                        <button type="button" className="btn-icon btn-icon-danger"
+                            onClick={(ev) => { ev.stopPropagation(); handleDeleteEvent(e) }}>
+                            <TrashIcon />
+                        </button>
+                    </span>
+                </div>
+            ),
         },
     ]
 
-    // Columna de acciones (solo para vista de administración)
-    const actionsColumn = {
-        key: 'actions',
-        header: 'Acciones',
-        sortable: false,
-        width: '15%',
-        render: (e: EventDTO) => (
-            <div className="actions-container">
-                <button
-                    type="button"
-                    className="button-secondary"
-                    onClick={(ev) => {
-                        ev.stopPropagation()
-                        handleEditEvent(e)
-                    }}
-                >
-                    Editar
-                </button>
-                <button
-                    type="button"
-                    className="button-danger"
-                    onClick={(ev) => {
-                        ev.stopPropagation()
-                        handleDeleteEvent(e)
-                    }}
-                >
-                    Eliminar
-                </button>
-            </div>
-        ),
-    }
+    // ── Effects ───────────────────────────────────────────────────────────────
 
-    // Construir columnas según la vista
-    const eventColumns = isAdminView ? [...baseColumns, actionsColumn] : baseColumns
-
-    // ===== EFECTOS =====
-
-    // Cargar tipos, estados y visibilidades
+    // Cargar opciones de tipos, estados y visibilidades al montar el componente.
+    // Se hace una única vez por token. Las opciones son necesarias para los
+    // selectores de filtros y para el formulario de creación/edición.
     useEffect(() => {
         if (!token) return
-
         const loadOptions = async () => {
             try {
                 setLoadingOptions(true)
@@ -240,72 +177,50 @@ function EventsPage() {
                 setLoadingOptions(false)
             }
         }
-
         loadOptions()
     }, [token])
 
-    // Cargar eventos según el tab activo
     useEffect(() => {
         if (!token) return
-        if (isAdminView || activeTab === 'BUSQUEDA') {
-            loadSearchEvents()
-        } else if (activeTab === 'MIS_EVENTOS') {
-            loadMyEvents()
-        } else if (activeTab === 'PENDIENTES') {
-            loadPendingEvents()
-        } else if (activeTab === 'CALENDARIO') {
-            loadCalendarEvents()
-        }
+        loadEvents()
     }, [
-        token,
-        activeTab,
-        page,
-        size,
-        sortField,
-        sortDirection,
-        searchTitle,
-        searchLocation,
-        searchType,
-        searchStatus,
-        searchVisibility,
-        searchStartAtFrom,
-        searchStartAtTo,
-        searchEndAtFrom,
-        searchEndAtTo,
+        token, pagination.page, pagination.size,
+        sorting.field, sorting.direction,
+        searchTitle, searchLocation, searchType, searchStatus, searchVisibility,
+        searchStartAtFrom, searchStartAtTo, searchEndAtFrom, searchEndAtTo,
         searchTrigger,
-        currentMonth,
     ])
 
-    const loadSearchEvents = async () => {
-        if (!token) return
+    // ── Carga ─────────────────────────────────────────────────────────────────
 
+    /**
+     * Carga la página de eventos con filtros, ordenamiento y paginación actuales.
+     * Realiza una solicitud GET a searchEventsPage() con los parámetros de búsqueda,
+     * actualiza el estado de eventos, y maneja errores. Se llama automáticamente
+     * siempre que cambien los filtros, página, tamaño o campo de ordenamiento.
+     */
+    const loadEvents = async () => {
+        if (!token) return
         try {
             setLoading(true)
             setError(null)
-
-            const sortParam = sortField
-                ? [`${sortField},${sortDirection}`]
-                : ['startAt,asc']
-
             const params: EventSearchParams = {
-                page,
-                size,
-                sort: sortParam,
-                title: searchTitle || undefined,
-                location: searchLocation || undefined,
-                type: searchType,
-                status: searchStatus,
-                visibility: searchVisibility,
+                page:        pagination.page,
+                size:        pagination.size,
+                sort:        sorting.field ? [`${sorting.field},${sorting.direction}`] : ['startAt,asc'],
+                title:       searchTitle    || undefined,
+                location:    searchLocation || undefined,
+                type:        searchType,
+                status:      searchStatus,
+                visibility:  searchVisibility,
                 startAtFrom: searchStartAtFrom,
-                startAtTo: searchStartAtTo,
-                endAtFrom: searchEndAtFrom,
-                endAtTo: searchEndAtTo,
+                startAtTo:   searchStartAtTo,
+                endAtFrom:   searchEndAtFrom,
+                endAtTo:     searchEndAtTo,
             }
-
             const data = await searchEventsPage(params, token)
             setEvents(data.content)
-            setTotalPages(data.totalPages)
-            setTotalElements(data.totalElements)
+            pagination.setTotals(data.totalPages, data.totalElements)
         } catch (e: any) {
             console.error('Error loading events:', e)
             setError('Error cargando eventos')
@@ -314,206 +229,60 @@ function EventsPage() {
         }
     }
 
-    const loadMyEvents = async () => {
-        if (!token) return
+    // ── Handlers ──────────────────────────────────────────────────────────────
 
-        try {
-            setLoading(true)
-            setError(null)
-
-            const now = new Date().toISOString()
-            
-            // Mapear campos de eventos a campos de surveys
-            const surveySortField = sortField === 'startAt' ? 'opensAt' : sortField === 'title' ? 'title' : 'opensAt'
-            const sortParam = [`${surveySortField},${sortDirection}`]
-
-            // Obtener encuestas ATTENDANCE respondidas
-            const surveysResponse = await getMyAnsweredSurveys(
-                {
-                    surveyType: 'ATTENDANCE',
-                    page,
-                    size,
-                    sort: sortParam,
-                },
-                token
-            )
-
-            // Obtener los eventos asociados
-            if (surveysResponse.content.length > 0) {
-                const eventIds = [...new Set(surveysResponse.content.map(s => s.eventId))]
-                const eventsPromises = eventIds.map(id => getEventById(id, token))
-                const eventsData = await Promise.all(eventsPromises)
-                
-                // Filtrar solo eventos futuros
-                const futureEvents = eventsData.filter(e => new Date(e.startAt) >= new Date(now))
-                setEvents(futureEvents)
-                setTotalPages(Math.ceil(futureEvents.length / size))
-                setTotalElements(futureEvents.length)
-            } else {
-                setEvents([])
-                setTotalPages(0)
-                setTotalElements(0)
-            }
-        } catch (e: any) {
-            console.error('Error loading my events:', e)
-            setError('Error cargando mis eventos')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const loadPendingEvents = async () => {
-        if (!token) return
-
-        try {
-            setLoading(true)
-            setError(null)
-
-            const now = new Date().toISOString()
-            
-            // Mapear campos de eventos a campos de surveys
-            const surveySortField = sortField === 'startAt' ? 'opensAt' : sortField === 'title' ? 'title' : 'opensAt'
-            const sortParam = [`${surveySortField},${sortDirection}`]
-
-            // Obtener encuestas ATTENDANCE no respondidas
-            const surveysResponse = await getMyNotAnsweredSurveys(
-                {
-                    surveyType: 'ATTENDANCE',
-                    status: 'OPEN',
-                    opensTo: now,
-                    closesFrom: now,
-                    page,
-                    size,
-                    sort: sortParam,
-                },
-                token
-            )
-
-            // Obtener los eventos asociados
-            if (surveysResponse.content.length > 0) {
-                const eventIds = [...new Set(surveysResponse.content.map(s => s.eventId))]
-                const eventsPromises = eventIds.map(id => getEventById(id, token))
-                const eventsData = await Promise.all(eventsPromises)
-                
-                // Filtrar solo eventos futuros
-                const futureEvents = eventsData.filter(e => new Date(e.startAt) >= new Date(now))
-                setEvents(futureEvents)
-                setTotalPages(Math.ceil(futureEvents.length / size))
-                setTotalElements(futureEvents.length)
-            } else {
-                setEvents([])
-                setTotalPages(0)
-                setTotalElements(0)
-            }
-        } catch (e: any) {
-            console.error('Error loading pending events:', e)
-            setError('Error cargando eventos pendientes')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const loadCalendarEvents = async () => {
-        if (!token) return
-
-        try {
-            setLoading(true)
-            setError(null)
-
-            // Calcular primer y último día del mes actual
-            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59)
-
-            const from = firstDay.toISOString()
-            const to = lastDay.toISOString()
-
-            const response = await getCalendar(from, to, 0, 100, 'startAt,asc', token)
-            setCalendarEvents(response.content)
-        } catch (e: any) {
-            console.error('Error loading calendar events:', e)
-            setError('Error cargando calendario')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    // ===== HANDLERS =====
-
+    /**
+     * Maneja el envío del formulario de filtros. Traslada los valores del
+     * formulario (filter*) a los filtros efectivos (search*), convierte las
+     * fechas datetime-local a ISO Instant, resetea la paginación a página 0
+     * para mostrar resultados desde el principio, y dispara una nueva carga.
+     */
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault()
         setSearchTitle(filterTitle)
         setSearchLocation(filterLocation)
-        setSearchType(filterType || undefined)
-        setSearchStatus(filterStatus || undefined)
+        setSearchType(filterType           || undefined)
+        setSearchStatus(filterStatus       || undefined)
         setSearchVisibility(filterVisibility || undefined)
         setSearchStartAtFrom(filterStartAtFrom ? datetimeLocalToISOInstant(filterStartAtFrom) : undefined)
-        setSearchStartAtTo(filterStartAtTo ? datetimeLocalToISOInstant(filterStartAtTo) : undefined)
-        setSearchEndAtFrom(filterEndAtFrom ? datetimeLocalToISOInstant(filterEndAtFrom) : undefined)
-        setSearchEndAtTo(filterEndAtTo ? datetimeLocalToISOInstant(filterEndAtTo) : undefined)
-        setPage(0)
+        setSearchStartAtTo(filterStartAtTo     ? datetimeLocalToISOInstant(filterStartAtTo)   : undefined)
+        setSearchEndAtFrom(filterEndAtFrom     ? datetimeLocalToISOInstant(filterEndAtFrom)   : undefined)
+        setSearchEndAtTo(filterEndAtTo         ? datetimeLocalToISOInstant(filterEndAtTo)     : undefined)
+        pagination.goToPage(0)
     }
 
     const handleResetFilters = () => {
-        setFilterTitle('')
-        setFilterLocation('')
-        setFilterType('')
-        setFilterStatus('')
-        setFilterVisibility('')
-        setFilterStartAtFrom('')
-        setFilterStartAtTo('')
-        setFilterEndAtFrom('')
-        setFilterEndAtTo('')
-        setSearchTitle('')
-        setSearchLocation('')
-        setSearchType(undefined)
-        setSearchStatus(undefined)
-        setSearchVisibility(undefined)
-        setSearchStartAtFrom(undefined)
-        setSearchStartAtTo(undefined)
-        setSearchEndAtFrom(undefined)
-        setSearchEndAtTo(undefined)
-        setPage(0)
+        setFilterTitle(''); setFilterLocation(''); setFilterType('')
+        setFilterStatus(''); setFilterVisibility('')
+        setFilterStartAtFrom(''); setFilterStartAtTo('')
+        setFilterEndAtFrom(''); setFilterEndAtTo('')
+        setSearchTitle(''); setSearchLocation('')
+        setSearchType(undefined); setSearchStatus(undefined); setSearchVisibility(undefined)
+        setSearchStartAtFrom(undefined); setSearchStartAtTo(undefined)
+        setSearchEndAtFrom(undefined); setSearchEndAtTo(undefined)
+        pagination.goToPage(0)
     }
 
     const handleSort = (field: SortableField) => {
-        setPage(0)
-        if (sortField === field) {
-            setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-        } else {
-            setSortField(field)
-            setSortDirection('asc')
-        }
+        pagination.goToPage(0)
+        sorting.handleSortChange(field)
     }
 
     const handleViewDetails = (event: EventDTO) => {
-        if (expandedEventId === event.id) {
-            setIsClosing(true)
-            setTimeout(() => {
-                setExpandedEventId(null)
-                setSelectedEvent(null)
-                setIsClosing(false)
-            }, 250)
+        if (rowExpansion.expandedId === event.id) {
+            rowExpansion.close()
+            setTimeout(() => setSelectedEvent(null), 250)
         } else {
-            setExpandedEventId(event.id)
+            rowExpansion.toggle(event.id)
             setSelectedEvent(event)
         }
     }
 
-    // Convertir datetime-local a ISO Instant sin aplicar offset de zona horaria
-    const datetimeLocalToISOInstant = (datetimeLocal: string): string => {
-        // datetime-local está en formato YYYY-MM-DDTHH:mm
-        // Lo convertimos a ISO añadiendo segundos y Z (UTC)
-        return `${datetimeLocal}:00.000Z`
-    }
-
     const handleOpenCreateEvent = () => {
-        // Usar los primeros valores disponibles de las APIs
         setFormPayload({
-            title: '',
-            description: '',
-            location: '',
-            type: eventTypes[0] || '',
-            status: eventStatuses[0] || '',
+            title: '', description: '', location: '',
+            type:       eventTypes[0]        || '',
+            status:     eventStatuses[0]     || '',
             visibility: eventVisibilities[0] || '',
         })
         setFormStartAt('')
@@ -522,24 +291,13 @@ function EventsPage() {
     }
 
     const handleEditEvent = (event: EventDTO) => {
-        // Convertir ISO Instant a datetime-local (YYYY-MM-DDTHH:mm) sin conversión de zona horaria
-        const toDateTimeLocal = (isoString: string) => {
-            try {
-                // Parsear directamente sin conversión: 2025-09-27T19:00:00Z -> 2025-09-27T19:00
-                const match = isoString.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/)
-                return match ? match[1] : ''
-            } catch {
-                return ''
-            }
-        }
-
         setFormPayload({
-            title: event.title,
+            title:       event.title,
             description: event.description || '',
-            location: event.location || '',
-            type: event.type,
-            status: event.status,
-            visibility: event.visibility,
+            location:    event.location    || '',
+            type:        event.type,
+            status:      event.status,
+            visibility:  event.visibility,
         })
         setFormStartAt(toDateTimeLocal(event.startAt))
         setFormEndAt(toDateTimeLocal(event.endAt))
@@ -547,752 +305,196 @@ function EventsPage() {
         setMode('EDIT')
     }
 
+    const handleCancelForm = () => {
+        setMode('LIST')
+        setSelectedEvent(null)
+    }
+
+    /**
+     * Crea un evento nuevo. Valida que los campos obligatorios estén rellenos,
+     * convierte las fechas datetime-local a ISO Instant, envía la solicitud POST
+     * a createEvent(), muestra un toast de éxito, y resetea la vista a LIST.
+     * Si falla, muestra un toast con el mensaje de error.
+     */
     const handleCreateEvent = async () => {
         if (!token) return
-
         try {
             setSaving(true)
-            setError(null)
-            
-            // Convertir datetime-local a ISO Instant sin offset
-            const payload: EventCreateRequestDTO = {
+            await createEvent({
                 ...formPayload,
                 startAt: datetimeLocalToISOInstant(formStartAt),
-                endAt: datetimeLocalToISOInstant(formEndAt),
-            }
-            
-            await createEvent(payload, token)
+                endAt:   datetimeLocalToISOInstant(formEndAt),
+            }, token)
+            showToast('Evento creado correctamente', 'success')
             setMode('LIST')
-            setSearchTrigger((prev) => prev + 1)
+            setSearchTrigger(prev => prev + 1)
         } catch (e: any) {
-            console.error('Error creating event:', e)
-            setError(extractErrorMessage(e, 'Error creando evento'))
+            showToast(extractErrorMessage(e, 'Error creando evento'), 'error')
         } finally {
             setSaving(false)
         }
     }
 
+    /**
+     * Actualiza un evento existente. Similar a handleCreateEvent pero usa PUT
+     * updateEvent() con el ID y versión del evento actual (control de concurrencia
+     * optimista). Detecta conflictos (status 412/428) y muestra mensaje específico.
+     * Cierra la fila expandida y resetea el formulario tras guardar.
+     */
     const handleUpdateEvent = async () => {
         if (!token || !selectedEvent) return
-
         try {
             setSaving(true)
-            setError(null)
-            
-            // Convertir datetime-local a ISO Instant sin offset
-            const payload: EventCreateRequestDTO = {
+            await updateEvent(selectedEvent.id, selectedEvent.version, {
                 ...formPayload,
                 startAt: datetimeLocalToISOInstant(formStartAt),
-                endAt: datetimeLocalToISOInstant(formEndAt),
-            }
-            
-            await updateEvent(selectedEvent.id, selectedEvent.version, payload, token)
+                endAt:   datetimeLocalToISOInstant(formEndAt),
+            }, token)
+            showToast('Evento actualizado correctamente', 'success')
             setMode('LIST')
-            setSearchTrigger((prev) => prev + 1)
-            setExpandedEventId(null)
+            setSearchTrigger(prev => prev + 1)
+            rowExpansion.forceClose()
             setSelectedEvent(null)
         } catch (e: any) {
-            console.error('Error updating event:', e)
+            // Manejo específico de errores de concurrencia optimista (412/428).
+            // El servidor rechaza la actualización porque otro cliente modificó
+            // el evento. Se pide al usuario que recargue los datos.
             const status = e?.response?.status
-            
             if (status === 412 || status === 428) {
-                setError('El evento ha sido modificado. Recarga los datos.')
+                showToast('El evento ha sido modificado. Recarga los datos.', 'error')
             } else {
-                setError(extractErrorMessage(e, 'Error actualizando evento'))
+                showToast(extractErrorMessage(e, 'Error actualizando evento'), 'error')
             }
         } finally {
             setSaving(false)
         }
     }
 
+    /**
+     * Abre un diálogo de confirmación para eliminar un evento. Si el usuario
+     * confirma, envía DELETE con el ID y versión (control de concurrencia).
+     * Si la operación falla por conflicto (412/428), muestra el mensaje específico.
+     * Tras el borrado, recarga la lista de eventos y cierra la fila expandida
+     * si era el evento que estaba expandido.
+     */
     const handleDeleteEvent = (event: EventDTO) => {
         if (!token) return
-
-        setConfirmDialog({
-            isOpen: true,
-            title: `Eliminar evento`,
-            message: `¿Seguro que quieres eliminar el evento: "${event.title}"?\nEsta acción no se puede deshacer.`,
+        confirm.open({
+            title:   'Eliminar evento',
+            message: `¿Seguro que quieres eliminar "${event.title}"?\nEsta acción no se puede deshacer.`,
             variant: 'danger',
             onConfirm: async () => {
-                setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+                confirm.close()
                 try {
-                    setError(null)
                     await deleteEvent(event.id, event.version, token)
-                    setPage(0)
-                    setSearchTrigger((prev) => prev + 1)
-                    if (selectedEvent && selectedEvent.id === event.id) {
+                    showToast('Evento eliminado correctamente', 'success')
+                    pagination.goToPage(0)
+                    setSearchTrigger(prev => prev + 1)
+                    if (selectedEvent?.id === event.id) {
+                        rowExpansion.forceClose()
                         setSelectedEvent(null)
-                        setExpandedEventId(null)
                     }
                 } catch (e: any) {
-                    console.error('Error deleting event:', e)
+                    // Manejo específico de errores de concurrencia optimista (412/428).
                     const status = e?.response?.status
-                    
                     if (status === 412 || status === 428) {
-                        setError('El evento ha sido modificado. Recarga los datos.')
+                        showToast('El evento ha sido modificado. Recarga los datos.', 'error')
                     } else {
-                        setError(extractErrorMessage(e, 'Error eliminando evento'))
+                        showToast(extractErrorMessage(e, 'Error eliminando evento'), 'error')
                     }
                 }
             },
         })
     }
 
-    const handleCancelForm = () => {
-        setMode('LIST')
-        setSelectedEvent(null)
-    }
+    const activeFiltersCount = [
+        searchTitle, searchLocation, searchType, searchStatus, searchVisibility,
+        searchStartAtFrom, searchStartAtTo, searchEndAtFrom, searchEndAtTo,
+    ].filter(v => v !== '' && v !== undefined).length
 
-    const handleTabChange = (tab: TabType) => {
-        setActiveTab(tab)
-        setPage(0)
-        setExpandedEventId(null)
-        setSelectedEvent(null)
-    }
-
-    const handlePreviousMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
-    }
-
-    const handleNextMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
-    }
-
-    // ===== RENDER =====
-
-    const renderTabs = () => {
-        if (isAdminView) return null
-
-        return (
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '2px solid #e0e0e0' }}>
-                <button
-                    type="button"
-                    onClick={() => handleTabChange('MIS_EVENTOS')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        borderBottom: activeTab === 'MIS_EVENTOS' ? '3px solid #1976d2' : 'none',
-                        color: activeTab === 'MIS_EVENTOS' ? '#1976d2' : '#666',
-                        fontWeight: activeTab === 'MIS_EVENTOS' ? 600 : 400,
-                        cursor: 'pointer',
-                    }}
-                >
-                    ✅ Mis Eventos
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleTabChange('PENDIENTES')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        borderBottom: activeTab === 'PENDIENTES' ? '3px solid #1976d2' : 'none',
-                        color: activeTab === 'PENDIENTES' ? '#1976d2' : '#666',
-                        fontWeight: activeTab === 'PENDIENTES' ? 600 : 400,
-                        cursor: 'pointer',
-                    }}
-                >
-                    🕓 Eventos Pendientes
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleTabChange('CALENDARIO')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        borderBottom: activeTab === 'CALENDARIO' ? '3px solid #1976d2' : 'none',
-                        color: activeTab === 'CALENDARIO' ? '#1976d2' : '#666',
-                        fontWeight: activeTab === 'CALENDARIO' ? 600 : 400,
-                        cursor: 'pointer',
-                    }}
-                >
-                    📅 Calendario
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleTabChange('BUSQUEDA')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        borderBottom: activeTab === 'BUSQUEDA' ? '3px solid #1976d2' : 'none',
-                        color: activeTab === 'BUSQUEDA' ? '#1976d2' : '#666',
-                        fontWeight: activeTab === 'BUSQUEDA' ? 600 : 400,
-                        cursor: 'pointer',
-                    }}
-                >
-                    🔍 Búsqueda
-                </button>
-            </div>
-        )
-    }
-
-    const renderTabDescription = () => {
-        if (isAdminView) return null
-
-        return (
-            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-                {activeTab === 'MIS_EVENTOS' && (
-                    <p style={{ margin: 0, color: '#666' }}>
-                        Eventos futuros donde has respondido a su encuesta de asistencia
-                    </p>
-                )}
-                {activeTab === 'PENDIENTES' && (
-                    <p style={{ margin: 0, color: '#666' }}>
-                        Eventos futuros con encuesta de asistencia abierta que aún no has respondido
-                    </p>
-                )}
-                {activeTab === 'CALENDARIO' && (
-                    <p style={{ margin: 0, color: '#666' }}>
-                        Vista mensual de eventos
-                    </p>
-                )}
-                {activeTab === 'BUSQUEDA' && (
-                    <p style={{ margin: 0, color: '#666' }}>
-                        Buscar eventos con filtros avanzados
-                    </p>
-                )}
-            </div>
-        )
-    }
-
-    const renderCalendarView = () => {
-        const monthName = currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })
-        
-        // Obtener días del mes
-        const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-        const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
-        const daysInMonth = lastDay.getDate()
-        const startDayOfWeek = firstDay.getDay() // 0 = domingo
-        
-        // Ajustar para que lunes sea el primer día (0)
-        const adjustedStartDay = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1
-        
-        const days = []
-        for (let i = 0; i < adjustedStartDay; i++) {
-            days.push(null) // Días vacíos antes del primer día del mes
-        }
-        for (let day = 1; day <= daysInMonth; day++) {
-            days.push(day)
-        }
-
-        // Agrupar eventos por día
-        const eventsByDay: Record<number, CalendarEventItemDTO[]> = {}
-        calendarEvents.forEach(event => {
-            const eventDate = new Date(event.startAt)
-            if (eventDate.getMonth() === currentMonth.getMonth() && 
-                eventDate.getFullYear() === currentMonth.getFullYear()) {
-                const day = eventDate.getDate()
-                if (!eventsByDay[day]) {
-                    eventsByDay[day] = []
-                }
-                eventsByDay[day].push(event)
-            }
-        })
-
-        return (
-            <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <button type="button" className="button-secondary" onClick={handlePreviousMonth}>
-                        ← Anterior
-                    </button>
-                    <h2 style={{ textTransform: 'capitalize', margin: 0 }}>{monthName}</h2>
-                    <button type="button" className="button-secondary" onClick={handleNextMonth}>
-                        Siguiente →
-                    </button>
-                </div>
-                
-                <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(7, 1fr)', 
-                    gap: '1px', 
-                    backgroundColor: '#e0e0e0',
-                    border: '1px solid #e0e0e0'
-                }}>
-                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                        <div key={day} style={{ 
-                            backgroundColor: '#f5f5f5', 
-                            padding: '0.5rem', 
-                            textAlign: 'center', 
-                            fontWeight: 600 
-                        }}>
-                            {day}
-                        </div>
-                    ))}
-                    {days.map((day, index) => (
-                        <div key={index} style={{ 
-                            backgroundColor: 'white', 
-                            minHeight: '80px', 
-                            padding: '0.5rem',
-                            position: 'relative'
-                        }}>
-                            {day && (
-                                <>
-                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{day}</div>
-                                    {eventsByDay[day] && eventsByDay[day].length > 0 && (
-                                        <div style={{ fontSize: '0.75rem' }}>
-                                            {eventsByDay[day].slice(0, 3).map(event => (
-                                                <div key={event.id} style={{ 
-                                                    backgroundColor: '#e3f2fd', 
-                                                    padding: '0.15rem 0.25rem', 
-                                                    marginBottom: '0.15rem',
-                                                    borderRadius: '3px',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap'
-                                                }}>
-                                                    {event.title}
-                                                </div>
-                                            ))}
-                                            {eventsByDay[day].length > 3 && (
-                                                <div style={{ fontSize: '0.7rem', color: '#666' }}>
-                                                    +{eventsByDay[day].length - 3} más
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )
-    }
-
-    const renderSearchFilters = () => {
-        if (!isAdminView && activeTab !== 'BUSQUEDA') return null
-
-        return (
-            <form
-                onSubmit={handleSearchSubmit}
-                className="card"
-                style={{ marginBottom: '1rem' }}
-            >
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.75rem',
-                    }}
-                >
-                    <div className="section-title" style={{ marginBottom: 0 }}>
-                        Filtros de búsqueda
-                    </div>
-                    {isAdminView && (
-                        <button
-                            type="button"
-                            className="button-secondary"
-                            onClick={handleOpenCreateEvent}
-                        >
-                            + Nuevo evento
-                        </button>
-                    )}
-                </div>
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '1rem',
-                        width: '100%',
-                    }}
-                >
-                    {/* Grupo 1: Título, Localización, Tipo, Estado, Visibilidad */}
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Título</span>
-                            <input
-                                type="text"
-                                placeholder="Buscar por título"
-                                value={filterTitle}
-                                onChange={(e) => setFilterTitle(e.target.value)}
-                                className="input-full-width"
-                            />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Localización</span>
-                            <input
-                                type="text"
-                                placeholder="Buscar por localización"
-                                value={filterLocation}
-                                onChange={(e) => setFilterLocation(e.target.value)}
-                                className="input-full-width"
-                            />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Tipo</span>
-                            <select
-                                value={filterType}
-                                onChange={(e) =>
-                                    setFilterType(e.target.value as EventType | '')
-                                }
-                                className="select-base"
-                                disabled={loadingOptions}
-                            >
-                                <option value="">Todos</option>
-                                {eventTypes.map((t) => (
-                                    <option key={t} value={t}>
-                                        {translateEventType(t)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Estado</span>
-                            <select
-                                value={filterStatus}
-                                onChange={(e) =>
-                                    setFilterStatus(e.target.value as EventStatus | '')
-                                }
-                                className="select-base"
-                                disabled={loadingOptions}
-                            >
-                                <option value="">Todos</option>
-                                {eventStatuses.map((s) => (
-                                    <option key={s} value={s}>
-                                        {translateEventStatus(s)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Visibilidad</span>
-                            <select
-                                value={filterVisibility}
-                                onChange={(e) =>
-                                    setFilterVisibility(e.target.value as EventVisibility | '')
-                                }
-                                className="select-base"
-                                disabled={loadingOptions}
-                            >
-                                <option value="">Todas</option>
-                                {eventVisibilities.map((v) => (
-                                    <option key={v} value={v}>
-                                        {translateEventVisibility(v)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Grupo 2: Fechas de inicio y fin */}
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Fecha inicio (desde)</span>
-                            <input
-                                type="datetime-local"
-                                value={filterStartAtFrom}
-                                onChange={(e) => setFilterStartAtFrom(e.target.value)}
-                                className="input-full-width"
-                            />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha inicio (hasta)</span>
-                            <input
-                                type="datetime-local"
-                                value={filterStartAtTo}
-                                onChange={(e) => setFilterStartAtTo(e.target.value)}
-                                className="input-full-width"
-                            />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha fin (desde)</span>
-                            <input
-                                type="datetime-local"
-                                value={filterEndAtFrom}
-                                onChange={(e) => setFilterEndAtFrom(e.target.value)}
-                                className="input-full-width"
-                            />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha fin (hasta)</span>
-                            <input
-                                type="datetime-local"
-                                value={filterEndAtTo}
-                                onChange={(e) => setFilterEndAtTo(e.target.value)}
-                                className="input-full-width"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <div
-                    className="search-actions-row"
-                    style={{ justifyContent: 'space-between' }}
-                >
-                    <button type="submit" className="button-primary">
-                        Buscar
-                    </button>
-
-                    <button
-                        type="button"
-                        className="button-subtle"
-                        onClick={handleResetFilters}
-                        style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
-                    >
-                        Resetear filtros
-                    </button>
-                </div>
-            </form>
-        )
-    }
-
-    const renderEventsList = () => {
-        if (activeTab === 'CALENDARIO') return null
-
-        return (
-            <>
-                <div className="card">
-                    <DataTable<EventDTO, SortableField>
-                        columns={eventColumns}
-                        data={events}
-                        sortState={sortState}
-                        onSortChange={handleSort}
-                        onRowClick={handleViewDetails}
-                        expandedRowId={expandedEventId}
-                        isClosing={isClosing}
-                        renderExpandedContent={(event) =>
-                            isAdminView ? (
-                                <EventDetailCard
-                                    event={event}
-                                    onBack={() => {
-                                        setIsClosing(true)
-                                        setTimeout(() => {
-                                            setExpandedEventId(null)
-                                            setSelectedEvent(null)
-                                            setIsClosing(false)
-                                        }, 250)
-                                    }}
-                                    backButtonLabel="Ocultar"
-                                />
-                            ) : (
-                                <EventDetailCardComplete
-                                    event={event}
-                                    onBack={() => {
-                                        setIsClosing(true)
-                                        setTimeout(() => {
-                                            setExpandedEventId(null)
-                                            setSelectedEvent(null)
-                                            setIsClosing(false)
-                                        }, 250)
-                                    }}
-                                    backButtonLabel="Ocultar"
-                                />
-                            )
-                        }
-                    />
-                </div>
-                <PaginationBar
-                    page={page}
-                    totalPages={totalPages}
-                    pageSize={size}
-                    currentCount={events.length}
-                    totalElements={totalElements}
-                    onPageChange={setPage}
-                    onPageSizeChange={(newSize) => {
-                        setSize(newSize)
-                        setPage(0)
-                    }}
-                />
-            </>
-        )
-    }
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <div className="page-container">
-            <h1 className="page-title">{isAdminView ? 'Administración de eventos' : 'Eventos'}</h1>
+            <h1 className="page-title">Administración de eventos</h1>
 
-            {renderTabs()}
-            {renderTabDescription()}
-
-            {loading && <p>Cargando eventos...</p>}
-            {error && <p className="error-message">{error}</p>}
+            {loading && <Spinner />}
+            {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
             {!loading && !error && (
                 <>
-                    {activeTab === 'CALENDARIO' ? renderCalendarView() : (
+                    <EventFiltersPanel
+                        filterTitle={filterTitle}               setFilterTitle={setFilterTitle}
+                        filterLocation={filterLocation}         setFilterLocation={setFilterLocation}
+                        filterType={filterType}                 setFilterType={setFilterType}
+                        filterStatus={filterStatus}             setFilterStatus={setFilterStatus}
+                        filterVisibility={filterVisibility}     setFilterVisibility={setFilterVisibility}
+                        filterStartAtFrom={filterStartAtFrom}   setFilterStartAtFrom={setFilterStartAtFrom}
+                        filterStartAtTo={filterStartAtTo}       setFilterStartAtTo={setFilterStartAtTo}
+                        filterEndAtFrom={filterEndAtFrom}       setFilterEndAtFrom={setFilterEndAtFrom}
+                        filterEndAtTo={filterEndAtTo}           setFilterEndAtTo={setFilterEndAtTo}
+                        eventTypes={eventTypes}
+                        eventStatuses={eventStatuses}
+                        eventVisibilities={eventVisibilities}
+                        loadingOptions={loadingOptions}
+                        activeFiltersCount={activeFiltersCount}
+                        onSubmit={handleSearchSubmit}
+                        onReset={handleResetFilters}
+                        actionButton={
+                            <button type="button" className="button-secondary" onClick={handleOpenCreateEvent}>
+                                + Nuevo evento
+                            </button>
+                        }
+                    />
+
+                    {mode === 'LIST' && (
                         <>
-                            {renderSearchFilters()}
-                            {mode === 'LIST' && renderEventsList()}
+                            <div className="card">
+                                <DataTable<EventDTO, SortableField>
+                                    columns={eventColumns}
+                                    data={events}
+                                    sortState={sorting.state}
+                                    onSortChange={handleSort}
+                                    onRowClick={handleViewDetails}
+                                    expandedRowId={rowExpansion.expandedId}
+                                    isClosing={rowExpansion.isClosing}
+                                    renderExpandedContent={(event) => (
+                                        <EventDetailCard
+                                            event={event}
+                                            onBack={() => {
+                                                rowExpansion.close()
+                                                setTimeout(() => setSelectedEvent(null), 250)
+                                            }}
+                                            backButtonLabel="Ocultar"
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <PaginationBar {...pagination.barProps} currentCount={events.length} />
                         </>
                     )}
                 </>
             )}
 
-            {/* FORMULARIO CREAR/EDITAR */}
-            {isAdminView && (mode === 'CREATE' || mode === 'EDIT') && (
-                <div className="form-card">
-                    <h2 className="section-title">
-                        {mode === 'CREATE' ? 'Crear evento' : 'Editar evento'}
-                    </h2>
-                    
-                    {/* Línea 1: Título, Localización (2 columnas) */}
-                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
-                        <div className="form-field">
-                            <label className="label-text">Título *</label>
-                            <input
-                                type="text"
-                                value={formPayload.title}
-                                onChange={(e) =>
-                                    setFormPayload({ ...formPayload, title: e.target.value })
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Localización</label>
-                            <input
-                                type="text"
-                                value={formPayload.location}
-                                onChange={(e) =>
-                                    setFormPayload({ ...formPayload, location: e.target.value })
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Línea 2: Tipo, Estado, Visibilidad (3 columnas) */}
-                    <div className="form-grid" style={{ marginBottom: '0.75rem' }}>
-                        <div className="form-field">
-                            <label className="label-text">Tipo *</label>
-                            <select
-                                value={formPayload.type}
-                                onChange={(e) =>
-                                    setFormPayload({
-                                        ...formPayload,
-                                        type: e.target.value as EventType,
-                                    })
-                                }
-                                className="select-base"
-                                required
-                            >
-                                {eventTypes.map((t) => (
-                                    <option key={t} value={t}>
-                                        {translateEventType(t)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Estado</label>
-                            <select
-                                value={formPayload.status || eventStatuses[0] || ''}
-                                onChange={(e) =>
-                                    setFormPayload({
-                                        ...formPayload,
-                                        status: e.target.value as EventStatus,
-                                    })
-                                }
-                                className="select-base"
-                            >
-                                {eventStatuses.map((s) => (
-                                    <option key={s} value={s}>
-                                        {translateEventStatus(s)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Visibilidad *</label>
-                            <select
-                                value={formPayload.visibility}
-                                onChange={(e) =>
-                                    setFormPayload({
-                                        ...formPayload,
-                                        visibility: e.target.value as EventVisibility,
-                                    })
-                                }
-                                className="select-base"
-                                required
-                            >
-                                {eventVisibilities.map((v) => (
-                                    <option key={v} value={v}>
-                                        {translateEventVisibility(v)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Línea 3: Fecha inicio, Fecha fin (2 columnas) */}
-                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
-                        <div className="form-field">
-                            <label className="label-text">Fecha inicio *</label>
-                            <input
-                                type="datetime-local"
-                                value={formStartAt}
-                                onChange={(e) => setFormStartAt(e.target.value)}
-                                className="input-full-width"
-                                required
-                            />
-                        </div>
-                        <div className="form-field">
-                            <label className="label-text">Fecha fin *</label>
-                            <input
-                                type="datetime-local"
-                                value={formEndAt}
-                                onChange={(e) => setFormEndAt(e.target.value)}
-                                className="input-full-width"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    {/* Línea 4: Descripción (ancho completo) */}
-                    <div className="form-grid">
-                        <div
-                            className="form-field"
-                            style={{ gridColumn: '1 / -1' }}
-                        >
-                            <label className="label-text">Descripción</label>
-                            <textarea
-                                value={formPayload.description}
-                                onChange={(e) =>
-                                    setFormPayload({
-                                        ...formPayload,
-                                        description: e.target.value,
-                                    })
-                                }
-                                className="textarea-base"
-                                rows={4}
-                            />
-                        </div>
-                    </div>
-                    <div className="button-row-1rem">
-                        <button
-                            type="button"
-                            className="button-primary"
-                            onClick={mode === 'CREATE' ? handleCreateEvent : handleUpdateEvent}
-                            disabled={saving}
-                        >
-                            {saving ? 'Guardando...' : mode === 'CREATE' ? 'Crear' : 'Guardar'}
-                        </button>
-                        <button
-                            type="button"
-                            className="button-secondary"
-                            onClick={handleCancelForm}
-                            disabled={saving}
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
+            {(mode === 'CREATE' || mode === 'EDIT') && (
+                <EventForm
+                    editing={mode === 'EDIT' ? selectedEvent : null}
+                    formPayload={formPayload}
+                    setFormPayload={setFormPayload}
+                    formStartAt={formStartAt}
+                    setFormStartAt={setFormStartAt}
+                    formEndAt={formEndAt}
+                    setFormEndAt={setFormEndAt}
+                    eventTypes={eventTypes}
+                    eventStatuses={eventStatuses}
+                    eventVisibilities={eventVisibilities}
+                    saving={saving}
+                    onSave={mode === 'CREATE' ? handleCreateEvent : handleUpdateEvent}
+                    onCancel={handleCancelForm}
+                />
             )}
 
-            <ConfirmDialog
-                isOpen={confirmDialog.isOpen}
-                title={confirmDialog.title}
-                message={confirmDialog.message}
-                variant={confirmDialog.variant}
-                onConfirm={confirmDialog.onConfirm}
-                onCancel={() =>
-                    setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
-                }
-            />
+            <ConfirmDialog {...confirm.dialogProps} />
         </div>
     )
 }

@@ -1,25 +1,52 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../types/surveys'
-import type { InstrumentDTO } from '../types/instruments'
+import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../../types/surveys'
+import type { InstrumentDTO } from '../../types/instruments'
 import { 
     respondToSurvey, 
     getMyResponse, 
     updateMyResponse, 
     deleteMyResponse 
-} from '../api/surveysApi'
-import { getMyProfile } from '../api/usersApi'
-import { useAuth } from '../features/auth/AuthContext'
-import { extractErrorMessage } from '../utils/errorHandler'
-import { translateYesNoMaybeAnswer } from '../utils/surveyTranslations'
-import { ConfirmDialog } from './ConfirmDialog'
-import '../styles/common.css'
+} from '../../api/surveysApi'
+import { getMyProfile } from '../../api/usersApi'
+import { useAuth } from '../auth/AuthContext'
+import { extractErrorMessage } from '../../utils/errorHandler'
+import { translateYesNoMaybeAnswer } from '../../utils/surveyTranslations'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { XMarkIcon } from '../../components/Icons'
+import '../../styles/common.css'
 
 interface SurveyResponseFormProps {
     survey: SurveyDTO
     onResponseSubmitted?: () => void
+    onHide?: () => void
 }
 
-export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyResponseFormProps) {
+/**
+ * SurveyResponseForm — Formulario para responder una encuesta.
+ *
+ * RESPONSABILIDAD:
+ * Renderiza el formulario de respuesta del músico a una encuesta de tipo
+ * ATTENDANCE. Gestiona el flujo completo: cargar respuesta existente, validar,
+ * enviar (crear o actualizar), y eliminar (si ya respondió).
+ *
+ * FLUJO DE RESPUESTA DEL MÚSICO:
+ * 1. Cargar la encuesta y comprobar si ya respondió
+ * 2. Si ya respondió: pre-rellenar el formulario con su respuesta anterior
+ * 3. Si no respondió: mostrar formulario vacío
+ * 4. El usuario selecciona: Sí / No / Quizás
+ * 5. Si la encuesta requiere instrumento, cargar instrumentos del usuario
+ * 6. Enviar respuesta (POST si nueva, PUT si existente)
+ * 7. Opcionalmente: eliminar respuesta anterior (DELETE)
+ *
+ * TIPOS DE RESPUESTA Y SELECTOR DE INSTRUMENTO:
+ * - YES_NO_MAYBE: solo permite Sí/No/Quizás, sin instrumento
+ * - YES_NO_MAYBE_WITH_INSTRUMENT: permite Sí/No/Quizás + selector de instrumento
+ *
+ * La presencia del selector se controla condicionalmente según responseType:
+ * - Si survey.responseType === 'YES_NO_MAYBE_WITH_INSTRUMENT' && (respuesta !== 'NO'),
+ *   mostrar selector de instrumento (solo necesario para YES y MAYBE).
+ */
+export function SurveyResponseForm({ survey, onResponseSubmitted, onHide }: SurveyResponseFormProps) {
     const { token } = useAuth()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -47,7 +74,7 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
 
     const needsInstrument = survey.responseType === 'YES_NO_MAYBE_WITH_INSTRUMENT'
 
-    // Cargar respuesta existente y perfil del usuario
+    // Cargar respuesta existente y perfil del usuario al montar el componente
     useEffect(() => {
         if (!token) return
 
@@ -56,7 +83,9 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
                 setLoading(true)
                 setError(null)
 
-                // Cargar respuesta existente
+                // Cargar respuesta existente del usuario a esta encuesta.
+                // Si existe (status 200), pre-rellenar el formulario.
+                // Si no existe (status 404), mostrar formulario vacío.
                 try {
                     const response = await getMyResponse(survey.id, token)
                     setExistingResponse(response)
@@ -74,7 +103,8 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
                     }
                 }
 
-                // Si la encuesta requiere instrumento, cargar instrumentos del usuario
+                // Si la encuesta requiere instrumento, cargar la lista de instrumentos
+                // del usuario desde su perfil (profile.instruments).
                 if (needsInstrument) {
                     setLoadingInstruments(true)
                     const profile = await getMyProfile(token)
@@ -102,6 +132,8 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
             return
         }
 
+        // Validación condicional: si la encuesta requiere instrumento y la respuesta
+        // no es NO (porque NO implica que no irá al evento), entonces debe seleccionar instrumento.
         if (needsInstrument && !selectedInstrumentId) {
             setError('Debes seleccionar un instrumento')
             return
@@ -114,12 +146,15 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
 
             const payload = {
                 answer: selectedAnswer,
+                // Incluir instrumentId solo si la encuesta lo requiere
                 instrumentId: needsInstrument ? selectedInstrumentId : undefined,
+                // Incluir comentario solo si no es vacío
                 comment: comment.trim() || undefined,
             }
 
             if (hasResponse && existingResponse) {
-                // Actualizar respuesta existente
+                // Actualizar respuesta existente: enviar PUT con versión para
+                // control de concurrencia optimista (detectar conflictos 412/428)
                 const updated = await updateMyResponse(
                     survey.id,
                     payload,
@@ -129,7 +164,7 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
                 setExistingResponse(updated)
                 setSuccessMessage('Respuesta actualizada correctamente')
             } else {
-                // Crear nueva respuesta
+                // Crear nueva respuesta: enviar POST
                 const created = await respondToSurvey(
                     survey.id,
                     payload,
@@ -141,12 +176,14 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
                 setSuccessMessage('Respuesta enviada correctamente')
             }
 
+            // Mostrar mensaje de éxito durante 3 segundos y luego limpiar
             setTimeout(() => setSuccessMessage(null), 3000)
             onResponseSubmitted?.()
         } catch (err: any) {
             console.error('Error submitting response:', err)
             const status = err?.response?.status
             if (status === 412 || status === 428) {
+                // Errores de concurrencia: otro cliente cambió la encuesta o la respuesta
                 setError('La encuesta o tu respuesta ha sido modificada. Recarga la página.')
             } else {
                 setError(extractErrorMessage(err, 'Error al guardar la respuesta'))
@@ -159,6 +196,7 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
     const handleDelete = () => {
         if (!token || !existingResponse) return
 
+        // Abrir diálogo de confirmación para eliminar la respuesta existente
         setConfirmDialog({
             isOpen: true,
             onConfirm: async () => {
@@ -166,9 +204,10 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
                 try {
                     setSaving(true)
                     setError(null)
+                    // Enviar DELETE con la versión actual para control de concurrencia
                     await deleteMyResponse(survey.id, existingResponse.version, token)
                     
-                    // Resetear estado
+                    // Resetear estado tras la eliminación exitosa
                     setExistingResponse(null)
                     setHasResponse(false)
                     setSelectedAnswer('')
@@ -181,6 +220,7 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
                     console.error('Error deleting response:', err)
                     const status = err?.response?.status
                     if (status === 412 || status === 428) {
+                        // Errores de concurrencia: otro cliente cambió la respuesta
                         setError('La respuesta ha sido modificada. Recarga la página.')
                     } else {
                         setError(extractErrorMessage(err, 'Error al eliminar la respuesta'))
@@ -243,9 +283,16 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
 
     return (
         <div className="card" style={{ padding: '1rem' }}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
-                {hasResponse ? 'Actualizar respuesta' : 'Responder encuesta'}
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
+                    {hasResponse ? 'Actualizar respuesta' : 'Responder encuesta'}
+                </h3>
+                {onHide && (
+                    <button type="button" className="button-secondary" onClick={onHide}>
+                        <XMarkIcon /> Ocultar
+                    </button>
+                )}
+            </div>
 
             {error && <p className="error-message">{error}</p>}
             {successMessage && (
@@ -292,7 +339,7 @@ export function SurveyResponseForm({ survey, onResponseSubmitted }: SurveyRespon
                     </div>
                 </div>
 
-                {/* Selector de instrumento */}
+                {/* Selector de instrumento: solo se muestra si la encuesta requiere instrumento */}
                 {needsInstrument && (
                     <div className="form-field" style={{ marginBottom: '1rem' }}>
                         <label className="label-text">Instrumento *</label>

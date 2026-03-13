@@ -1,20 +1,19 @@
 import { useEffect, useState } from 'react'
-import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../types/surveys'
-import type { UserDTO } from '../types/users'
-import type { InstrumentDTO } from '../types/instruments'
+import type { SurveyDTO, SurveyResponseDTO, YesNoMaybeAnswer } from '../../types/surveys'
+import type { InstrumentDTO } from '../../types/instruments'
 import {
   getYesNoMaybeResults,
   getCompleteResults,
-} from '../api/surveysApi'
-import { getUserByIamId } from '../api/usersApi'
-import { getInstrumentById } from '../api/instrumentsApi'
-import { useAuth } from '../features/auth/AuthContext'
+} from '../../api/surveysApi'
+import { getUserByIamId } from '../../api/usersApi'
+import { getInstrumentById } from '../../api/instrumentsApi'
+import { useAuth } from '../auth/AuthContext'
 import {
   translateYesNoMaybeAnswer,
   formatSurveyDateTime,
-} from '../utils/surveyTranslations'
-import { extractErrorMessage } from '../utils/errorHandler'
-import '../styles/common.css'
+} from '../../utils/surveyTranslations'
+import { extractErrorMessage } from '../../utils/errorHandler'
+import '../../styles/common.css'
 
 interface SurveyResultsModalProps {
   survey: SurveyDTO
@@ -27,6 +26,24 @@ interface ResponseWithUserAndInstrument extends SurveyResponseDTO {
   instrument?: InstrumentDTO
   loadingInstrument?: boolean
 }
+
+/**
+ * SurveyResultsModal — Modal que envuelve la vista de resultados de una encuesta.
+ *
+ * RESPONSABILIDAD:
+ * Es un contenedor modal que renderiza los mismos resultados que SurveyResultsView,
+ * pero en una presentación modal sobrepuesta (fullscreen o centered). Maneja la
+ * apertura/cierre del modal y la navegación entre tabs de resultados.
+ *
+ * RELACIÓN CON SurveyResultsView:
+ * - SurveyResultsView: componente de presentación puro, renderiza 3 tabs
+ * - SurveyResultsModal: envuelve SurveyResultsView en un modal con header/close
+ *
+ * Ambos componentes duplican parte de la lógica (cálculos, efectos) porque
+ * tienen contextos de uso diferentes. SurveyResultsView se usa como vista
+ * standalone, mientras que SurveyResultsModal se usa para aperturas puntuales
+ * dentro de diálogos.
+ */
 
 export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps) {
   const { token } = useAuth()
@@ -71,6 +88,8 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
   const instrumentSummary = () => {
     if (!hasInstrument) return { yes: {}, maybe: {} }
     
+    // Iterar todas las respuestas enriquecidas y agrupar por instrumento.
+    // Se suman YES/MAYBE separadamente, ignorando NO (porque NO implica ausencia).
     const yesSummary: Record<string, number> = {}
     const maybeSummary: Record<string, number> = {}
     
@@ -86,16 +105,15 @@ export function SurveyResultsModal({ survey, onClose }: SurveyResultsModalProps)
       }
     })
     
-    // Obtener todos los instrumentos únicos
+    // Obtener todos los instrumentos únicos y ordenar alfabéticamente
     const allInstruments = new Set([
       ...Object.keys(yesSummary),
       ...Object.keys(maybeSummary)
     ])
     
-    // Ordenar por nombre de instrumento
     const sortedInstruments = Array.from(allInstruments).sort((a, b) => a.localeCompare(b))
     
-    // Crear objetos ordenados
+    // Crear objetos ordenados para YES y MAYBE
     const sortedYes: Record<string, number> = {}
     const sortedMaybe: Record<string, number> = {}
     

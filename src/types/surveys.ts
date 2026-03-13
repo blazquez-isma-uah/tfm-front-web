@@ -46,6 +46,7 @@ export interface CreateSurveyRequestDTO {
 export interface UpdateSurveyRequestDTO {
   title: string
   description?: string
+  responseType: ResponseType
   surveyType: SurveyType
   opensAt: string // ISO Instant
   closesAt: string // ISO Instant

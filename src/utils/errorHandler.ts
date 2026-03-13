@@ -12,17 +12,18 @@ export function extractErrorMessage(error: any, defaultMessage: string): string 
             .join(', ')
         return validationErrors
     }
-    
+
     // Si hay un mensaje específico del servidor
     if (error?.response?.data?.message) {
         return error.response.data.message
     }
-    
-    // Si hay un mensaje del error de Axios
-    if (error?.message) {
-        return error.message
+
+    // Sin respuesta HTTP (error de red, timeout, CORS…) → mensaje contextual
+    // error.message sería "Network Error" o "timeout of Xms exceeded", no apto para el usuario
+    if (!error?.response) {
+        return defaultMessage
     }
-    
-    // Mensaje por defecto
+
+    // Error HTTP sin cuerpo de mensaje → mensaje por defecto
     return defaultMessage
 }

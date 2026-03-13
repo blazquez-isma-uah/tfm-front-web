@@ -1,319 +1,659 @@
-/* Contenedores de página */
+/* ============================================================
+   COMMON.CSS — Componentes y utilidades globales
+   ============================================================
+   Depende de: design-tokens.css (debe importarse antes)
+
+   IMPORTANTE Mobile First:
+   Los estilos base aquí son para móvil (320px+).
+   Los @media query amplían el diseño para pantallas mayores.
+   Nunca al revés.
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   CONTENEDORES DE PÁGINA
+---------------------------------------------------------- */
 .page-container {
-  max-width: 1200px;
+  max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 1.5rem 1.75rem;
+  /* Móvil: padding reducido para aprovechar el espacio */
+  padding: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding: var(--space-6) var(--space-8);
+  }
 }
 
 .page-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4) 0;
+  line-height: var(--line-height-tight);
 }
 
-/* Cards y secciones */
-.card {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+@media (min-width: 768px) {
+  .page-title {
+    font-size: var(--font-size-3xl);
+    margin-bottom: var(--space-6);
+  }
+}
+
+/* ----------------------------------------------------------
+   CARDS Y SUPERFICIES ELEVADAS
+   card, form-card y toolbar comparten la misma "receta"
+   de superficie: fondo blanco, borde, sombra sutil.
+   Se usa una clase base compartida para evitar duplicación.
+---------------------------------------------------------- */
+.card,
+.form-card,
+.toolbar {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
   width: 100%;
   box-sizing: border-box;
 }
 
-.section-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
+.card {
+  padding: var(--space-4) var(--space-5);
 }
 
 .form-card {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-  margin-top: 1.25rem;
-  width: 100%;
-  box-sizing: border-box;
+  padding: var(--space-4) var(--space-5);
+  margin-top: var(--space-5);
 }
 
 .toolbar {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-  margin-bottom: 1rem;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-3);
   align-items: center;
 }
 
-/* Grids */
+@media (min-width: 768px) {
+  .card,
+  .form-card {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .toolbar {
+    padding: var(--space-4) var(--space-5);
+  }
+}
+
+.section-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-3) 0;
+}
+
+/* ----------------------------------------------------------
+   BADGES — Etiquetas de estado
+   Badges pequeños para mostrar estados o información destacada.
+---------------------------------------------------------- */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.badge--success {
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.badge--warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+
+.badge--info {
+  background: var(--color-info-light);
+  color: var(--color-info-dark);
+}
+
+.badge--error {
+  background: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+
+.badge--neutral {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
+/* ----------------------------------------------------------
+   STAT BOXES — Patrón de tarjeta de detalle
+   Reemplaza dl/dt/dd por boxes independientes con etiqueta arriba
+   y valor abajo. Evita problemas de desalineación.
+---------------------------------------------------------- */
+
+/* Contenedor de una sección dentro de la tarjeta */
+.detail-section {
+  margin-bottom: var(--space-5);
+}
+
+/* Separador visual entre secciones consecutivas */
+.detail-section + .detail-section {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-light);
+}
+
+/* Grid de stat boxes — auto-fill responsive sin breakpoints explícitos */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3) var(--space-4);
+}
+
+/* Cada campo: etiqueta arriba, valor abajo */
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0; /* Evita overflow en grid */
+}
+
+/* Etiqueta del campo: pequeña, gris, mayúsculas */
+.detail-field__label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Valor del campo */
+.detail-field__value {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* Valor vacío o no disponible */
+.detail-field__value--empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Campo que ocupa todo el ancho (notas, descripción, instrumentos) */
+.detail-field--full {
+  grid-column: 1 / -1;
+}
+
+/* Campo que ocupa la mitad izquierda en grids de 2+ columnas */
+.detail-field--half {
+  grid-column: span 2;
+}
+
+/* Título principal de detalle (usado en tarjetas de eventos/encuestas) */
+.detail-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--space-4) 0;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* ----------------------------------------------------------
+   GRIDS
+   Mobile First: una sola columna en móvil, múltiples en tablet+.
+
+   Problema original: minmax(180px, 1fr) hacía que en móvil
+   (<375px) los inputs intentaran ocupar 180px mínimo y
+   se salían del contenedor o generaban scroll horizontal.
+   Solución: en móvil siempre 1 columna, breakout al grid
+   solo cuando hay espacio suficiente.
+---------------------------------------------------------- */
 .search-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: 1fr;  /* Móvil: 1 columna */
+  gap: var(--space-3);
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.75rem 1rem;
+  grid-template-columns: 1fr;  /* Móvil: 1 columna */
+  gap: var(--space-3) var(--space-4);
 }
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 0.75rem 1.5rem;
+  grid-template-columns: 1fr;  /* Móvil: 1 columna */
+  gap: var(--space-3) var(--space-6);
 }
 
-/* Inputs y controles */
-.input-base {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.45rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
+@media (min-width: 640px) {
+  .search-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .detail-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+/* ----------------------------------------------------------
+   INPUTS, SELECTS Y TEXTAREAS
+   Todos comparten el mismo aspecto visual. La diferencia
+   entre input-base e input-full-width es solo el ancho.
+
+   Mejora: se añaden estados :focus y :hover explícitos,
+   que el código original no tenía (mala accesibilidad).
+   Los inputs táctiles necesitan target mínimo de 44px
+   de altura para ser usables con el dedo.
+---------------------------------------------------------- */
+.input-base,
+.input-full-width,
+.select-base,
+.textarea-base {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  color: var(--text-primary);
+  background: var(--surface-card);
   box-sizing: border-box;
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  /* Altura mínima táctil: 44px (recomendación WCAG) */
+  min-height: 2.75rem;
+  line-height: var(--line-height-normal);
 }
 
-.input-full-width {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.45rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
+.input-base:hover,
+.input-full-width:hover,
+.select-base:hover {
+  border-color: var(--color-gray-400);
+}
+
+.input-base:focus,
+.input-full-width:focus,
+.select-base:focus,
+.textarea-base:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.input-base,
+.input-full-width,
+.select-base {
+  width: 100%;
+}
+
+input[type="datetime-local"],
+input[type="date"] {
   width: 100%;
   box-sizing: border-box;
 }
 
-.select-base {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.45rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
-  box-sizing: border-box;
-}
-
 .textarea-base {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.45rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
-  box-sizing: border-box;
   min-height: 80px;
   resize: vertical;
 }
 
-/* Botones */
+/* ----------------------------------------------------------
+   BOTONES
+   Problema original: 6 clases de botón con 7-9 propiedades
+   IDÉNTICAS repetidas. ~50 líneas de código duplicado.
+
+   Solución: clase base .btn con todas las propiedades
+   compartidas. Las variantes SOLO añaden color y fondo.
+   En HTML se usará: <button class="btn btn-primary">
+
+   Retrocompatibilidad: Las clases antiguas (button-primary,
+   etc.) se mantienen como alias para no romper el código
+   existente mientras se migra.
+---------------------------------------------------------- */
+
+/* Clase base: todo lo que comparten los botones */
+.btn {
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  text-decoration: none;
+  transition: background-color var(--transition-fast),
+              opacity var(--transition-fast),
+              box-shadow var(--transition-fast);
+  /* Target táctil mínimo */
+  min-height: 2.25rem;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Variantes */
+.btn-primary,
+.button-primary {
+  background-color: var(--color-primary-600);
+  color: var(--text-inverse);
+}
+.btn-primary:hover:not(:disabled),
+.button-primary:hover {
+  background-color: var(--color-primary-700);
+}
+
+.btn-secondary,
+.button-secondary {
+  background-color: var(--color-gray-200);
+  color: var(--text-primary);
+}
+.btn-secondary:hover:not(:disabled),
+.button-secondary:hover {
+  background-color: var(--color-gray-300);
+}
+
+.btn-subtle,
+.button-subtle {
+  background-color: var(--color-gray-100);
+  color: var(--text-primary);
+}
+.btn-subtle:hover:not(:disabled),
+.button-subtle:hover {
+  background-color: var(--color-gray-200);
+}
+
+.btn-danger,
+.button-danger {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+.btn-danger:hover:not(:disabled),
+.button-danger:hover {
+  background-color: #fecaca;  /* Un tono más oscuro de danger-light */
+}
+
+.btn-warning,
+.button-warning {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+.btn-warning:hover:not(:disabled),
+.button-warning:hover {
+  background-color: #fde68a;
+}
+
+/* Alias de retrocompatibilidad:
+   Las clases antiguas sin prefijo btn también funcionan.
+   Heredan de .btn vía el selector de abajo. */
+.button-primary,
+.button-secondary,
+.button-subtle,
+.button-danger,
+.button-warning,
 .button-base {
   border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 2.25rem;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast);
 }
 
-.button-primary {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #2563eb;
-  color: #ffffff;
+.button-base {
+  background-color: var(--color-gray-100);
+  color: var(--text-primary);
 }
 
-.button-secondary {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #e5e7eb;
-  color: #111827;
-}
-
-.button-subtle {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #f3f4f6;
-  color: #111827;
-}
-
-.button-danger {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #fee2e2;
-  color: #b91c1c;
-}
-
-.button-warning {
-  border: none;
-  border-radius: 999px;
-  padding: 0.38rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-/* Campos de formulario */
+/* ----------------------------------------------------------
+   CAMPOS DE FORMULARIO
+---------------------------------------------------------- */
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  min-width: 0; /* Evita desbordamiento en grid/flex */
 }
 
 .label-text {
-  font-weight: 500;
-  color: #374151;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
 }
 
-/* Detalles */
+/* Indicador de campo requerido */
+.label-text.required::after {
+  content: ' *';
+  color: var(--color-danger);
+}
+
+/* ----------------------------------------------------------
+   ITEMS DE DETALLE (vista lectura de un registro)
+---------------------------------------------------------- */
 .detail-item {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  font-size: 0.9rem;
+  gap: 2px;
+  font-size: var(--font-size-sm);
 }
 
 .detail-label {
-  font-weight: 600;
-  color: #4b5563;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .detail-value {
-  color: #111827;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
 }
 
-/* Utilidades */
+/* ----------------------------------------------------------
+   FILAS DE ACCIONES Y BOTONES
+---------------------------------------------------------- */
 .search-actions-row {
   display: flex;
   justify-content: flex-end;
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
+  /* En móvil, los botones ocupan todo el ancho */
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (min-width: 480px) {
+  .search-actions-row {
+    flex-wrap: nowrap;
+  }
+}
+
+.actions-container,
+.actions-container-wide {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ----------------------------------------------------------
+   GRUPOS DE FECHA EN FILTROS DE BÚSQUEDA
+   search-date-group: contenedor principal, apila las filas de fecha verticalmente
+   search-date-row:   una fila con dos campos (desde/hasta), en móvil 1 columna,
+                      en desktop 2 columnas lado a lado.
+---------------------------------------------------------- */
+.search-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.search-date-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+@media (min-width: 1024px) {
+  .search-date-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.button-row {
+  margin-top: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* button-row-1rem es alias de button-row con margin mayor */
+.button-row-1rem {
+  margin-top: var(--space-4);
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .ml-auto {
   margin-left: auto;
 }
 
-/* Contenedores de acciones y botones */
-.actions-container {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.actions-container-wide {
-  display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-
-.button-row {
-  margin-top: 0.75rem;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-.button-row-1rem {
-  margin-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-/* Mensajes de error */
+/* ----------------------------------------------------------
+   MENSAJES DE ESTADO
+   Problema original: color: red sin semántica.
+   Ahora usa los colores del sistema.
+---------------------------------------------------------- */
 .error-message {
-  color: red;
-  margin-top: 0.5rem;
+  color: var(--color-danger-dark);
+  background: var(--color-danger-light);
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-2);
 }
 
-/* Grid full width */
+/* ----------------------------------------------------------
+   UTILIDADES DE GRID
+---------------------------------------------------------- */
 .grid-full-width {
   grid-column: 1 / -1;
 }
 
-/* Checkboxes en formularios */
+/* ----------------------------------------------------------
+   CHECKBOXES EN FORMULARIOS
+---------------------------------------------------------- */
 .checkbox-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.85rem;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  /* Target táctil mínimo */
+  min-height: 2.25rem;
 }
 
-/* Instrumentos en columnas */
+/* ----------------------------------------------------------
+   GRID DE INSTRUMENTOS
+   Problema original: column-count: 5 fijo → inutilizable en móvil.
+   Solución Mobile First: 1 col → 2 cols → 3 cols → 5 cols.
+---------------------------------------------------------- */
 .instruments-grid {
   max-height: 300px;
   overflow-y: auto;
-  padding: 0.5rem 1rem;
-  column-count: 5;
-  column-gap: 0.75rem;
+  padding: var(--space-2) var(--space-4);
+  /* Móvil: 1 columna */
+  column-count: 1;
+  column-gap: var(--space-3);
+}
+
+@media (min-width: 480px) {
+  .instruments-grid { column-count: 2; }
+}
+
+@media (min-width: 768px) {
+  .instruments-grid { column-count: 3; }
+}
+
+@media (min-width: 1024px) {
+  .instruments-grid { column-count: 5; }
 }
 
 .instrument-group {
   break-inside: avoid;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 .instrument-group-title {
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 0.15rem;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: 2px;
 }
 
 .instrument-item {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  padding: 1px 0;
-  margin-left: 0.75rem;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  padding: 2px 0;
+  margin-left: var(--space-3);
+  min-height: 2rem; /* target táctil */
 }
 
-/* Fila expandible en tablas */
+/* ----------------------------------------------------------
+   FILA EXPANDIBLE EN TABLAS
+---------------------------------------------------------- */
 .expanded-row-content {
-  padding: 1rem;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--space-4) var(--space-2);
+  background: var(--surface-subtle);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
   animation: expandRow 0.25s ease-in-out;
   overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .expanded-row-content {
+    padding: var(--space-4);
+  }
 }
 
 .expanded-row-content.closing {
@@ -324,6 +664,7 @@
   from {
     opacity: 0;
     transform: scaleY(0);
+    transform-origin: top;
     max-height: 0;
     padding-top: 0;
     padding-bottom: 0;
@@ -331,9 +672,10 @@
   to {
     opacity: 1;
     transform: scaleY(1);
+    transform-origin: top;
     max-height: 2000px;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-4);
   }
 }
 
@@ -341,89 +683,1158 @@
   from {
     opacity: 1;
     transform: scaleY(1);
+    transform-origin: top;
     max-height: 2000px;
   }
   to {
     opacity: 0;
     transform: scaleY(0);
+    transform-origin: top;
     max-height: 0;
     padding-top: 0;
     padding-bottom: 0;
   }
 }
 
-/* Modal */
+/* ----------------------------------------------------------
+   MODAL
+   Problema original: en móvil el modal tenía max-width: 500px
+   y width: 90%, lo que en pantallas de 320px deja márgenes
+   de solo 16px a cada lado. Con el teclado virtual abierto
+   (cuando el usuario está en un input del modal) el espacio
+   se reduce aún más y el modal quedaba cortado.
+
+   Solución Mobile First:
+   - Móvil (<480px): modal ocupa prácticamente toda la pantalla,
+     se ancla al fondo (bottom sheet pattern) para que sea
+     accesible con el pulgar.
+   - Tablet/Desktop: comportamiento original centrado.
+---------------------------------------------------------- */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;  /* top/right/bottom/left: 0 en un shorthand moderno */
+  background-color: var(--surface-overlay);
   display: flex;
-  align-items: center;
+  align-items: flex-end;  /* Móvil: ancla al fondo (bottom sheet) */
   justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-in-out;
+  z-index: var(--z-modal);
+  animation: fadeIn var(--transition-normal);
+  /* Permite scroll del overlay en caso de modal muy alto */
+  overflow-y: auto;
+  padding: 0;
 }
 
 .modal-content {
-  background: #ffffff;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 500px;
-  width: 90%;
-  animation: slideIn 0.2s ease-in-out;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-xl);
+  animation: slideUp var(--transition-normal);
+  /* Móvil: ocupa todo el ancho, bordes redondeados solo arriba */
+  width: 100%;
+  max-width: 100%;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  /* Máximo 90% del viewport para que siempre se vea algo del overlay */
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 480px) {
+  .modal-overlay {
+    align-items: center;  /* Tablet+: centrado */
+    padding: var(--space-4);
+  }
+
+  .modal-content {
+    max-width: 500px;
+    width: 90%;
+    border-radius: var(--radius-lg);  /* Todos los bordes */
+    max-height: 85vh;
+    animation: slideIn var(--transition-normal);
+  }
 }
 
 .modal-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  /* Indicador visual de "agarre" para bottom sheet en móvil */
+  position: relative;
+}
+
+/* Pastilla de agarre del bottom sheet (solo en móvil) */
+.modal-header::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: var(--color-gray-300);
+  border-radius: var(--radius-full);
+  margin: 0 auto var(--space-3);
+}
+
+@media (min-width: 480px) {
+  .modal-header::before {
+    display: none;  /* No necesario en desktop */
+  }
 }
 
 .modal-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
   margin: 0;
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: var(--space-4) var(--space-6);
 }
 
 .modal-message {
-  font-size: 0.95rem;
-  color: #000000;
-  line-height: 1.5;
+  font-size: var(--font-size-md);
+  color: var(--text-primary);
+  line-height: var(--line-height-normal);
   margin: 0;
   white-space: pre-line;
 }
 
 .modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  padding: var(--space-3) var(--space-6);
+  border-top: 1px solid var(--border-light);
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: var(--space-3);
+  /* En móvil, los botones del modal son full width */
+  flex-direction: column;
 }
 
+@media (min-width: 480px) {
+  .modal-footer {
+    flex-direction: row;  /* Inline en tablet+ */
+  }
+}
+
+/* ----------------------------------------------------------
+   ANIMACIONES GLOBALES
+---------------------------------------------------------- */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideIn {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Animación para bottom sheet en móvil */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ----------------------------------------------------------
+   MENSAJE DE ÉXITO
+   Equivalente semántico a .error-message pero en verde.
+   Mismo patrón visual: fondo semántico, borde, radio.
+---------------------------------------------------------- */
+.success-message {
+  color: var(--color-success-dark);
+  background: var(--color-success-light);
+  border: 1px solid #86efac;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-4);
+}
+
+/* ----------------------------------------------------------
+   HINT DE CAMPO
+   Texto de ayuda debajo de un input (ej: "Mínimo 6 caracteres")
+---------------------------------------------------------- */
+.field-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ----------------------------------------------------------
+   DATA TABLE — Mobile First
+   Estrategia de renderizado condicional con useMediaQuery:
+     · < 768px  → vista tarjeta (card view), no se renderiza <table>
+     · ≥ 768px  → tabla tradicional dentro de .data-table-wrapper
+
+   Las clases .dt-table* usan BEM para evitar el acoplamiento
+   entre CSS y estructura HTML que tenían los selectores
+   descendientes del bloque anterior (.data-table-wrapper table).
+   Ref: https://getbem.com/
+---------------------------------------------------------- */
+
+/* ── Wrapper: se mantiene para overflow-x como fallback ─── */
+
+.data-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Tabla (tablet/desktop ≥ 480px) ────────────────────── */
+
+.dt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  background: var(--color-white, #ffffff);
+  border-radius: var(--radius-md, 0.5rem);
+  overflow: hidden;
+}
+
+.dt-table__head {
+  background-color: var(--color-gray-50);
+  border-bottom: 2px solid var(--border-light);
+}
+
+.dt-table__th {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.dt-table__th--sortable {
+  cursor: pointer;
+}
+
+.dt-table__th--sortable:hover {
+  color: var(--text-primary);
+  background-color: var(--color-gray-100);
+}
+
+.dt-table__row {
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color var(--transition-fast);
+}
+
+.dt-table__row--clickable {
+  cursor: pointer;
+}
+
+.dt-table__row--clickable:hover {
+  background-color: var(--color-primary-50);
+}
+
+.dt-table__row--expanded {
+  background-color: var(--color-primary-50);
+}
+
+.dt-table__td {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.dt-table__expanded-td {
+  padding: 0;
+  border: none;
+}
+
+.dt-table__empty {
+  padding: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ── Card view (móvil < 480px) ──────────────────────────── */
+
+/*
+ * Mobile First: estos estilos son la BASE porque el componente
+ * renderiza tarjetas en móvil por defecto (useMediaQuery devuelve
+ * true para pantallas pequeñas). No es necesario un @media query
+ * aquí porque el renderizado condicional en JS ya se encarga de
+ * mostrar solo el DOM necesario.
+ */
+
+.dt-card-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dt-card-empty {
+  padding: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.dt-card {
+  background: var(--color-white, #ffffff);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md, 0.5rem);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-sm);
+}
+
+.dt-card[role='button'] {
+  cursor: pointer;
+}
+
+.dt-card[role='button']:hover,
+.dt-card[role='button']:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  outline: none;
+}
+
+.dt-card--expanded {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-50);
+}
+
+.dt-card__body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dt-card__pair {
+  /*
+   * Grid 2 columnas: etiqueta fija (40%), valor flexible (60%).
+   * Más legible que flex en valores largos porque los valores
+   * siempre empiezan en la misma columna visual.
+   */
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.dt-card__term {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.dt-card__value {
+  margin: 0; /* reset del margin por defecto de <dd> */
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.dt-card__actions {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+/* ----------------------------------------------------------
+   BOTÓN ICONO (para acciones en tabla)
+   Diseño: círculo pequeño (32px), solo icono, sin texto.
+   Tooltip CSS puro: el texto del tooltip se lee del atributo
+   data-tooltip del WRAPPER, no del botón.
+
+   Ventaja frente a soluciones JS: sin dependencias, sin
+   rerenders, accesible vía title como fallback.
+
+   Uso en JSX:
+   <span className="tooltip-wrap" data-tooltip="Editar usuario">
+     <button className="btn-icon btn-icon-edit" aria-label="Editar">
+       <EditIcon />
+     </button>
+   </span>
+---------------------------------------------------------- */
+.btn-icon {
+  width: 2rem;          /* 32px — target táctil razonable en lista */
+  height: 2rem;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color var(--transition-fast),
+              color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-icon svg {
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;  /* El click no se "traga" el svg */
+}
+
+/* Variante editar: azul */
+.btn-icon-edit {
+  background-color: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+.btn-icon-edit:hover:not(:disabled) {
+  background-color: var(--color-primary-200);
+}
+
+/* Variante eliminar: rojo */
+.btn-icon-danger {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+.btn-icon-danger:hover:not(:disabled) {
+  background-color: #fecaca;
+}
+
+/* Variante neutral (activar/desactivar, ver resultados, etc.) */
+.btn-icon-neutral {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+.btn-icon-neutral:hover:not(:disabled) {
+  background-color: var(--color-gray-200);
+}
+
+/* Variante éxito: verde — acciones habilitadoras (abrir encuesta, etc.) */
+.btn-icon-success {
+  background-color: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+.btn-icon-success:hover:not(:disabled) {
+  background-color: #bbf7d0;
+}
+
+/* Variante advertencia: naranja/ámbar — acciones reversibles pero significativas (reiniciar, etc.) */
+.btn-icon-warning {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+.btn-icon-warning:hover:not(:disabled) {
+  background-color: #fde68a;
+}
+
+/* ----------------------------------------------------------
+   TOOLTIP CSS PURO
+   Funciona con cualquier elemento que tenga:
+   1. La clase .tooltip-wrap
+   2. El atributo data-tooltip="texto del tooltip"
+
+   El pseudo-elemento ::after genera el globo.
+   El pseudo-elemento ::before genera el triángulo.
+
+   NOTA IMPORTANTE: position: relative es imprescindible.
+   Sin él el tooltip se posiciona respecto al viewport.
+---------------------------------------------------------- */
+.tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Triángulo apuntando hacia abajo (bajo el tooltip) */
+.tooltip-wrap::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--color-gray-800);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  z-index: 11;
+}
+
+/* Globo del tooltip */
+.tooltip-wrap::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-gray-800);
+  color: var(--color-white);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-base);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  z-index: 10;
+}
+
+.tooltip-wrap:hover::before,
+.tooltip-wrap:hover::after {
+  opacity: 1;
+}
+
+/* ----------------------------------------------------------
+   PANEL DE FILTROS COLAPSABLE (SearchFiltersPanel)
+   Implementa el patrón "Filtros" con:
+   - Cabecera clickable con chevron animado
+   - Badge con número de filtros activos
+   - Contenido animado via max-height transition
+   - Borde bottom de color primario cuando hay filtros activos
+
+   La animación con max-height tiene una limitación conocida:
+   necesita un valor máximo grande (9999px). La alternativa
+   (JS con altura real) añade complejidad que no se justifica
+   en este contexto. Se documenta para la defensa.
+---------------------------------------------------------- */
+.filter-panel {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-4);
+  overflow: hidden;
+  /* Borde inferior de acento cuando hay filtros activos */
+  transition: border-color var(--transition-normal);
+}
+
+.filter-panel.has-active-filters {
+  border-color: var(--color-primary-200);
+  border-bottom: 2px solid var(--color-primary-600);
+}
+
+.filter-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition-fast);
+}
+
+.filter-panel-header:hover {
+  background-color: var(--color-gray-50);
+}
+
+.filter-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-panel-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Badge: círculo pequeño con número de filtros activos */
+.filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-600);
+  color: var(--text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+}
+
+.filter-panel-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Icono chevron con rotación animada */
+.filter-chevron {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--text-secondary);
+  transition: transform var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.filter-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Contenido colapsable */
+.filter-panel-body {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height var(--transition-slow) ease-in-out,
+              padding var(--transition-slow) ease-in-out,
+              opacity var(--transition-normal);
+  padding: 0 var(--space-4);
+  opacity: 0;
+}
+
+.filter-panel-body.open {
+  max-height: 9999px;  /* Ver nota en el comentario del bloque */
+  padding: var(--space-1) var(--space-4) var(--space-4);
+  opacity: 1;
+}
+
+
+/* ============================================================
+   TOAST SYSTEM
+   Feedback transiente para resultados de operaciones
+   (guardar, borrar, actualizar). No usar para errores de carga
+   persistentes — para eso está ErrorState.
+
+   Posicionamiento Mobile First:
+   · Base (móvil): centrado en la parte inferior, full-width con margen
+   · ≥ 480px: esquina inferior derecha, ancho fijo
+
+   z-index: var(--z-toast) = 1100, por encima de modales (1000).
+   ============================================================ */
+
+.toast-container {
+  position: fixed;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  pointer-events: none; /* El contenedor no intercepta clicks... */
+}
+
+@media (min-width: 480px) {
+  .toast-container {
+    left: auto;
+    right: var(--space-6);
+    width: 360px;
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  pointer-events: all; /* ...pero cada toast sí recibe clicks */
+  animation: toast-in var(--transition-normal) ease-out;
+}
+
+.toast--success {
+  background: var(--color-success-dark);
+  color: var(--color-white);
+}
+
+.toast--error {
+  background: var(--color-danger-dark);
+  color: var(--color-white);
+}
+
+.toast--warning {
+  background: var(--color-warning-dark);
+  color: var(--color-white);
+}
+
+.toast--info {
+  background: var(--color-primary-700);
+  color: var(--color-white);
+}
+
+.toast__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.toast__message {
+  flex: 1;
+  line-height: var(--line-height-normal);
+}
+
+.toast__close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  opacity: 0.7;
+  padding: 0 var(--space-1);
+  transition: opacity var(--transition-fast);
+}
+
+.toast__close:hover {
+  opacity: 1;
+}
+
+@keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(var(--space-4));
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+}
+
+.toast--removing {
+  animation: toast-out 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+/* ============================================================
+   ERROR STATE
+   Bloque persistente para errores de carga de datos.
+   Vive en el flujo normal de la página (no flotante).
+   ============================================================ */
+
+.error-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-danger-light);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger-dark);
+  font-size: var(--font-size-sm);
+}
+
+.error-state__icon {
+  flex-shrink: 0;
+}
+
+.error-state__message {
+  flex: 1;
+  line-height: var(--line-height-normal);
+}
+
+.error-state__retry {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-full);
+  color: var(--color-danger-dark);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-1) var(--space-3);
+  transition: background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.error-state__retry:hover {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+
+/* ============================================================
+   DASHBOARD
+   Layout y tarjetas de la página de inicio.
+
+   Las tarjetas del dashboard reutilizan la estructura dl/dt/dd
+   ya establecida en el card view del DataTable (.dt-card__*)
+   para consistencia semántica y visual.
+   ============================================================ */
+
+.dashboard-section {
+  margin-top: var(--space-6);
+}
+
+.dashboard-section:first-of-type {
+  margin-top: var(--space-4);
+}
+
+.dashboard-empty {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  padding: var(--space-2) 0;
+}
+
+/*
+ * Grid responsive sin breakpoints explícitos: auto-fill con
+ * minmax(280px, 1fr) crea automáticamente 1 columna en móvil,
+ * 2 en tablet y 3 en desktop cuando hay espacio suficiente.
+ * Es el patrón más robusto para grids de cards de contenido variable.
+ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.dashboard-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Variante para encuestas pendientes: borde izquierdo de aviso */
+.dashboard-card--warning {
+  border-left: 3px solid var(--color-warning);
+}
+
+/* Variante para eventos con asistencia confirmada: borde izquierdo verde */
+.dashboard-card--success {
+  border-left: 4px solid var(--color-success);
+}
+
+.dashboard-card__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-3) 0;
+  line-height: var(--line-height-tight);
+}
+
+.dashboard-card__body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-card__pair {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.dashboard-card__term {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.dashboard-card__value {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.dashboard-card__value--urgent {
+  color: var(--color-warning-dark);
+  font-weight: var(--font-weight-medium);
+}
+
+.dashboard-card__value--muted {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ============================================================
+   TAB NAVIGATION
+   Sistema de tabs para MyEventsPage y cualquier vista futura
+   que necesite navegación por pestañas.
+
+   Mobile First:
+   · Base: tabs en fila con scroll horizontal si no caben
+     (overflow-x: auto) — no se rompe en pantallas pequeñas
+   · ≥ 480px: los tabs tienen más padding y caben con comodidad
+
+   Decisión de diseño: borde inferior activo en lugar de fondo
+   activo. Es el patrón de tabs más extendido (Chrome DevTools,
+   GitHub, Linear) y funciona bien sobre cualquier fondo.
+   ============================================================ */
+
+.tab-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border-light);
+  margin-bottom: var(--space-3);
+  /* Scroll horizontal en móvil si los tabs no caben */
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox: oculta scrollbar pero mantiene funcionalidad */
+  -ms-overflow-style: none;
+}
+
+.tab-nav::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.tab-nav__item {
+  flex-shrink: 0; /* Los tabs no se encogen — se hace scroll si no caben */
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  /* El borde inferior del tab está sobre el borde del contenedor.
+     margin-bottom: -2px lo superpone para que el activo "rompa" la línea */
+  margin-bottom: -2px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+@media (min-width: 480px) {
+  .tab-nav__item {
+    padding: var(--space-2) var(--space-4);
+  }
+}
+
+.tab-nav__item:hover {
+  color: var(--text-primary);
+}
+
+.tab-nav__item--active {
+  color: var(--color-primary-600);
+  border-bottom-color: var(--color-primary-600);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Descripción contextual de la tab activa */
+.tab-description {
+  margin: 0 0 var(--space-4) 0;
+  padding: var(--space-3);
+  background: var(--color-primary-50);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-primary-500);
+  color: var(--color-primary-800);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+/* ============================================================
+   SPINNER
+   Indicador de carga genérico. Animación CSS pura — sin JS,
+   sin dependencias externas.
+
+   La técnica es un borde circular con un cuarto transparente
+   que rota continuamente. Es el patrón más ligero posible:
+   un solo elemento DOM, una sola regla @keyframes.
+   ============================================================ */
+
+.spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  color: var(--text-secondary);
+}
+
+.spinner-wrap--sm {
+  flex-direction: row;
+  padding: 0;
+  gap: var(--space-1);
+}
+
+.spinner {
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-light);
+  border-top-color: var(--color-primary-600);
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinner-wrap--md .spinner {
+  width: 32px;
+  height: 32px;
+}
+
+.spinner-wrap--sm .spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.spinner-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.spinner-wrap--sm .spinner-label {
+  font-size: var(--font-size-xs);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* ============================================================
+   VALIDACIÓN DE FORMULARIOS
+   Estilos para el estado de error en campos de formulario.
+
+   Patrón: el input recibe la clase .input--error cuando hay
+   un error de validación, y un <span class="field-error">
+   aparece debajo con el mensaje.
+
+   El borde rojo en el input da feedback visual inmediato.
+   El mensaje debajo da contexto sobre qué corregir.
+   Ambos desaparecen en cuanto el usuario empieza a escribir
+   (clearError en onChange).
+   ============================================================ */
+
+.input--error {
+  border-color: var(--color-danger) !important;
+  /* El !important es necesario porque input-full-width puede
+     tener especificidad mayor en algunos contextos */
+}
+
+.input--error:focus {
+  outline-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.field-error {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-danger-dark);
+  line-height: var(--line-height-normal);
+}
+
+/* ----------------------------------------------------------
+   CALENDARIO — EventCalendarView (.cal-)
+   Prefijo .cal- para todas las clases de la vista mensual.
+---------------------------------------------------------- */
+
+.cal-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+}
+
+/* El input de mes ocupa el espacio disponible entre los dos botones */
+.cal-nav input[type="month"] {
+  min-width: 0;
+  width: auto;
+  flex: 1;
+  text-align: center;
+  font-size: var(--font-size-sm);
+}
+
+/* Los botones no se encogen — el input cede el espacio */
+.cal-nav .button-secondary {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* En móvil reducir el padding de los botones para ganar espacio */
+@media (max-width: 480px) {
+  .cal-nav .button-secondary {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+}
+
+
+
+/* ----------------------------------------------------------
+   CALENDARIO - VISTA DE LISTA
+---------------------------------------------------------- */
+.cal-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cal-list__day {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.cal-list__day-header {
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-subtle);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.cal-list__day-header--today {
+  background: var(--color-primary-600);
+  color: white;
+}
+
+.cal-list__events {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border-light);
+}
+
+.cal-list__event {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-base);
+  align-items: start;
+}
+
+.cal-list__event-time {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-600);
+  white-space: nowrap;
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.cal-list__event-title {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.cal-list__event-location {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  grid-row: 2;
+  grid-column: 2;
+}
+
+.cal-list__empty {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  padding: var(--space-6) 0;
+  margin: 0;
 }

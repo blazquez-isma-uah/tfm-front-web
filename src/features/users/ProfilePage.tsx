@@ -2,8 +2,15 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { getMyProfile, updateMyProfile, updateMyPassword } from '../../api/usersApi'
 import type { UserDTO, MyProfileUpdateRequestDTO, PasswordUpdateRequestDTO } from '../../types/users'
-import { UserDetailCard } from '../../components/UserDetailCard'
+import { UserDetailCard } from './UserDetailCard'
 import '../../styles/common.css'
+
+/**
+ * ProfilePage — Perfil del usuario autenticado.
+ *
+ * Permite visualizar datos personales y editar el perfil o la contraseña
+ * con validaciones básicas en el cliente.
+ */
 
 type ViewMode = 'VIEW' | 'EDIT_PROFILE' | 'CHANGE_PASSWORD'
 
@@ -32,6 +39,7 @@ function ProfilePage() {
     const [confirmPassword, setConfirmPassword] = useState('')
     const [passwordError, setPasswordError] = useState<string | null>(null)
 
+    // ── Carga inicial del perfil ──────────────────────────────────
     useEffect(() => {
         if (!token) return
 
@@ -41,7 +49,6 @@ function ProfilePage() {
                 setError(null)
                 const profile = await getMyProfile(token)
                 setUser(profile)
-                // Inicializar formulario con datos actuales
                 setFormProfile({
                     firstName: profile.firstName || '',
                     lastName: profile.lastName || '',
@@ -62,6 +69,7 @@ function ProfilePage() {
         loadProfile()
     }, [token])
 
+    // ── Handlers ─────────────────────────────────────────────────
     const handleEditProfile = () => {
         setMode('EDIT_PROFILE')
         setSuccessMessage(null)
@@ -79,7 +87,6 @@ function ProfilePage() {
         setMode('VIEW')
         setPasswordError(null)
         setSuccessMessage(null)
-        // Resetear formulario
         if (user) {
             setFormProfile({
                 firstName: user.firstName || '',
@@ -117,12 +124,10 @@ function ProfilePage() {
         e.preventDefault()
         if (!token) return
 
-        // Validaciones
         if (newPassword.length < 6) {
             setPasswordError('La contraseña debe tener al menos 6 caracteres')
             return
         }
-
         if (newPassword !== confirmPassword) {
             setPasswordError('Las contraseñas no coinciden')
             return
@@ -145,43 +150,48 @@ function ProfilePage() {
         }
     }
 
+    // ── Estados de carga / error crítico ─────────────────────────
     if (loading) {
-        return <div><p>Cargando perfil...</p></div>
+        return (
+            <div className="page-container">
+                <p>Cargando perfil...</p>
+            </div>
+        )
     }
 
     if (error && !user) {
-        return <div><p className="error-message">{error}</p></div>
+        return (
+            <div className="page-container">
+                <p className="error-message">{error}</p>
+            </div>
+        )
     }
 
+    // ── Render ───────────────────────────────────────────────────
     return (
-        <div>
-            <h1>Mi Perfil</h1>
+        <div className="page-container">
+            <h1 className="page-title">Mi Perfil</h1>
 
+            {/* Mensaje de éxito */}
             {successMessage && (
-                <div style={{ 
-                    padding: '0.75rem', 
-                    marginBottom: '1rem', 
-                    backgroundColor: '#d4edda', 
-                    color: '#155724',
-                    borderRadius: '6px',
-                    border: '1px solid #c3e6cb'
-                }}>
+                <div className="success-message">
                     ✓ {successMessage}
                 </div>
             )}
 
+            {/* Error no crítico (usuario ya cargado) */}
             {error && (
                 <p className="error-message">{error}</p>
             )}
 
-            {/* Vista de detalle */}
+            {/* ── Vista de detalle ── */}
             {mode === 'VIEW' && user && (
                 <>
-                    <UserDetailCard 
+                    <UserDetailCard
                         user={user}
                         showButtons={false}
                     />
-                    <div className="button-row-1rem" style={{ marginTop: '1rem' }}>
+                    <div className="button-row-1rem">
                         <button
                             type="button"
                             className="button-primary"
@@ -200,12 +210,12 @@ function ProfilePage() {
                 </>
             )}
 
-            {/* Formulario de edición de perfil */}
+            {/* ── Formulario de edición de perfil ── */}
             {mode === 'EDIT_PROFILE' && (
                 <form onSubmit={handleSaveProfile} className="form-card">
                     <h2 className="section-title">Editar perfil</h2>
-                    
-                    <div className="form-grid" style={{ marginBottom: '0.75rem' }}>
+
+                    <div className="form-grid">
                         <div className="form-field">
                             <label className="label-text">Nombre</label>
                             <input
@@ -233,9 +243,6 @@ function ProfilePage() {
                                 className="input-full-width"
                             />
                         </div>
-                    </div>
-
-                    <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
                         <div className="form-field">
                             <label className="label-text">Teléfono</label>
                             <input
@@ -254,34 +261,28 @@ function ProfilePage() {
                                 className="input-full-width"
                             />
                         </div>
-                    </div>
-
-                    <div className="form-field" style={{ marginBottom: '0.75rem' }}>
-                        <label className="label-text">URL foto de perfil</label>
-                        <input
-                            type="url"
-                            value={formProfile.profilePictureUrl}
-                            onChange={(e) => setFormProfile({ ...formProfile, profilePictureUrl: e.target.value })}
-                            className="input-full-width"
-                        />
-                    </div>
-
-                    <div className="form-field">
-                        <label className="label-text">Notas</label>
-                        <textarea
-                            value={formProfile.notes}
-                            onChange={(e) => setFormProfile({ ...formProfile, notes: e.target.value })}
-                            rows={4}
-                            className="input-full-width"
-                        />
+                        <div className="form-field grid-full-width">
+                            <label className="label-text">URL foto de perfil</label>
+                            <input
+                                type="url"
+                                value={formProfile.profilePictureUrl}
+                                onChange={(e) => setFormProfile({ ...formProfile, profilePictureUrl: e.target.value })}
+                                className="input-full-width"
+                            />
+                        </div>
+                        <div className="form-field grid-full-width">
+                            <label className="label-text">Notas</label>
+                            <textarea
+                                value={formProfile.notes}
+                                onChange={(e) => setFormProfile({ ...formProfile, notes: e.target.value })}
+                                rows={4}
+                                className="textarea-base"
+                            />
+                        </div>
                     </div>
 
                     <div className="button-row-1rem">
-                        <button
-                            type="submit"
-                            className="button-primary"
-                            disabled={saving}
-                        >
+                        <button type="submit" className="button-primary" disabled={saving}>
                             {saving ? 'Guardando...' : 'Guardar cambios'}
                         </button>
                         <button
@@ -296,46 +297,43 @@ function ProfilePage() {
                 </form>
             )}
 
-            {/* Formulario de cambio de contraseña */}
+            {/* ── Formulario de cambio de contraseña ── */}
             {mode === 'CHANGE_PASSWORD' && (
                 <form onSubmit={handleSavePassword} className="form-card">
                     <h2 className="section-title">Cambiar contraseña</h2>
-                    
+
                     {passwordError && (
                         <p className="error-message">{passwordError}</p>
                     )}
 
-                    <div className="form-field" style={{ marginBottom: '0.75rem' }}>
-                        <label className="label-text">Nueva contraseña</label>
-                        <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            required
-                            minLength={6}
-                            className="input-full-width"
-                        />
-                        <small style={{ color: '#666' }}>Mínimo 6 caracteres</small>
-                    </div>
-
-                    <div className="form-field">
-                        <label className="label-text">Confirmar nueva contraseña</label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                            minLength={6}
-                            className="input-full-width"
-                        />
+                    <div className="form-grid">
+                        <div className="form-field">
+                            <label className="label-text">Nueva contraseña</label>
+                            <input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                                minLength={6}
+                                className="input-full-width"
+                            />
+                            <small className="field-hint">Mínimo 6 caracteres</small>
+                        </div>
+                        <div className="form-field">
+                            <label className="label-text">Confirmar nueva contraseña</label>
+                            <input
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                minLength={6}
+                                className="input-full-width"
+                            />
+                        </div>
                     </div>
 
                     <div className="button-row-1rem">
-                        <button
-                            type="submit"
-                            className="button-primary"
-                            disabled={saving}
-                        >
+                        <button type="submit" className="button-primary" disabled={saving}>
                             {saving ? 'Guardando...' : 'Cambiar contraseña'}
                         </button>
                         <button

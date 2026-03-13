@@ -1,12 +1,23 @@
+/**
+ * PaginationBar — Barra de paginación reutilizable con diseño responsive.
+ * 
+ * Mobile First: en móvil se apila verticalmente, en tablet+ en fila horizontal.
+ * Los botones usan las clases del design system para consistencia.
+ * 
+ * @param currentCount Opcional: número de elementos en la página actual
+ */
+
+import './PaginationBar.css'
+
 type PaginationBarProps = {
     page: number
     totalPages: number
     pageSize: number
-    currentCount: number         // elementos en la página actual
-    totalElements: number        // total devuelto por el backend
+    currentCount?: number        // Opcional: elementos en la página actual
+    totalElements: number
     onPageChange: (newPage: number) => void
     onPageSizeChange?: (newSize: number) => void
-    pageSizeOptions?: number[]   // ej: [5, 10, 20, 50]
+    pageSizeOptions?: number[]
 }
 
 export function PaginationBar({
@@ -19,80 +30,74 @@ export function PaginationBar({
     pageSizeOptions = [5, 10, 20, 50],
 }: PaginationBarProps) {
 
-    const handlePrev = () => {
-        onPageChange(Math.max(0, page - 1))
-    }
-
+    // Handlers de navegación: aseguran que no salgamos de los límites (0 a totalPages-1)
+    const handlePrev = () => onPageChange(Math.max(0, page - 1))
     const handleNext = () => {
-        if (totalPages === 0) return
-        onPageChange(Math.min(totalPages - 1, page + 1))
+        if (totalPages > 0) onPageChange(Math.min(totalPages - 1, page + 1))
     }
 
-    const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        if (!onPageSizeChange) return
+    // Cambia el tamaño de página y notifica al padre
+    const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newSize = Number(e.target.value)
-        if (!Number.isNaN(newSize)) {
+        if (onPageSizeChange && !Number.isNaN(newSize)) {
             onPageSizeChange(newSize)
         }
     }
 
-    // Por si quieres mostrar el rango: 11–20 de 53, etc. (opcional)
+    // Cálculo del rango visible (ej: "11–20 de 150")
     const from = totalElements === 0 ? 0 : page * pageSize + 1
-    const to = totalElements === 0 ? 0 : Math.min(totalElements, (page + 1) * pageSize)
+    const to   = totalElements === 0 ? 0 : Math.min(totalElements, (page + 1) * pageSize)
+
+    // Deshabilitamos botones en los extremos
+    const isFirstPage = page === 0
+    const isLastPage  = totalPages === 0 || page >= totalPages - 1
 
     return (
-        <div
-            style={{
-                marginTop: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-            }}
-        >
-            {/* Izquierda: paginación */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <button disabled={page === 0} onClick={handlePrev}>
-                    Anterior
+        <div className="pagination-bar">
+
+            <div className="pagination-nav">
+                <button
+                    className="btn btn-secondary pagination-btn"
+                    onClick={handlePrev}
+                    disabled={isFirstPage}
+                    aria-label="Ir a la página anterior"
+                >
+                    ← Anterior
                 </button>
-                <span style={{ fontSize: '0.9rem' }}>
+
+                <span className="pagination-info">
                     Página {page + 1} de {totalPages || 1}
                 </span>
+
                 <button
-                    disabled={totalPages === 0 || page >= totalPages - 1}
+                    className="btn btn-secondary pagination-btn"
                     onClick={handleNext}
+                    disabled={isLastPage}
+                    aria-label="Ir a la página siguiente"
                 >
-                    Siguiente
+                    Siguiente →
                 </button>
             </div>
 
-            {/* Derecha: info + tamaño de página */}
-            <div
-                style={{
-                    marginLeft: 'auto',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    fontSize: '0.85rem',
-                }}
-            >
-                {/* Si quieres mostrar el rango: */}
-                {/* <span>{from}–{to} de {totalElements}</span> */}
-                {/* Si prefieres "N de total" simple: */}
-                <span>
+            <div className="pagination-meta">
+                <span className="pagination-range">
                     {from}–{to} de {totalElements}
                 </span>
 
                 {onPageSizeChange && (
-                    <>
-                        {/* <span>Elementos por página:</span> */}
-                        <select value={pageSize} onChange={handlePageSizeChange}>
-                            {pageSizeOptions.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
+                    <label className="pagination-size-label">
+                        <span className="pagination-size-text">Por página:</span>
+                        <select
+                            className="select-base pagination-size-select"
+                            value={pageSize}
+                            onChange={handleSizeChange}
+                            aria-label="Elementos por página"
+                        >
+                            {pageSizeOptions.map(opt => (
+                                <option key={opt} value={opt}>{opt}</option>
                             ))}
                         </select>
-                    </>
+                    </label>
                 )}
             </div>
         </div>

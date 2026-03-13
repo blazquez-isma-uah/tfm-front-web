@@ -2,468 +2,307 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { extractErrorMessage } from '../../utils/errorHandler'
 import {
-    searchUsersPage,
-    getUserById,
-    updateUser,
-    enableUser,
-    disableUser,
-    deleteUser,
-    type UserUpdatePayload,
-    createUser,
-    type UserCreatePayload,
-    setUserRoles,
+    searchUsersPage, getUserById, updateUser,
+    enableUser, disableUser, deleteUser,
+    type UserUpdatePayload, createUser,
+    type UserCreatePayload, setUserRoles,
 } from '../../api/usersApi'
 import { getAllInstruments, setUserInstruments } from '../../api/instrumentsApi'
-import type { InstrumentDTO } from '../../types/instruments'
 import { getAllRoles } from '../../api/rolesApi'
 import type { UserDTO } from '../../types/users'
 import type { KeycloakRoleResponse } from '../../types/roles'
-import { PaginationBar } from '../../components/PaginationBar'
-import { DataTable, type SortState } from '../../components/DataTable'
-import { UserDetailCard } from '../../components/UserDetailCard'
-import { ConfirmDialog } from '../../components/ConfirmDialog'
-import {
-    groupInstrumentsByInitial,
-    type InstrumentGroup,
-} from '../../utils/instrumentUtils'
+import type { InstrumentGroup } from '../../utils/instrumentUtils'
+import { groupInstrumentsByInitial } from '../../utils/instrumentUtils'
 import { formatDate } from '../../utils/date'
+import { PaginationBar } from '../../components/PaginationBar'
+import { DataTable } from '../../components/DataTable'
+import { UserDetailCard } from './UserDetailCard'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { SearchFiltersPanel } from '../../components/SearchFiltersPanel'
+import { UserEditForm } from './UserEditForm'
+import { UserCreateForm } from './UserCreateForm'
+import { UserRolesPanel } from './UserRolesPanel'
+import { UserInstrumentsPanel } from './UserInstrumentsPanel'
+import { EditIcon, TrashIcon, CheckIcon, CancelIcon } from '../../components/Icons'
+import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
+import { useToast } from '../../context/ToastContext'
+import { ErrorState } from '../../components/ErrorState'
+import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
 
-type ViewMode = 'LIST' | 'DETAIL' | 'EDIT' | 'CREATE'
+/**
+ * UsersPage — Orquesta el CRUD completo de usuarios (solo ADMIN).
+ *
+ * Centraliza todo el estado y los handlers de API; los subcomponentes son
+ * presentacionales y solo reciben datos y callbacks.
+ *
+ * Patrón de doble estado `filter*` y `search*`:
+ * - `filter*` refleja lo que el usuario escribe en el formulario.
+ * - `search*` son los filtros efectivos que disparan la búsqueda.
+ * El badge de filtros activos cuenta `search*` para mostrar lo realmente aplicado,
+ * no lo que todavía está escrito pero sin enviar.
+ */
 
-type SortableField = 'username' | 'email' | 'active' | 'bandJoinDate'
+type ViewMode = 'LIST' | 'EDIT' | 'CREATE'
+type SortableField = 'username' | 'email' | 'active' | 'bandJoinDate' | 'firstName' | 'lastName'
 
 function UsersPage() {
     const { token, hasRole } = useAuth()
     const isAdmin = hasRole('ADMIN')
+    const { showToast } = useToast()
 
-    const [users, setUsers] = useState<UserDTO[]>([])
+    const [users, setUsers]     = useState<UserDTO[]>([])
     const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const [error, setError]     = useState<string | null>(null)
+    const [saving, setSaving]   = useState(false)
 
-    const [page, setPage] = useState(0)
-    const [size, setSize] = useState(10)
-    const [totalPages, setTotalPages] = useState(0)
-    const [totalElements, setTotalElements] = useState(0)
+    const pagination   = usePagination({ defaultSize: 10 })
+    const sorting      = useSorting<SortableField>()
+    const confirm      = useConfirmDialog()
+    const rowExpansion = useRowExpansion<number>()
 
-    const [mode, setMode] = useState<ViewMode>('LIST')
+    const [mode, setMode]                 = useState<ViewMode>('LIST')
     const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null)
-    const [saving, setSaving] = useState(false)
-    const [expandedUserId, setExpandedUserId] = useState<number | null>(null)
-    const [isClosing, setIsClosing] = useState(false)
 
-    // Gestión de instrumentos
-    const [allGroupedInstruments, setAllGroupedInstruments] = useState<
-        InstrumentGroup[]
-    >([])
-    const [instrumentsLoading, setInstrumentsLoading] = useState(false)
-    const [managingInstruments, setManagingInstruments] = useState(false)
-    const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<number[]>(
-        [],
-    )
+    const [allGroupedInstruments, setAllGroupedInstruments] = useState<InstrumentGroup[]>([])
+    const [instrumentsLoading, setInstrumentsLoading]       = useState(false)
+    const [managingInstruments, setManagingInstruments]     = useState(false)
+    const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<number[]>([])
+    const [managingRoles, setManagingRoles]                 = useState(false)
+    const [selectedRoleNames, setSelectedRoleNames]         = useState<string[]>([])
+    const [roles, setRoles]                                 = useState<KeycloakRoleResponse[]>([])
+    const [rolesLoading, setRolesLoading]                   = useState(false)
 
-    // Gestión de roles
-    const [managingRoles, setManagingRoles] = useState(false)
-    const [selectedRoleNames, setSelectedRoleNames] = useState<string[]>([])
-
-    // Modal de confirmación
-    const [confirmDialog, setConfirmDialog] = useState<{
-        isOpen: boolean
-        title: string
-        message: string
-        variant: 'danger' | 'warning' | 'info'
-        onConfirm: () => void
-    }>({
-        isOpen: false,
-        title: '',
-        message: '',
-        variant: 'danger',
-        onConfirm: () => {},
-    })
-
-    // filtros visibles
-    const [filterUsername, setFilterUsername] = useState('')
-    const [filterFirstName, setFilterFirstName] = useState('')
-    const [filterLastName, setFilterLastName] = useState('')
-    const [filterSecondLastName, setFilterSecondLastName] = useState('')
-    const [filterEmail, setFilterEmail] = useState('')
-    const [filterActive, setFilterActive] = useState<'all' | 'true' | 'false'>(
-        'all',
-    )
-    const [filterRole, setFilterRole] = useState('')
-    const [filterBirthDateFrom, setFilterBirthDateFrom] = useState('')
-    const [filterBirthDateTo, setFilterBirthDateTo] = useState('')
+    // Filtros visibles (UI)
+    const [filterUsername, setFilterUsername]                 = useState('')
+    const [filterFirstName, setFilterFirstName]               = useState('')
+    const [filterLastName, setFilterLastName]                 = useState('')
+    const [filterSecondLastName, setFilterSecondLastName]     = useState('')
+    const [filterEmail, setFilterEmail]                       = useState('')
+    const [filterActive, setFilterActive]                     = useState<'all' | 'true' | 'false'>('all')
+    const [filterRole, setFilterRole]                         = useState('')
+    const [filterBirthDateFrom, setFilterBirthDateFrom]       = useState('')
+    const [filterBirthDateTo, setFilterBirthDateTo]           = useState('')
     const [filterBandJoinDateFrom, setFilterBandJoinDateFrom] = useState('')
-    const [filterBandJoinDateTo, setFilterBandJoinDateTo] = useState('')
+    const [filterBandJoinDateTo, setFilterBandJoinDateTo]     = useState('')
 
-    // filtros efectivos
-    const [searchUsername, setSearchUsername] = useState('')
-    const [searchFirstName, setSearchFirstName] = useState('')
-    const [searchLastName, setSearchLastName] = useState('')
-    const [searchSecondLastName, setSearchSecondLastName] = useState('')
-    const [searchEmail, setSearchEmail] = useState('')
-    const [searchActive, setSearchActive] = useState<boolean | undefined>(
-        undefined,
-    )
-    const [searchRoleName, setSearchRoleName] = useState<string | undefined>(
-        undefined,
-    )
-    const [searchBirthDateFrom, setSearchBirthDateFrom] = useState<string | undefined>(undefined)
-    const [searchBirthDateTo, setSearchBirthDateTo] = useState<string | undefined>(undefined)
-    const [searchBandJoinDateFrom, setSearchBandJoinDateFrom] = useState<string | undefined>(undefined)
-    const [searchBandJoinDateTo, setSearchBandJoinDateTo] = useState<string | undefined>(undefined)
+    // Filtros efectivos (los que disparan la búsqueda)
+    const [searchUsername, setSearchUsername]                   = useState('')
+    const [searchFirstName, setSearchFirstName]                 = useState('')
+    const [searchLastName, setSearchLastName]                   = useState('')
+    const [searchSecondLastName, setSearchSecondLastName]       = useState('')
+    const [searchEmail, setSearchEmail]                         = useState('')
+    const [searchActive, setSearchActive]                       = useState<boolean | undefined>(undefined)
+    const [searchRoleName, setSearchRoleName]                   = useState<string | undefined>(undefined)
+    const [searchBirthDateFrom, setSearchBirthDateFrom]         = useState<string | undefined>(undefined)
+    const [searchBirthDateTo, setSearchBirthDateTo]             = useState<string | undefined>(undefined)
+    const [searchBandJoinDateFrom, setSearchBandJoinDateFrom]   = useState<string | undefined>(undefined)
+    const [searchBandJoinDateTo, setSearchBandJoinDateTo]       = useState<string | undefined>(undefined)
+    const [searchTrigger, setSearchTrigger]                     = useState(0)
 
-    const [searchTrigger, setSearchTrigger] = useState(0)
-
-    // ordenación
-    const [sortField, setSortField] = useState<SortableField | null>(null)
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-
-    const sortState: SortState<SortableField> = {
-        field: sortField,
-        direction: sortDirection,
-    }
-
-    // roles disponibles
-    const [roles, setRoles] = useState<KeycloakRoleResponse[]>([])
-    const [rolesLoading, setRolesLoading] = useState(false)
-
-    // formulario creación
     const [createPayload, setCreatePayload] = useState<UserCreatePayload>({
-        email: '',
-        username: '',
-        password: '',
-        firstName: '',
-        lastName: '',
-        secondLastName: '',
-        birthDate: '',
-        bandJoinDate: '',
-        systemSignupDate: '',
-        phone: '',
-        notes: '',
-        profilePictureUrl: '',
-        instrumentIds: [],
-        roles: [],
+        email: '', username: '', password: '',
+        firstName: '', lastName: '', secondLastName: '',
+        birthDate: '', bandJoinDate: '', systemSignupDate: '',
+        phone: '', notes: '', profilePictureUrl: '',
+        instrumentIds: [], roles: [],
     })
-
-
-    // formulario edición
     const [editPayload, setEditPayload] = useState<UserUpdatePayload>({
-        email: '',
-        firstName: '',
-        lastName: '',
-        secondLastName: '',
-        birthDate: '',
-        bandJoinDate: '',
-        phone: '',
-        notes: '',
-        profilePictureUrl: '',
+        email: '', firstName: '', lastName: '', secondLastName: '',
+        birthDate: '', bandJoinDate: '', phone: '', notes: '', profilePictureUrl: '',
     })
 
-    // columnas tabla
+    // Badge: cuenta los filtros efectivos (search*), no los del formulario (filter*).
+    // Así el indicador refleja lo aplicado en la búsqueda, no lo pendiente de enviar.
+    const activeFiltersCount =
+        [searchUsername, searchFirstName, searchLastName, searchSecondLastName, searchEmail].filter(Boolean).length
+        + (searchActive !== undefined ? 1 : 0)
+        + (searchRoleName ? 1 : 0)
+        + (searchBirthDateFrom || searchBirthDateTo ? 1 : 0)
+        + (searchBandJoinDateFrom || searchBandJoinDateTo ? 1 : 0)
+
+    // Columnas. Los botones de acción usan btn-icon + tooltip-wrap.
+    // e.stopPropagation() es imprescindible: sin él el click en el botón
+    // también dispara onRowClick del DataTable, expandiendo la fila.
     const userColumns = [
+        { key: 'username',  header: 'Username',     sortable: true,  sortField: 'username'    as SortableField, width: '20%' },
         {
-            key: 'username',
-            header: 'Username',
-            sortable: true,
-            sortField: 'username' as SortableField,
-            width: '20%',
+            key: 'firstName', header: 'Nombre', sortable: true,
+            sortField: 'firstName' as SortableField, width: '20%',
+            render: (u: UserDTO) => `${u.firstName}`,
         },
         {
-            key: 'email',
-            header: 'Email',
-            sortable: true,
-            sortField: 'email' as SortableField,
-            width: '30%',
+            key: 'lastName', header: 'Apellidos', sortable: true,
+            sortField: 'lastName' as SortableField, width: '23%',
+            render: (u: UserDTO) => u.secondLastName ? `${u.lastName} ${u.secondLastName}` : u.lastName,
         },
         {
-            key: 'active',
-            header: 'Activo',
-            sortable: true,
-            sortField: 'active' as SortableField,
-            width: '10%',
-            render: (u: UserDTO) => (u.active ? 'Sí' : 'No'),
-        },
-        {
-            key: 'bandJoinDate',
-            header: 'Fecha entrada',
-            sortable: true,
-            sortField: 'bandJoinDate' as SortableField,
-            width: '15%',
+            key: 'bandJoinDate', header: 'Alta en banda', sortable: true,
+            sortField: 'bandJoinDate' as SortableField, width: '20%',
             render: (u: UserDTO) => formatDate(u.bandJoinDate),
         },
         {
-            key: 'actions',
-            header: 'Acciones',
-            sortable: false,
-            width: '25%',
+            key: 'actions', header: 'Acciones', sortable: false, width: '17%',
             render: (u: UserDTO) => (
                 <div className="actions-container">
-                    <button
-                        type="button"
-                        className="button-secondary"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleEditUser(u)
-                        }}
-                    >
-                        Editar
-                    </button>
-                    <button
-                        type="button"
-                        className="button-danger"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteUser(u)
-                        }}
-                    >
-                        Eliminar
-                    </button>
+                    <span className="tooltip-wrap" data-tooltip="Editar">
+                        <button type="button" className="btn-icon btn-icon-edit"
+                            aria-label="Editar usuario"
+                            onClick={e => { e.stopPropagation(); handleEditUser(u) }}>
+                            <EditIcon />
+                        </button>
+                    </span>
+                    <span className="tooltip-wrap" data-tooltip={u.active ? 'Desactivar' : 'Activar'}>
+                        <button type="button"
+                            className={`btn-icon ${u.active ? 'btn-icon-neutral' : 'btn-icon-success'}`}
+                            aria-label={u.active ? 'Desactivar usuario' : 'Activar usuario'}
+                            onClick={e => { e.stopPropagation(); handleToggleActive(u) }}>
+                            {u.active ? <CancelIcon /> : <CheckIcon />}
+                        </button>
+                    </span>
+                    <span className="tooltip-wrap" data-tooltip="Eliminar">
+                        <button type="button" className="btn-icon btn-icon-danger"
+                            aria-label="Eliminar usuario"
+                            onClick={e => { e.stopPropagation(); handleDeleteUser(u) }}>
+                            <TrashIcon />
+                        </button>
+                    </span>
                 </div>
             ),
         },
     ]
 
-    // ===== efectos =====
+    // ── Effects ───────────────────────────────────────────────────────────────
 
-    // roles
+    // Cargamos la lista de roles al montar y cuando cambian token/isAdmin.
+    // Si no hay autorización, salimos sin hacer llamadas a la API.
     useEffect(() => {
         if (!token || !isAdmin) return
-
-        const loadRoles = async () => {
+        let cancelled = false
+        const load = async () => {
             try {
                 setRolesLoading(true)
-                const data = await getAllRoles(token)
-                setRoles(data)
+                const result = await getAllRoles(token)
+                if (!cancelled) setRoles(result)
             } catch (e) {
-                console.error('Error loading roles', e)
-                setError(extractErrorMessage(e, 'Error cargando roles'))
-            } finally {
-                setRolesLoading(false)
-            }
+                if (!cancelled) console.error('Error cargando roles:', e)
+            } finally { if (!cancelled) setRolesLoading(false) }
         }
-        loadRoles()
+        load()
+        return () => { cancelled = true }
     }, [token, isAdmin])
 
-    // lista usuarios
+    // Cargamos usuarios cada vez que cambia paginación, ordenación o search*.
+    // Estas dependencias son las que realmente alteran el resultado del listado.
     useEffect(() => {
         if (!token || !isAdmin) return
-
         const load = async () => {
-            setLoading(true)
-            setError(null)
+            setLoading(true); setError(null)
             try {
-                const sort =
-                    sortField != null ? [`${sortField},${sortDirection}`] : undefined
-                const data = await searchUsersPage(
-                    {
-                        page,
-                        size,
-                        username: searchUsername || undefined,
-                        firstName: searchFirstName || undefined,
-                        lastName: searchLastName || undefined,
-                        secondLastName: searchSecondLastName || undefined,
-                        email: searchEmail || undefined,
-                        active: searchActive,
-                        roleName: searchRoleName,
-                        birthDateFrom: searchBirthDateFrom,
-                        birthDateTo: searchBirthDateTo,
-                        bandJoinDateFrom: searchBandJoinDateFrom,
-                        bandJoinDateTo: searchBandJoinDateTo,
-                        sort,
-                    },
-                    token,
-                )
+                const sort = sorting.field != null ? [`${sorting.field},${sorting.direction}`] : undefined
+                const data = await searchUsersPage({
+                    page: pagination.page, size: pagination.size,
+                    username: searchUsername || undefined,
+                    firstName: searchFirstName || undefined,
+                    lastName: searchLastName || undefined,
+                    secondLastName: searchSecondLastName || undefined,
+                    email: searchEmail || undefined,
+                    active: searchActive, roleName: searchRoleName,
+                    birthDateFrom: searchBirthDateFrom, birthDateTo: searchBirthDateTo,
+                    bandJoinDateFrom: searchBandJoinDateFrom, bandJoinDateTo: searchBandJoinDateTo,
+                    sort,
+                }, token)
                 setUsers(data.content ?? [])
-                setTotalPages(data.totalPages ?? 1)
-                setTotalElements(data.totalElements ?? 0)
+                pagination.setTotals(data.totalPages ?? 1, data.totalElements ?? 0)
             } catch (e: any) {
-                console.error('Error en getUsersPage (detallado):', e)
+                // Capturamos errores de red, validación o concurrencia y mostramos
+                // un mensaje consistente en la UI sin romper el render.
                 setError(extractErrorMessage(e, 'Error cargando usuarios'))
-            } finally {
-                setLoading(false)
-            }
+            } finally { setLoading(false) }
         }
-
         load()
     }, [
-        token,
-        isAdmin,
-        page,
-        size,
-        searchUsername,
-        searchFirstName,
-        searchLastName,
-        searchSecondLastName,
-        searchEmail,
-        searchActive,
-        searchRoleName,
-        searchBirthDateFrom,
-        searchBirthDateTo,
-        searchBandJoinDateFrom,
-        searchBandJoinDateTo,
-        sortField,
-        sortDirection,
-        searchTrigger,
+        token, isAdmin, pagination.page, pagination.size,
+        searchUsername, searchFirstName, searchLastName, searchSecondLastName,
+        searchEmail, searchActive, searchRoleName,
+        searchBirthDateFrom, searchBirthDateTo,
+        searchBandJoinDateFrom, searchBandJoinDateTo,
+        sorting.field, sorting.direction, searchTrigger,
     ])
 
-    if (!isAdmin) {
-        return (
-            <div className="page-container">
-                <h1 className="page-title">Gestión de usuarios</h1>
-                <p>No tienes permisos para ver esta sección.</p>
-            </div>
-        )
-    }
-
-    // ===== helpers UI =====
+    // ── Handlers de búsqueda ──────────────────────────────────────────────────
 
     const handleResetFilters = () => {
-        setFilterUsername('')
-        setFilterFirstName('')
-        setFilterLastName('')
-        setFilterSecondLastName('')
-        setFilterEmail('')
-        setFilterActive('all')
-        setFilterRole('')
-        setFilterBirthDateFrom('')
-        setFilterBirthDateTo('')
-        setFilterBandJoinDateFrom('')
-        setFilterBandJoinDateTo('')
-        
-        setSearchUsername('')
-        setSearchFirstName('')
-        setSearchLastName('')
-        setSearchSecondLastName('')
-        setSearchEmail('')
-        setSearchActive(undefined)
-        setSearchRoleName(undefined)
-        setSearchBirthDateFrom(undefined)
-        setSearchBirthDateTo(undefined)
-        setSearchBandJoinDateFrom(undefined)
+        // Limpiamos filtros visibles y filtros efectivos para volver al estado base.
+        setFilterUsername(''); setFilterFirstName(''); setFilterLastName('')
+        setFilterSecondLastName(''); setFilterEmail(''); setFilterActive('all')
+        setFilterRole(''); setFilterBirthDateFrom(''); setFilterBirthDateTo('')
+        setFilterBandJoinDateFrom(''); setFilterBandJoinDateTo('')
+        setSearchUsername(''); setSearchFirstName(''); setSearchLastName('')
+        setSearchSecondLastName(''); setSearchEmail(''); setSearchActive(undefined)
+        setSearchRoleName(undefined); setSearchBirthDateFrom(undefined)
+        setSearchBirthDateTo(undefined); setSearchBandJoinDateFrom(undefined)
         setSearchBandJoinDateTo(undefined)
-        
-        setPage(0)
-        setMode('LIST')
-        setSelectedUser(null)
-        setSearchTrigger((prev) => prev + 1)
+        // Reseteamos a la primera página para evitar quedarnos en una página vacía.
+        pagination.goToPage(0); setMode('LIST'); setSelectedUser(null)
+        // Forzamos recarga aunque los filtros ya estuvieran vacíos.
+        setSearchTrigger(prev => prev + 1)
     }
 
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault()
-        setPage(0)
-
-        setSearchUsername(filterUsername.trim())
-        setSearchFirstName(filterFirstName.trim())
-        setSearchLastName(filterLastName.trim())
-        setSearchSecondLastName(filterSecondLastName.trim())
+        // Reseteamos a la primera página para evitar mostrar resultados incompletos.
+        pagination.goToPage(0)
+        // Copiamos los valores del formulario de filtros a los estados de búsqueda
+        // efectiva. Este paso es el que realmente dispara la recarga de datos.
+        setSearchUsername(filterUsername.trim()); setSearchFirstName(filterFirstName.trim())
+        setSearchLastName(filterLastName.trim()); setSearchSecondLastName(filterSecondLastName.trim())
         setSearchEmail(filterEmail.trim())
-
-        if (filterActive === 'all') {
-            setSearchActive(undefined)
-        } else if (filterActive === 'true') {
-            setSearchActive(true)
-        } else {
-            setSearchActive(false)
-        }
-
-        const roleTrim = filterRole.trim()
-        setSearchRoleName(roleTrim === '' ? undefined : roleTrim)
-
+        setSearchActive(filterActive === 'all' ? undefined : filterActive === 'true')
+        setSearchRoleName(filterRole.trim() || undefined)
         setSearchBirthDateFrom(filterBirthDateFrom || undefined)
         setSearchBirthDateTo(filterBirthDateTo || undefined)
         setSearchBandJoinDateFrom(filterBandJoinDateFrom || undefined)
         setSearchBandJoinDateTo(filterBandJoinDateTo || undefined)
-
-        setMode('LIST')
-        setSelectedUser(null)
-        setSearchTrigger((prev) => prev + 1)
+        setMode('LIST'); setSelectedUser(null)
+        setSearchTrigger(prev => prev + 1)
     }
 
     const handleSort = (field: SortableField) => {
-        setPage(0)
-        if (sortField === field) {
-            setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-        } else {
-            setSortField(field)
-            setSortDirection('asc')
-        }
-    }
-
-    const handlePageChange = (newPage: number) => setPage(newPage)
-    const handlePageSizeChange = (newSize: number) => {
-        setSize(newSize)
-        setPage(0)
+        // Reseteamos a la primera página porque la ordenación cambia el conjunto visible.
+        pagination.goToPage(0); sorting.handleSortChange(field)
     }
 
     const handleViewDetails = (user: UserDTO) => {
-        if (expandedUserId === user.id) {
-            setIsClosing(true)
-            setTimeout(() => {
-                setExpandedUserId(null)
-                setSelectedUser(null)
-                setIsClosing(false)
-            }, 250)
+        if (rowExpansion.expandedId === user.id) {
+            rowExpansion.close()
+            setTimeout(() => setSelectedUser(null), 250)
         } else {
-            setExpandedUserId(user.id ?? null)
+            rowExpansion.toggle(user.id ?? null)
             setSelectedUser(user)
-            setIsClosing(false)
         }
-        setManagingInstruments(false)
-        setManagingRoles(false)
+        setManagingInstruments(false); setManagingRoles(false)
     }
 
+    // ── CRUD usuario ──────────────────────────────────────────────────────────
+
     const handleOpenCreateUser = () => {
-        setSelectedUser(null)
-        setManagingInstruments(false)
-        setManagingRoles(false)
+        // Preparamos el formulario de alta con un payload limpio.
+        setSelectedUser(null); setManagingInstruments(false); setManagingRoles(false)
         setMode('CREATE')
         setCreatePayload({
-            email: '',
-            username: '',
-            password: '',
-            firstName: '',
-            lastName: '',
-            secondLastName: '',
-            birthDate: '',
-            bandJoinDate: '',
-            systemSignupDate: '',
-            phone: '',
-            notes: '',
-            profilePictureUrl: '',
-            instrumentIds: [],
-            roles: [],
+            email: '', username: '', password: '', firstName: '', lastName: '',
+            secondLastName: '', birthDate: '', bandJoinDate: '', systemSignupDate: '',
+            phone: '', notes: '', profilePictureUrl: '', instrumentIds: [], roles: [],
         })
     }
 
-    const handleCreateFieldChange = (
-        field: keyof UserCreatePayload,
-        value: string,
-    ) => {
-        setCreatePayload((prev) => ({
-            ...prev,
-            [field]: value,
-        }))
-    }
-
-    const handleToggleCreateRole = (roleName: string) => {
-        setCreatePayload((prev) => ({
-            ...prev,
-            roles: prev.roles.includes(roleName)
-                ? prev.roles.filter((r) => r !== roleName)
-                : [...prev.roles, roleName],
-        }))
-    }
-
     const handleSubmitCreateUser = async (e: FormEvent) => {
-        e.preventDefault()
-        if (!token) return
-
+        e.preventDefault(); if (!token) return
         try {
-            setSaving(true)
-            setError(null)
-
-            const payloadToSend: UserCreatePayload = {
+            // Creamos el usuario con valores opcionales normalizados a undefined.
+            setSaving(true); setError(null)
+            await createUser({
                 ...createPayload,
                 secondLastName: createPayload.secondLastName || undefined,
                 birthDate: createPayload.birthDate || undefined,
@@ -474,349 +313,212 @@ function UsersPage() {
                 profilePictureUrl: createPayload.profilePictureUrl || undefined,
                 instrumentIds: createPayload.instrumentIds ?? [],
                 roles: createPayload.roles ?? [],
-            }
-
-            await createUser(payloadToSend, token)
-
-            // volvemos a la lista y recargamos
-            setMode('LIST')
-            setPage(0)
-            setSearchTrigger((prev) => prev + 1)
+            }, token)
+            showToast('Usuario creado correctamente', 'success')
+            // Volvemos al listado y a la primera página para ver el nuevo registro.
+            setMode('LIST'); pagination.goToPage(0)
+            setSearchTrigger(prev => prev + 1)
         } catch (e) {
-            console.error('Error creando usuario', e)
-            setError(extractErrorMessage(e, 'Error creando usuario'))
-        } finally {
-            setSaving(false)
-        }
+            // Mostramos el error devuelto por la API (incluida concurrencia si aplica).
+            showToast(extractErrorMessage(e, 'Error creando usuario'), 'error')
+        } finally { setSaving(false) }
     }
 
-
     const handleEditUser = (user: UserDTO) => {
-        setSelectedUser(user)
-        setManagingInstruments(false)
-        setManagingRoles(false)
+        // Cargamos en el formulario los datos actuales del usuario seleccionado.
+        setSelectedUser(user); setManagingInstruments(false); setManagingRoles(false)
         setEditPayload({
-            email: user.email ?? '',
-            firstName: user.firstName ?? '',
-            lastName: user.lastName ?? '',
-            secondLastName: user.secondLastName ?? '',
-            birthDate: user.birthDate ?? '',
-            bandJoinDate: user.bandJoinDate ?? '',
-            phone: user.phone ?? '',
-            notes: user.notes ?? '',
+            email: user.email ?? '', firstName: user.firstName ?? '',
+            lastName: user.lastName ?? '', secondLastName: user.secondLastName ?? '',
+            birthDate: user.birthDate ?? '', bandJoinDate: user.bandJoinDate ?? '',
+            phone: user.phone ?? '', notes: user.notes ?? '',
             profilePictureUrl: user.profilePictureUrl ?? '',
         })
         setMode('EDIT')
     }
 
-    const handleCancelDetailOrEdit = () => {
-        setMode('LIST')
-        setSelectedUser(null)
-        setManagingInstruments(false)
-        setManagingRoles(false)
-    }
-
-    const handleEditFieldChange = (
-        field: keyof UserUpdatePayload,
-        value: string,
-    ) => {
-        setEditPayload((prev) => ({
-            ...prev,
-            [field]: value,
-        }))
-    }
-
     const handleSaveEdit = async (e: FormEvent) => {
         e.preventDefault()
-        if (!selectedUser || !selectedUser.id || selectedUser.version == null) return
-        if (!token) return
-
-        setSaving(true)
-        setError(null)
+        if (!selectedUser?.id || selectedUser.version == null || !token) return
+        setSaving(true); setError(null)
         try {
-            const updated = await updateUser(
-                selectedUser.id,
-                {
-                    ...editPayload,
-                    secondLastName: editPayload.secondLastName || undefined,
-                    birthDate: editPayload.birthDate || undefined,
-                    bandJoinDate: editPayload.bandJoinDate || undefined,
-                    phone: editPayload.phone || undefined,
-                    notes: editPayload.notes || undefined,
-                    profilePictureUrl: editPayload.profilePictureUrl || undefined,
-                },
-                selectedUser.version,
-                token,
-            )
-
-            setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
-            setSelectedUser(updated)
-            setMode('LIST')
-            setSearchTrigger((prev) => prev + 1)
+            // Persistimos cambios y actualizamos tanto la lista como el detalle.
+            const updated = await updateUser(selectedUser.id, {
+                ...editPayload,
+                secondLastName: editPayload.secondLastName || undefined,
+                birthDate: editPayload.birthDate || undefined,
+                bandJoinDate: editPayload.bandJoinDate || undefined,
+                phone: editPayload.phone || undefined,
+                notes: editPayload.notes || undefined,
+                profilePictureUrl: editPayload.profilePictureUrl || undefined,
+            }, selectedUser.version, token)
+            setUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
+            showToast('Usuario actualizado correctamente', 'success')
+            setSelectedUser(updated); setMode('LIST')
+            setSearchTrigger(prev => prev + 1)
         } catch (e: any) {
-            console.error('Error actualizando usuario:', e)
-            setError(extractErrorMessage(e, 'Error actualizando usuario'))
-        } finally {
-            setSaving(false)
-        }
+            // Capturamos errores de validación o concurrencia y avisamos al usuario.
+            showToast(extractErrorMessage(e, 'Error actualizando usuario'), 'error')
+        } finally { setSaving(false) }
     }
 
-    const handleToggleActive = async (user: UserDTO) => {
+    const handleCancelForm = () => {
+        // Volvemos al listado y cerramos paneles secundarios.
+        setMode('LIST'); setSelectedUser(null)
+        setManagingInstruments(false); setManagingRoles(false)
+    }
+
+    // ── Activar / Desactivar / Eliminar ───────────────────────────────────────
+
+    const handleToggleActive = (user: UserDTO) => {
         if (!user.id || user.version == null || !token) return
-        const name = user.username
-        const action = user.active ? 'desactivar' : 'activar'
-        setConfirmDialog({
-            isOpen: true,
-            title: user.active ? `Desactivar usuario "${name}"` : `Activar usuario "${name}"`,
-            message: `¿Seguro que quieres ${action} al usuario "${name}"?`,
+        // Flujo: confirmación -> cambio de estado -> recarga del usuario.
+        confirm.open({
+            title: user.active ? `Desactivar "${user.username}"` : `Activar "${user.username}"`,
+            message: `¿Seguro que quieres ${user.active ? 'desactivar' : 'activar'} al usuario "${user.username}"?`,
             variant: 'warning',
             onConfirm: async () => {
-                setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+                confirm.close()
                 try {
                     setError(null)
-                    if (user.active) {
-                        await disableUser(user.id, user.version, token)
-                    } else {
-                        await enableUser(user.id, user.version, token)
-                    }
-
+                    user.active
+                        ? await disableUser(user.id, user.version, token)
+                        : await enableUser(user.id, user.version, token)
                     const refreshed = await getUserById(user.id, token)
-                    setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
-
-                    if (selectedUser && selectedUser.id === refreshed.id) {
-                        setSelectedUser(refreshed)
-                    }
+                    setUsers(prev => prev.map(u => u.id === refreshed.id ? refreshed : u))
+                    if (selectedUser?.id === refreshed.id) setSelectedUser(refreshed)
+                    showToast(user.active ? 'Usuario desactivado' : 'Usuario activado', 'success')
                 } catch (e: any) {
-                    console.error('Error cambiando activo/inactivo:', e)
-                    setError(extractErrorMessage(e, 'Error al cambiar el estado activo del usuario'))
+                    // Errores de API (incluida concurrencia) se muestran en un toast.
+                    showToast(extractErrorMessage(e, 'Error cambiando estado del usuario'), 'error')
                 }
             },
         })
     }
 
-    const handleDeleteUser = async (user: UserDTO) => {
+    const handleDeleteUser = (user: UserDTO) => {
         if (!user.id || user.version == null || !token) return
-        const name = user.username
-        setConfirmDialog({
-            isOpen: true,
-            title: `Eliminar usuario "${name}"`,
-            message: `¿Seguro que quieres eliminar al usuario "${name}"?\nEsta acción no se puede deshacer.`,
+        // Flujo: confirmación -> borrado -> recarga del listado.
+        confirm.open({
+            title: `Eliminar usuario "${user.username}"`,
+            message: `¿Seguro que quieres eliminar a "${user.username}"?\nEsta acción no se puede deshacer.`,
             variant: 'danger',
             onConfirm: async () => {
-                setConfirmDialog((prev) => ({ ...prev, isOpen: false }))
+                confirm.close()
                 try {
                     setError(null)
                     await deleteUser(user.id, user.version, token)
-
-                    setPage(0)
-                    setMode('LIST')
-                    setSearchTrigger((prev) => prev + 1)
-                    if (selectedUser && selectedUser.id === user.id) {
-                        setSelectedUser(null)
-                    }
+                    showToast('Usuario eliminado correctamente', 'success')
+                    // Reseteamos a la primera página para evitar huecos en la tabla.
+                    pagination.goToPage(0); setMode('LIST')
+                    setSearchTrigger(prev => prev + 1)
+                    if (selectedUser?.id === user.id) setSelectedUser(null)
                 } catch (e: any) {
-                    console.error('Error eliminando usuario:', e)
-                    setError(extractErrorMessage(e, 'Error eliminando usuario'))
+                    // Mostramos el error de API sin alterar el estado de la UI.
+                    showToast(extractErrorMessage(e, 'Error eliminando usuario'), 'error')
                 }
             },
         })
     }
 
-    // instrumentos
+    // ── Instrumentos ──────────────────────────────────────────────────────────
 
     const openManageInstruments = async (user: UserDTO) => {
         if (!token) return
-
-        setError(null)
-        setManagingInstruments(true)
-        setInstrumentsLoading(true)
-
+        // Abrimos el panel y cargamos datos solo cuando el admin lo solicita.
+        setError(null); setManagingInstruments(true); setInstrumentsLoading(true)
         try {
             const fullUser = await getUserById(user.id, token)
             setSelectedUser(fullUser)
-
-            const instruments = await getAllInstruments(token)
-            setAllGroupedInstruments(groupInstrumentsByInitial(instruments))
-
-            const currentIds =
-                fullUser.instruments
-                    ?.map((inst: any) => {
-                        if (typeof inst === 'number') return inst
-                        if (inst && typeof inst.id === 'number') return inst.id
-                        if (inst && typeof inst.instrumentId === 'number')
-                            return inst.instrumentId
-                        return undefined
-                    })
-                    .filter((id): id is number => id != null) ?? []
-
+            setAllGroupedInstruments(groupInstrumentsByInitial(await getAllInstruments(token)))
+            const currentIds = fullUser.instruments
+                ?.map((inst: any) => {
+                    if (typeof inst === 'number') return inst
+                    if (inst && typeof inst.id === 'number') return inst.id
+                    if (inst && typeof inst.instrumentId === 'number') return inst.instrumentId
+                    return undefined
+                })
+                .filter((id): id is number => id != null) ?? []
             setSelectedInstrumentIds(currentIds)
-            // Solo cambiar a DETAIL si no estamos en LIST (es decir, si no viene del expandible)
-            if (mode !== 'LIST') {
-                setMode('DETAIL')
-            }
         } catch (e) {
-            console.error('Error cargando instrumentos para gestión de usuario', e)
-            setError(extractErrorMessage(e, 'Error cargando instrumentos del usuario'))
+            // Si falla la carga, cerramos el panel y avisamos al usuario.
+            showToast(extractErrorMessage(e, 'Error cargando instrumentos del usuario'), 'error')
             setManagingInstruments(false)
-        } finally {
-            setInstrumentsLoading(false)
-        }
-    }
-
-    const toggleInstrumentForUser = (instrumentId: number) => {
-        setSelectedInstrumentIds((prev) =>
-            prev.includes(instrumentId)
-                ? prev.filter((id) => id !== instrumentId)
-                : [...prev, instrumentId],
-        )
+        } finally { setInstrumentsLoading(false) }
     }
 
     const handleSaveUserInstruments = async (e: FormEvent) => {
-        e.preventDefault()
-        if (!token || !selectedUser || !selectedUser.id) return
-
+        e.preventDefault(); if (!token || !selectedUser?.id) return
         try {
-            setSaving(true)
-            setError(null)
-
+            // Persistimos la asignación de instrumentos y refrescamos el usuario.
+            setSaving(true); setError(null)
             const refreshed = await setUserInstruments(
-                selectedUser.id,
-                selectedInstrumentIds,
-                selectedUser.version,
-                token,
+                selectedUser.id, selectedInstrumentIds, selectedUser.version, token,
             )
-            setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
-
-            setSelectedUser(refreshed)
-            setManagingInstruments(false)
-            // Mantener el usuario expandido si estábamos en LIST
-            if (mode === 'LIST') {
-                setExpandedUserId(refreshed.id ?? null)
-            }
+            setUsers(prev => prev.map(u => u.id === refreshed.id ? refreshed : u))
+            showToast('Instrumentos guardados correctamente', 'success')
+            setSelectedUser(refreshed); setManagingInstruments(false)
         } catch (e) {
-            console.error('Error guardando instrumentos del usuario', e)
-            setError(extractErrorMessage(e, 'Error guardando instrumentos del usuario'))
-        } finally {
-            setSaving(false)
-        }
+            // Errores de API se muestran en un toast para que el usuario actúe.
+            showToast(extractErrorMessage(e, 'Error guardando instrumentos'), 'error')
+        } finally { setSaving(false) }
     }
 
-    const handleCancelManageInstruments = () => {
-        setManagingInstruments(false)
-        setSelectedInstrumentIds([])
-    }
-
-    // roles
+    // ── Roles ─────────────────────────────────────────────────────────────────
 
     const openManageRoles = (user: UserDTO) => {
         if (!token) return
-
-        setError(null)
-        setManagingRoles(true)
-        setSelectedUser(user)
-
-        const currentRoles = user.roles ?? []
-        setSelectedRoleNames(currentRoles)
-        // Solo cambiar a DETAIL si no estamos en LIST (es decir, si no viene del expandible)
-        if (mode !== 'LIST') {
-            setMode('DETAIL')
-        }
-    }
-
-    const toggleRoleForUser = (roleName: string) => {
-        setSelectedRoleNames((prev) =>
-            prev.includes(roleName)
-                ? prev.filter((name) => name !== roleName)
-                : [...prev, roleName],
-        )
+        // Abrimos el panel y clonamos los roles actuales para edición local.
+        setError(null); setManagingRoles(true); setSelectedUser(user)
+        setSelectedRoleNames(user.roles ?? [])
     }
 
     const handleSaveUserRoles = async (e: FormEvent) => {
-        e.preventDefault()
-        if (!token || !selectedUser || !selectedUser.id) return
-
+        e.preventDefault(); if (!token || !selectedUser?.id) return
         try {
-            setSaving(true)
-            setError(null)
-
+            // Persistimos roles y actualizamos listado y detalle.
+            setSaving(true); setError(null)
             const refreshed = await setUserRoles(
-                selectedUser.id,
-                selectedRoleNames,
-                selectedUser.version,
-                token,
+                selectedUser.id, selectedRoleNames, selectedUser.version, token,
             )
-            setUsers((prev) => prev.map((u) => (u.id === refreshed.id ? refreshed : u)))
-
-            setSelectedUser(refreshed)
-            setManagingRoles(false)
-            setSearchTrigger((prev) => prev + 1)
-            // Mantener el usuario expandido si estábamos en LIST
-            if (mode === 'LIST') {
-                setExpandedUserId(refreshed.id ?? null)
-            }
+            setUsers(prev => prev.map(u => u.id === refreshed.id ? refreshed : u))
+            showToast('Roles guardados correctamente', 'success')
+            setSelectedUser(refreshed); setManagingRoles(false)
+            setSearchTrigger(prev => prev + 1)
         } catch (e) {
-            console.error('Error guardando roles del usuario', e)
-            setError(extractErrorMessage(e, 'Error guardando roles del usuario'))
-        } finally {
-            setSaving(false)
-        }
+            // Mostramos errores de API (incluida concurrencia) al usuario.
+            showToast(extractErrorMessage(e, 'Error guardando roles'), 'error')
+        } finally { setSaving(false) }
     }
 
-    const handleCancelManageRoles = () => {
-        setManagingRoles(false)
-        setSelectedRoleNames([])
-    }
-
-    // ===== render =====
-
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="page-container">
             <h1 className="page-title">Gestión de usuarios</h1>
 
-            {/* Buscador */}
-            <form onSubmit={handleSearchSubmit} className="card" style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <div className="section-title" style={{ marginBottom: 0 }}>Filtros de búsqueda</div>
-                    <button
-                        type="button"
-                        className="button-secondary"
-                        onClick={handleOpenCreateUser}
-                    >
+            {!error && (
+            <SearchFiltersPanel
+                activeFiltersCount={activeFiltersCount}
+                onSubmit={handleSearchSubmit}
+                actionButton={
+                    <button type="button" className="button-secondary" onClick={handleOpenCreateUser}>
                         + Nuevo usuario
                     </button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-                    {/* Grupo 1: Username, Email, Estado, Rol */}
+                }
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '0.5rem', width: '100%' }}>
                     <div className="search-grid">
                         <div className="form-field">
                             <span className="label-text">Username</span>
-                            <input
-                                type="text"
-                                placeholder="Buscar por username"
-                                value={filterUsername}
-                                onChange={(e) => setFilterUsername(e.target.value)}
-                                className="input-full-width"
-                            />
+                            <input type="text" placeholder="Buscar por username" value={filterUsername} onChange={e => setFilterUsername(e.target.value)} className="input-full-width" />
                         </div>
                         <div className="form-field">
                             <span className="label-text">Email</span>
-                            <input
-                                type="text"
-                                placeholder="Buscar por email"
-                                value={filterEmail}
-                                onChange={(e) => setFilterEmail(e.target.value)}
-                                className="input-full-width"
-                            />
+                            <input type="text" placeholder="Buscar por email" value={filterEmail} onChange={e => setFilterEmail(e.target.value)} className="input-full-width" />
                         </div>
                         <div className="form-field">
                             <span className="label-text">Estado</span>
-                            <select
-                                value={filterActive}
-                                onChange={(e) =>
-                                    setFilterActive(e.target.value as 'all' | 'true' | 'false')
-                                }
-                                className="select-base"
-                            >
+                            <select value={filterActive} onChange={e => setFilterActive(e.target.value as 'all' | 'true' | 'false')} className="select-base">
                                 <option value="all">Todos</option>
                                 <option value="true">Activos</option>
                                 <option value="false">Inactivos</option>
@@ -824,146 +526,80 @@ function UsersPage() {
                         </div>
                         <div className="form-field">
                             <span className="label-text">Rol</span>
-                            <select
-                                value={filterRole}
-                                onChange={(e) => setFilterRole(e.target.value)}
-                                className="select-base"
-                                disabled={rolesLoading}
-                            >
+                            <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="select-base" disabled={rolesLoading}>
                                 <option value="">Todos</option>
-                                {roles.map((r) => (
-                                    <option key={r.id} value={r.name}>
-                                        {r.name}
-                                    </option>
-                                ))}
+                                {roles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
                             </select>
                         </div>
                     </div>
 
-                    {/* Grupo 2: Nombre, 1er apellido, 2º Apellido */}
                     <div className="search-grid">
                         <div className="form-field">
                             <span className="label-text">Nombre</span>
-                            <input
-                                type="text"
-                                placeholder="Buscar por nombre"
-                                value={filterFirstName}
-                                onChange={(e) => setFilterFirstName(e.target.value)}
-                                className="input-full-width"
-                            />
+                            <input type="text" placeholder="Nombre" value={filterFirstName} onChange={e => setFilterFirstName(e.target.value)} className="input-full-width" />
                         </div>
                         <div className="form-field">
                             <span className="label-text">1er apellido</span>
-                            <input
-                                type="text"
-                                placeholder="Buscar por 1er apellido"
-                                value={filterLastName}
-                                onChange={(e) => setFilterLastName(e.target.value)}
-                                className="input-full-width"
-                            />
+                            <input type="text" placeholder="Primer apellido" value={filterLastName} onChange={e => setFilterLastName(e.target.value)} className="input-full-width" />
                         </div>
                         <div className="form-field">
                             <span className="label-text">2º apellido</span>
-                            <input
-                                type="text"
-                                placeholder="Buscar por 2º apellido"
-                                value={filterSecondLastName}
-                                onChange={(e) => setFilterSecondLastName(e.target.value)}
-                                className="input-full-width"
-                            />
+                            <input type="text" placeholder="Segundo apellido" value={filterSecondLastName} onChange={e => setFilterSecondLastName(e.target.value)} className="input-full-width" />
                         </div>
                     </div>
 
-                    {/* Grupo 3: Fechas */}
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Fecha de Nacimiento</span>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <input
-                                    type="date"
-                                    value={filterBirthDateFrom}
-                                    onChange={(e) => setFilterBirthDateFrom(e.target.value)}
-                                    className="input-full-width"
-                                    title="Desde"
-                                />
-                                <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>-</span>
-                                <input
-                                    type="date"
-                                    value={filterBirthDateTo}
-                                    onChange={(e) => setFilterBirthDateTo(e.target.value)}
-                                    className="input-full-width"
-                                    title="Hasta"
-                                />
+                    <div className="search-date-row">
+                        <div className="search-date-group">
+                            <div className="form-field">
+                                <span className="label-text">Nacimiento (desde)</span>
+                                <input type="date" value={filterBirthDateFrom} onChange={e => setFilterBirthDateFrom(e.target.value)} className="input-full-width" />
+                            </div>
+                            <div className="form-field">
+                                <span className="label-text">Nacimiento (hasta)</span>
+                                <input type="date" value={filterBirthDateTo} onChange={e => setFilterBirthDateTo(e.target.value)} className="input-full-width" />
                             </div>
                         </div>
-                        <div className="form-field">
-                            <span className="label-text">Fecha de Alta en la Banda</span>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <input
-                                    type="date"
-                                    value={filterBandJoinDateFrom}
-                                    onChange={(e) => setFilterBandJoinDateFrom(e.target.value)}
-                                    className="input-full-width"
-                                    title="Desde"
-                                />
-                                <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>-</span>
-                                <input
-                                    type="date"
-                                    value={filterBandJoinDateTo}
-                                    onChange={(e) => setFilterBandJoinDateTo(e.target.value)}
-                                    className="input-full-width"
-                                    title="Hasta"
-                                />
+                        <div className="search-date-group">
+                            <div className="form-field">
+                                <span className="label-text">Alta en banda (desde)</span>
+                                <input type="date" value={filterBandJoinDateFrom} onChange={e => setFilterBandJoinDateFrom(e.target.value)} className="input-full-width" />
+                            </div>
+                            <div className="form-field">
+                                <span className="label-text">Alta en banda (hasta)</span>
+                                <input type="date" value={filterBandJoinDateTo} onChange={e => setFilterBandJoinDateTo(e.target.value)} className="input-full-width" />
                             </div>
                         </div>
                     </div>
                 </div>
-                <div
-                    className="search-actions-row"
-                    style={{ justifyContent: 'space-between' }}
-                >
-                    <button type="submit" className="button-primary">
-                        Buscar
-                    </button>
 
-                    <button
-                        type="button"
-                        className="button-subtle"
-                        onClick={handleResetFilters}
-                        style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
-                    >
+                <div className="search-actions-row" style={{ justifyContent: 'space-between' }}>
+                    <button type="button" className="button-subtle" onClick={handleResetFilters}
+                        style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}>
                         Resetear filtros
                     </button>
+                    <button type="submit" className="button-primary">Buscar</button>
                 </div>
+            </SearchFiltersPanel>
+            )}
 
-            </form>
+            {loading && <Spinner />}
+            {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}
 
-            {loading && <p>Cargando usuarios...</p>}
-            {error && <p className="error-message">{error}</p>}
-
-            {/* LISTA */}
             {mode === 'LIST' && !loading && !error && !managingInstruments && !managingRoles && (
                 <>
                     <div className="card">
                         <DataTable<UserDTO, SortableField>
                             columns={userColumns}
                             data={users}
-                            sortState={sortState}
+                            sortState={sorting.state}
                             onSortChange={handleSort}
                             onRowClick={handleViewDetails}
-                            expandedRowId={expandedUserId}
-                            isClosing={isClosing}
+                            expandedRowId={rowExpansion.expandedId}
+                            isClosing={rowExpansion.isClosing}
                             renderExpandedContent={(user) => (
                                 <UserDetailCard
                                     user={user}
-                                    onBack={() => {
-                                        setIsClosing(true)
-                                        setTimeout(() => {
-                                            setExpandedUserId(null)
-                                            setSelectedUser(null)
-                                            setIsClosing(false)
-                                        }, 250)
-                                    }}
+                                    onBack={() => { rowExpansion.close(); setTimeout(() => setSelectedUser(null), 250) }}
                                     onToggleActive={handleToggleActive}
                                     onManageInstruments={openManageInstruments}
                                     onManageRoles={openManageRoles}
@@ -972,463 +608,68 @@ function UsersPage() {
                             )}
                         />
                     </div>
-                    <PaginationBar
-                        page={page}
-                        totalPages={totalPages}
-                        pageSize={size}
-                        currentCount={users.length}
-                        totalElements={totalElements}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                    />
+                    <PaginationBar {...pagination.barProps} currentCount={users.length} />
                 </>
             )}
 
-            {/* EDICIÓN */}
             {mode === 'EDIT' && selectedUser && (
-                <form
+                <UserEditForm
+                    selectedUser={selectedUser}
+                    editPayload={editPayload}
+                    onFieldChange={(field: any, value: any) => setEditPayload(prev => ({ ...prev, [field]: value }))}
                     onSubmit={handleSaveEdit}
-                    className="card"
-                    style={{ marginTop: '1rem' }}
-                >
-                    <div className="section-title">
-                        Editar usuario: {selectedUser.username}
-                    </div>
-
-                    <div className="form-grid">
-                        <div className="form-field">
-                            <span className="label-text">Email *</span>
-                            <input
-                                type="email"
-                                value={editPayload.email}
-                                onChange={(e) =>
-                                    handleEditFieldChange('email', e.target.value)
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">Nombre *</span>
-                            <input
-                                type="text"
-                                value={editPayload.firstName}
-                                onChange={(e) =>
-                                    handleEditFieldChange('firstName', e.target.value)
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">1er apellido *</span>
-                            <input
-                                type="text"
-                                value={editPayload.lastName}
-                                onChange={(e) =>
-                                    handleEditFieldChange('lastName', e.target.value)
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">2º apellido</span>
-                            <input
-                                type="text"
-                                value={editPayload.secondLastName ?? ''}
-                                onChange={(e) =>
-                                    handleEditFieldChange('secondLastName', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">Fecha nacimiento</span>
-                            <input
-                                type="date"
-                                value={editPayload.birthDate ?? ''}
-                                onChange={(e) =>
-                                    handleEditFieldChange('birthDate', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">Alta en banda</span>
-                            <input
-                                type="date"
-                                value={editPayload.bandJoinDate ?? ''}
-                                onChange={(e) =>
-                                    handleEditFieldChange('bandJoinDate', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">Teléfono</span>
-                            <input
-                                type="text"
-                                value={editPayload.phone ?? ''}
-                                onChange={(e) =>
-                                    handleEditFieldChange('phone', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field grid-full-width">
-                            <span className="label-text">Notas</span>
-                            <textarea
-                                rows={3}
-                                value={editPayload.notes ?? ''}
-                                onChange={(e) =>
-                                    handleEditFieldChange('notes', e.target.value)
-                                }
-                                className="textarea-base"
-                            />
-                        </div>
-
-                        <div className="form-field grid-full-width">
-                            <span className="label-text">URL foto de perfil</span>
-                            <input
-                                type="text"
-                                value={editPayload.profilePictureUrl ?? ''}
-                                onChange={(e) =>
-                                    handleEditFieldChange('profilePictureUrl', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="button-row">
-                        <button type="submit" className="button-primary" disabled={saving}>
-                            {saving ? 'Guardando...' : 'Guardar'}
-                        </button>
-                        <button
-                            type="button"
-                            className="button-secondary"
-                            onClick={handleCancelDetailOrEdit}
-                            disabled={saving}
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
+                    onCancel={handleCancelForm}
+                    saving={saving}
+                />
             )}
 
-            {/* CREACIÓN */}
             {mode === 'CREATE' && (
-                <form
+                <UserCreateForm
+                    createPayload={createPayload}
+                    roles={roles}
+                    onFieldChange={(field: any, value: any) => setCreatePayload(prev => ({ ...prev, [field]: value }))}
+                    onToggleRole={(name: string) => setCreatePayload(prev => ({
+                        ...prev,
+                        roles: prev.roles.includes(name)
+                            ? prev.roles.filter(r => r !== name)
+                            : [...prev.roles, name],
+                    }))}
                     onSubmit={handleSubmitCreateUser}
-                    className="card"
-                    style={{ marginTop: '1rem' }}
-                >
-                    <div className="section-title">Nuevo usuario</div>
-
-                    <div className="form-grid">
-                        {/* CREDENCIALES */}
-                        <div className="form-field">
-                            <span className="label-text">Username *</span>
-                            <input
-                                type="text"
-                                value={createPayload.username}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('username', e.target.value)
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">Email *</span>
-                            <input
-                                type="email"
-                                value={createPayload.email}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('email', e.target.value)
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">Password *</span>
-                            <input
-                                type="password"
-                                value={createPayload.password}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('password', e.target.value)
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        {/* DATOS PERSONALES */}
-                        <div className="form-field">
-                            <span className="label-text">Nombre *</span>
-                            <input
-                                type="text"
-                                value={createPayload.firstName}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('firstName', e.target.value)
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">1er apellido *</span>
-                            <input
-                                type="text"
-                                value={createPayload.lastName}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('lastName', e.target.value)
-                                }
-                                required
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">2º apellido</span>
-                            <input
-                                type="text"
-                                value={createPayload.secondLastName ?? ''}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('secondLastName', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">Fecha nacimiento</span>
-                            <input
-                                type="date"
-                                value={createPayload.birthDate ?? ''}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('birthDate', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <span className="label-text">Alta en banda</span>
-                            <input
-                                type="date"
-                                value={createPayload.bandJoinDate ?? ''}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('bandJoinDate', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-{/* 
-                        <div className="form-field">
-                            <span className="label-text">Alta en sistema</span>
-                            <input
-                                type="date"
-                                value={createPayload.systemSignupDate ?? ''}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('systemSignupDate', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div> */}
-
-                        <div className="form-field">
-                            <span className="label-text">Teléfono</span>
-                            <input
-                                type="text"
-                                value={createPayload.phone ?? ''}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('phone', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        <div className="form-field grid-full-width">
-                            <span className="label-text">Notas</span>
-                            <textarea
-                                rows={3}
-                                value={createPayload.notes ?? ''}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('notes', e.target.value)
-                                }
-                                className="textarea-base"
-                            />
-                        </div>
-
-                        <div className="form-field grid-full-width">
-                            <span className="label-text">URL foto de perfil</span>
-                            <input
-                                type="text"
-                                value={createPayload.profilePictureUrl ?? ''}
-                                onChange={(e) =>
-                                    handleCreateFieldChange('profilePictureUrl', e.target.value)
-                                }
-                                className="input-full-width"
-                            />
-                        </div>
-
-                        {/* ROLES */}
-                        <div className="form-field grid-full-width">
-                            <span className="label-text">Roles</span>
-                            <div className="checkbox-group">
-                                {roles.map((r) => (
-                                    <label key={r.id} className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={createPayload.roles.includes(r.name)}
-                                            onChange={() => handleToggleCreateRole(r.name)}
-                                        />
-                                        <span>{r.name}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="button-row">
-                        <button type="submit" className="button-primary" disabled={saving}>
-                            {saving ? 'Guardando...' : 'Crear usuario'}
-                        </button>
-                        <button
-                            type="button"
-                            className="button-secondary"
-                            onClick={handleCancelDetailOrEdit}
-                            disabled={saving}
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
+                    onCancel={handleCancelForm}
+                    saving={saving}
+                />
             )}
 
-
-            {/* GESTIÓN DE ROLES */}
             {selectedUser && managingRoles && (
-                <form
-                    onSubmit={handleSaveUserRoles}
-                    className="card"
-                    style={{ marginTop: '1rem' }}
-                >
-                    <div className="section-title">
-                        Gestionar roles de {selectedUser.username}
-                    </div>
-
-                    <div className="checkbox-group" style={{ marginTop: '1rem' }}>
-                        {roles.map((role) => (
-                            <label key={role.id} className="checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedRoleNames.includes(role.name)}
-                                    onChange={() => toggleRoleForUser(role.name)}
-                                />
-                                <span>{role.name}</span>
-                            </label>
-                        ))}
-                        {roles.length === 0 && (
-                            <p>No hay roles definidos en el sistema.</p>
-                        )}
-                    </div>
-
-                    <div className="button-row">
-                        <button type="submit" className="button-primary" disabled={saving}>
-                            {saving ? 'Guardando...' : 'Guardar roles'}
-                        </button>
-                        <button
-                            type="button"
-                            className="button-secondary"
-                            onClick={handleCancelManageRoles}
-                            disabled={saving}
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
-            )}
-
-            {/* GESTIÓN DE INSTRUMENTOS */}
-            {selectedUser && managingInstruments && (
-                <form
-                    onSubmit={handleSaveUserInstruments}
-                    className="card"
-                    style={{ marginTop: '1rem' }}
-                >
-                    <div className="section-title">
-                        Gestionar instrumentos de {selectedUser.username}
-                    </div>
-
-                    {instrumentsLoading ? (
-                        <p>Cargando instrumentos...</p>
-                    ) : (
-                        <div className="instruments-grid">
-                            {allGroupedInstruments.map((group) => (
-                                <div key={group.letter} className="instrument-group">
-                                    <div className="instrument-group-title">
-                                        {group.letter}
-                                    </div>
-
-                                    {group.items.map((inst: InstrumentDTO) => (
-                                        <label key={inst.id} className="instrument-item">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedInstrumentIds.includes(inst.id)}
-                                                onChange={() => toggleInstrumentForUser(inst.id)}
-                                            />
-                                            <span>
-                                                {inst.instrumentName}{' '}
-                                                {inst.voice && `(${inst.voice})`}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            ))}
-                            {allGroupedInstruments.length === 0 && (
-                                <p>No hay instrumentos definidos en el sistema.</p>
-                            )}
-                        </div>
+                <UserRolesPanel
+                    selectedUser={selectedUser}
+                    roles={roles}
+                    selectedRoleNames={selectedRoleNames}
+                    onToggleRole={(name: string) => setSelectedRoleNames(prev =>
+                        prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
                     )}
-
-                    <div className="button-row">
-                        <button type="submit" className="button-primary" disabled={saving}>
-                            {saving ? 'Guardando...' : 'Guardar instrumentos'}
-                        </button>
-                        <button
-                            type="button"
-                            className="button-secondary"
-                            onClick={handleCancelManageInstruments}
-                            disabled={saving}
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
+                    onSubmit={handleSaveUserRoles}
+                    onCancel={() => { setManagingRoles(false); setSelectedRoleNames([]) }}
+                    saving={saving}
+                />
             )}
 
-            <ConfirmDialog
-                isOpen={confirmDialog.isOpen}
-                title={confirmDialog.title}
-                message={confirmDialog.message}
-                variant={confirmDialog.variant}
-                onConfirm={confirmDialog.onConfirm}
-                onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
-            />
+            {selectedUser && managingInstruments && (
+                <UserInstrumentsPanel
+                    selectedUser={selectedUser}
+                    allGroupedInstruments={allGroupedInstruments}
+                    selectedInstrumentIds={selectedInstrumentIds}
+                    instrumentsLoading={instrumentsLoading}
+                    onToggleInstrument={(id: number) => setSelectedInstrumentIds(prev =>
+                        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+                    )}
+                    onSubmit={handleSaveUserInstruments}
+                    onCancel={() => { setManagingInstruments(false); setSelectedInstrumentIds([]) }}
+                    saving={saving}
+                />
+            )}
+
+            <ConfirmDialog {...confirm.dialogProps} />
         </div>
     )
 }

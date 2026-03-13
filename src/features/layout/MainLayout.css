@@ -1,130 +1,324 @@
+/* ============================================================
+   MAINLAYOUT.CSS — Estructura principal de la aplicación
+   ============================================================
+   Depende de: design-tokens.css
+
+   ESTRATEGIA MOBILE FIRST:
+   El layout base es para móvil. El sidebar es un "drawer"
+   (cajón deslizante desde la izquierda) que se activa con
+   un botón hamburguesa en el header.
+
+   En móvil y tablet (< 1024px): drawer con hamburguesa.
+   En desktop (≥ 1024px): sidebar siempre visible.
+
+   Por qué 1024px y no 768px:
+   A 768px (tablet portrait) el sidebar de 240px consume el 31%
+   del viewport, dejando solo ~528px para el contenido. Con tablas
+   de varias columnas eso genera scroll horizontal constante.
+   A 1024px el sidebar consume el 23% y el contenido dispone de
+   ~784px, suficiente para la mayoría de las vistas de gestión.
+   El patrón lo usan Notion, Linear y GitHub en sus versiones web.
+
+   Por qué drawer y no bottom nav:
+   La app tiene 9 items de navegación (5 generales + 4 admin).
+   Una bottom nav está recomendada para 3-5 items máximo.
+   Un drawer maneja cualquier número de items y es el patrón
+   correcto para este caso de uso.
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   LAYOUT RAÍZ
+   La app ocupa el 100% del viewport. El header está fijo
+   arriba, el contenido hace scroll debajo de él.
+---------------------------------------------------------- */
 .layout-root {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: var(--font-family-base);
+  overflow: hidden; /* Previene scroll en el root */
 }
 
+/* ----------------------------------------------------------
+   HEADER
+---------------------------------------------------------- */
 .layout-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    background: #1f2933;
-    color: #f9fafb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--space-4);
+  height: var(--header-height);
+  min-height: var(--header-height);
+  background: var(--layout-header-bg);
+  color: var(--layout-header-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  /* Header siempre por encima del sidebar drawer */
+  position: relative;
+  z-index: calc(var(--z-sidebar) + 1);
+  flex-shrink: 0;
 }
 
 .layout-header-left {
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .layout-logo {
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-.layout-title {
-    font-size: 0.95rem;
-    opacity: 0.8;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  letter-spacing: -0.02em;
+  color: var(--color-white);
 }
 
 .layout-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Nombre de usuario: oculto en móviles muy pequeños */
+.layout-username {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-300);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 480px) {
+  .layout-username {
+    max-width: none;
+  }
 }
 
 .layout-logout-btn {
-    border: none;
-    border-radius: 999px;
-    padding: 0.4rem 0.9rem;
-    background: #ef4444;
-    color: #f9fafb;
-    cursor: pointer;
-    font-size: 0.85rem;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-danger);
+  color: var(--color-white);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  transition: background-color var(--transition-fast);
+  min-height: 2rem;
 }
 
 .layout-logout-btn:hover {
-    background: #dc2626;
+  background: var(--color-danger-dark);
 }
 
+/* ----------------------------------------------------------
+   BOTÓN HAMBURGUESA (visible en móvil y tablet, < 1024px)
+   Se oculta en desktop porque el sidebar siempre está visible.
+---------------------------------------------------------- */
+.layout-hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 22px;
+  height: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  /* Agrandar el target táctil sin aumentar el icono visualmente */
+  position: relative;
+}
+
+.layout-hamburger::before {
+  content: '';
+  position: absolute;
+  inset: -12px -8px;
+}
+
+.layout-hamburger-line {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--color-gray-200);
+  border-radius: var(--radius-full);
+  transition: transform var(--transition-normal),
+              opacity var(--transition-normal);
+  transform-origin: center;
+}
+
+/* Animación: hamburguesa → X cuando el menú está abierto */
+.layout-hamburger.is-open .layout-hamburger-line:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.layout-hamburger.is-open .layout-hamburger-line:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.layout-hamburger.is-open .layout-hamburger-line:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* En desktop (≥ 1024px), el hamburguesa desaparece */
+@media (min-width: 1024px) {
+  .layout-hamburger {
+    display: none;
+  }
+}
+
+/* ----------------------------------------------------------
+   OVERLAY DEL SIDEBAR (solo en móvil y tablet, < 1024px)
+   Tapa el contenido cuando el drawer está abierto.
+   Al hacer click cierra el menú.
+---------------------------------------------------------- */
+.layout-sidebar-overlay {
+  display: none;
+}
+
+.layout-sidebar-overlay.is-visible {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: var(--surface-overlay);
+  z-index: var(--z-overlay);
+  animation: fadeIn var(--transition-normal);
+}
+
+/* Nunca visible en desktop */
+@media (min-width: 1024px) {
+  .layout-sidebar-overlay {
+    display: none !important;
+  }
+}
+
+/* ----------------------------------------------------------
+   CUERPO DEL LAYOUT (sidebar + contenido)
+---------------------------------------------------------- */
 .layout-body {
-    display: flex;
-    flex: 1;
-    min-height: 0;
+  display: flex;
+  flex: 1;
+  min-height: 0;  /* Necesario para que flex-children hagan scroll */
+  overflow: hidden;
+  position: relative;
 }
 
-/* Sidebar */
+/* ----------------------------------------------------------
+   SIDEBAR / DRAWER DE NAVEGACIÓN
+
+   MÓVIL Y TABLET (< 1024px):
+   - Posición fixed, ocupa toda la altura menos el header
+   - Por defecto fuera de pantalla (translateX -100%)
+   - Cuando .is-open: desliza hacia adentro
+   - z-index entre el header y el overlay
+
+   DESKTOP (≥ 1024px):
+   - Posición normal en el flujo del documento
+   - Siempre visible, sin translateX
+---------------------------------------------------------- */
 .layout-sidebar {
-    width: 230px;
-    background: #111827;
-    color: #e5e7eb;
-    padding: 1rem;
-    box-sizing: border-box;
-    overflow-y: auto;
+  /* Móvil/Tablet: drawer */
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  bottom: 0;
+  width: min(var(--sidebar-width), 80vw);  /* Máx 80% del viewport */
+  background: var(--layout-sidebar-bg);
+  color: var(--layout-sidebar-text);
+  padding: var(--space-4);
+  box-sizing: border-box;
+  overflow-y: auto;
+  z-index: var(--z-sidebar);
+  /* Por defecto: fuera de pantalla */
+  transform: translateX(-100%);
+  transition: transform var(--transition-slow);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
+.layout-sidebar.is-open {
+  transform: translateX(0);
+}
+
+@media (min-width: 1024px) {
+  .layout-sidebar {
+    /* Desktop: en el flujo normal, siempre visible */
+    position: static;
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    transform: none;
+    box-shadow: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+  }
+}
+
+/* ----------------------------------------------------------
+   ITEMS DE NAVEGACIÓN
+---------------------------------------------------------- */
 .menu-section {
-    margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .menu-section-title {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #9ca3af;
-    margin-bottom: 0.5rem;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--layout-sidebar-muted);
+  margin-bottom: var(--space-2);
+  padding: 0 var(--space-2);
 }
 
 .menu-link {
-    display: block;
-    padding: 0.4rem 0.75rem;
-    border-radius: 0.4rem;
-    font-size: 0.9rem;
-    color: #d1d5db;
-    text-decoration: none;
-    margin-bottom: 0.2rem;
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--layout-sidebar-text);
+  text-decoration: none;
+  margin-bottom: 2px;
+  transition: background-color var(--transition-fast),
+              color var(--transition-fast);
+  min-height: 2.5rem;
 }
 
 .menu-link:hover {
-    background: #1f2937;
+  background: var(--layout-sidebar-hover);
+  color: var(--color-white);
 }
 
 .menu-link-active {
-    background: #2563eb;
-    color: #f9fafb;
+  background: var(--layout-sidebar-active);
+  color: var(--color-white);
+  font-weight: var(--font-weight-medium);
 }
 
-/* Contenido */
+.menu-link-active:hover {
+  background: var(--color-primary-700);
+}
+
+/* ----------------------------------------------------------
+   ÁREA DE CONTENIDO PRINCIPAL
+---------------------------------------------------------- */
 .layout-content {
-    flex: 1;
-    padding: 1.5rem;
-    background: #f3f4f6;
-    overflow-y: auto;
-    box-sizing: border-box;
-    scrollbar-gutter: stable;
+  flex: 1;
+  min-width: 0;  /* Previene overflow en flex containers */
+  padding: var(--space-4);
+  background: var(--surface-page);
+  overflow-y: auto;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
 }
 
-/* Responsive: sidebar arriba en pantallas pequeñas */
-@media (max-width: 768px) {
-    .layout-body {
-        flex-direction: column;
-    }
+@media (min-width: 1024px) {
+  .layout-content {
+    padding: var(--space-6);
+  }
+}
 
-    .layout-sidebar {
-        width: 100%;
-        display: flex;
-        flex-wrap: wrap;
-    }
-
-    .menu-section {
-        margin-right: 1rem;
-    }
-
-    .layout-content {
-        padding: 1rem;
-    }
+/* ----------------------------------------------------------
+   ANIMACIONES
+---------------------------------------------------------- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }

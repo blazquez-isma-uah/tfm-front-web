@@ -1,85 +1,82 @@
-/* :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* ============================================================
+   INDEX.CSS — Reset y estilos base globales
+   ============================================================
+   Este fichero se carga primero. Establece una base limpia
+   y consistente para todos los navegadores.
+   Solo debe contener estilos que afecten al DOM primitivo
+   (body, html, *, inputs sin clase, etc.).
+   ============================================================ */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-} */
-:root {
-  color-scheme: light;
-}
-
+/* ----------------------------------------------------------
+   BOX-SIZING UNIVERSAL
+   Por defecto los navegadores usan content-box, lo que hace
+   que padding y border se sumen al tamaño declarado.
+   border-box hace que padding y border se incluyan dentro
+   del tamaño declarado: más predecible y menos bugs.
+---------------------------------------------------------- */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+/* ----------------------------------------------------------
+   RESET DE MÁRGENES Y ALTOS
+---------------------------------------------------------- */
 html,
 body,
 #root {
   margin: 0;
   padding: 0;
   height: 100%;
+}
+
+/* ----------------------------------------------------------
+   TIPOGRAFÍA BASE
+   Se establece en body para que todos los elementos hereden.
+   font-size: 100% respeta la preferencia del usuario
+   (si el usuario tiene el navegador a 18px de base,
+   nuestros rem se calculan sobre 18px, no sobre 16px).
+   Esto es buena práctica de accesibilidad.
+---------------------------------------------------------- */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 100%;
+  line-height: 1.5;
+  color: #111827;          /* --text-primary del design system */
+  background-color: #f3f4f6;  /* --surface-page del design system */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Evitar zoom automático en inputs en iOS */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ----------------------------------------------------------
+   VIEWPORT MÍNIMO
+   Garantizamos que la app es usable desde 320px (iPhone SE)
+---------------------------------------------------------- */
+html {
+  min-width: 320px;
+}
+
+/* ----------------------------------------------------------
+   IMÁGENES RESPONSIVAS
+   Por defecto las imágenes respetan su tamaño original.
+   Con este reset nunca se salen de su contenedor.
+---------------------------------------------------------- */
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ----------------------------------------------------------
+   MODO DE COLOR
+   Forzamos light mode. Si en el futuro se implementa
+   dark mode, se controla desde aquí con prefers-color-scheme.
+---------------------------------------------------------- */
+:root {
+  color-scheme: light;
 }

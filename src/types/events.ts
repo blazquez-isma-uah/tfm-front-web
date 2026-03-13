@@ -32,8 +32,8 @@ export interface EventCreateRequestDTO {
 export interface CalendarEventItemDTO {
     id: string
     title: string
-    startAt: string // ISO-8601 Instant (UTC)
-    endAt: string // ISO-8601 Instant (UTC)
+    start: string // ISO-8601 Instant (UTC)
+    end: string   // ISO-8601 Instant (UTC)
     allDay: boolean
     type: EventType
     status: EventStatus

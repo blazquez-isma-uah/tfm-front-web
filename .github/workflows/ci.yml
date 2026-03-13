@@ -1,0 +1,36 @@
+name: CI - Build
+
+# Ejecuta el pipeline en cada push o PR sobre las ramas principales.
+# Verifica que la aplicación React compila sin errores de TypeScript ni de Vite.
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Configura Node.js con caché de dependencias npm.
+      # El caché evita reinstalar node_modules en cada ejecución.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # Instala dependencias de forma reproducible usando el lockfile.
+      # npm ci es más estricto que npm install: falla si package-lock.json
+      # no está sincronizado con package.json, lo que garantiza builds deterministas.
+      - name: Install dependencies
+        run: npm ci
+
+      # Ejecuta el build de producción con Vite + TypeScript.
+      # Si hay errores de tipos o de compilación, este paso falla
+      # y el PR queda bloqueado, evitando mergear código roto.
+      - name: Build
+        run: npm run build

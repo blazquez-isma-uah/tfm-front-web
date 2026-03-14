@@ -124,7 +124,7 @@ export function EventDetailCardComplete({
                                 padding: '0.6rem 0.9rem',
                                 border: '1px solid var(--border-light)',
                                 borderRadius: 'var(--radius-md)',
-                                backgroundColor: 'var(--color-surface)',
+                                backgroundColor: 'var(--surface-subtle)',
                                 gap: 'var(--space-3)',
                             }}
                         >

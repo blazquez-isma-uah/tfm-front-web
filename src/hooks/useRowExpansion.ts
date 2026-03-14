@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 /**
  * useRowExpansion — Encapsula la lógica de expansión/colapso de filas en tablas.
@@ -32,13 +32,31 @@ export function useRowExpansion<T = string>(): RowExpansionControl<T> {
     // Estado: ID de la fila expandida (null si ninguna) y flag de animación de cierre
     const [expandedId, setExpandedId] = useState<T | null>(null)
     const [isClosing, setIsClosing] = useState(false)
+    
+    // Ref para guardar el timeoutId y poder cancelarlo si es necesario
+    const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    // Limpia cualquier timeout pendiente cuando el componente se desmonta
+    useEffect(() => {
+        return () => {
+            if (timeoutIdRef.current) {
+                clearTimeout(timeoutIdRef.current)
+            }
+        }
+    }, [])
 
     // Cierra la fila expandida con animación (250ms)
     const close = useCallback(() => {
+        // Cancela cualquier cierre en curso para evitar múltiples timeouts
+        if (timeoutIdRef.current) {
+            clearTimeout(timeoutIdRef.current)
+        }
+        
         setIsClosing(true)
-        setTimeout(() => {
+        timeoutIdRef.current = setTimeout(() => {
             setExpandedId(null)
             setIsClosing(false)
+            timeoutIdRef.current = null
         }, ANIMATION_DURATION_MS)
     }, [])
 
@@ -54,13 +72,25 @@ export function useRowExpansion<T = string>(): RowExpansionControl<T> {
     const toggle = useCallback((id: T) => {
         if (expandedId === id) {
             // Misma fila: colapsar con animación
+            // Cancela cualquier cierre previo para evitar múltiples timeouts
+            if (timeoutIdRef.current) {
+                clearTimeout(timeoutIdRef.current)
+            }
+            
             setIsClosing(true)
-            setTimeout(() => {
+            timeoutIdRef.current = setTimeout(() => {
                 setExpandedId(null)
                 setIsClosing(false)
+                timeoutIdRef.current = null
             }, ANIMATION_DURATION_MS)
         } else {
             // Fila diferente: expandir inmediatamente
+            // Cancela cualquier cierre en curso
+            if (timeoutIdRef.current) {
+                clearTimeout(timeoutIdRef.current)
+                timeoutIdRef.current = null
+            }
+            
             setIsClosing(false)
             setExpandedId(id)
         }

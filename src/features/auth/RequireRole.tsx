@@ -35,14 +35,14 @@ function RequireRole({ role, children, redirectTo }: RequireRoleProps) {
   // Muestra un toast cuando detectamos falta de permisos, antes de redirigir.
   // Se usa un ref para evitar mostrar el toast múltiples veces si el componente
   // se re-renderiza antes de que el Navigate tome efecto.
-  if (!isLoading && !hasRole(role) && !toastShownRef.current) {
-    toastShownRef.current = true
-    // setTimeout(..., 0): ejecuta en el siguiente tick del event loop para evitar
-    // el warning de React sobre actualizar estado (del ToastContext) durante render.
-    setTimeout(() => {
+  // Se ejecuta en useEffect para evitar side-effects durante render,
+  // incluso en React 18+ con StrictMode.
+  useEffect(() => {
+    if (!isLoading && !hasRole(role) && !toastShownRef.current) {
+      toastShownRef.current = true
       showToast('No tienes permisos para acceder a esta sección', 'warning')
-    }, 0)
-  }
+    }
+  }, [isLoading, role, showToast])
 
   // Limpia el flag cuando el componente se desmonta, para que si el usuario
   // vuelve más tarde, el toast pueda mostrarse de nuevo si sigue sin permisos.

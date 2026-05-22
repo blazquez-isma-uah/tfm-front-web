@@ -11,6 +11,7 @@ import {
     translateResponseType,
     translateSurveyType,
 } from '../../utils/surveyTranslations'
+import { EventSelectOptions } from '../../components/EventSelectOptions'
 import '../../styles/common.css'
 
 type SurveyFormFields = {
@@ -180,9 +181,7 @@ export function SurveyForm({
                         className={`select-base${errors.eventId ? ' input--error' : ''}`}
                     >
                         <option value="">Selecciona un evento</option>
-                        {availableEvents.map(evt => (
-                            <option key={evt.id} value={evt.id}>{evt.title}</option>
-                        ))}
+                        <EventSelectOptions events={availableEvents} />
                     </select>
                     {errors.eventId && <span className="field-error">{errors.eventId}</span>}
                 </div>

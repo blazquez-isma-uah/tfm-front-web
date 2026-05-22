@@ -216,10 +216,12 @@ function MyEventsPage() {
             setError(null)
             const now = new Date().toISOString()
             const surveySortField = sorting.field === 'title' ? 'title' : 'opensAt'
+            // Buscar encuestas NO respondidas de tipo ATTENDANCE
+            // que cierren después de ahora (pueden estar abiertas o por abrir)
             const surveysResponse = await getMyNotAnsweredSurveys(
                 {
                     surveyType: 'ATTENDANCE', status: 'OPEN',
-                    opensTo: now, closesFrom: now,
+                    closesFrom: now,  // Solo incluir encuestas que cierren en el futuro
                     page: pagination.page, size: pagination.size,
                     sort: [`${surveySortField},${sorting.direction}`],
                 },

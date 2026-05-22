@@ -2,6 +2,7 @@ import type { FormEvent, ReactNode } from 'react'
 import type { SurveyStatus } from '../../types/surveys'
 import type { EventDTO } from '../../types/events'
 import { SearchFiltersPanel } from '../../components/SearchFiltersPanel'
+import { EventSelectOptions } from '../../components/EventSelectOptions'
 import { translateSurveyStatus } from '../../utils/surveyTranslations'
 import '../../styles/common.css'
 
@@ -104,9 +105,7 @@ export function SurveyFiltersPanel({
                             disabled={loadingOptions}
                         >
                             <option value="">Todos</option>
-                            {availableEvents.map(evt => (
-                                <option key={evt.id} value={evt.id}>{evt.title}</option>
-                            ))}
+                            <EventSelectOptions events={availableEvents} />
                         </select>
                     </div>
                     <div className="form-field">

@@ -16,7 +16,7 @@ type RequireAuthProps = {
  * - RequireRole: verifica autenticación + rol específico (¿es ADMIN?).
  *
  * Renderiza un spinner durante isLoading para evitar redirecciones
- * incorrectas. Si proveedor de identidad de identidad aún está inicializando, isAuthenticated
+ * incorrectas. Si proveedor de identidad aún está inicializando, isAuthenticated
  * puede ser false temporalmente aunque el usuario tenga sesión.
  * Esperar a que termine la inicialización garantiza decisiones correctas.
  */

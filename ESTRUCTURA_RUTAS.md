@@ -284,7 +284,7 @@ GET    /api/instruments/{id}/users         → getInstrumentUsers(id)
 
 ```
 GET    /api/roles                          → getAllRoles()
-       Retorna: KeycloakRoleResponse[]
+       Retorna: RoleResponse []
 ```
 
 ---

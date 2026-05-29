@@ -16,7 +16,7 @@ type RequireAuthProps = {
  * - RequireRole: verifica autenticación + rol específico (¿es ADMIN?).
  *
  * Renderiza un spinner durante isLoading para evitar redirecciones
- * incorrectas. Si Keycloak aún está inicializando, isAuthenticated
+ * incorrectas. Si proveedor de identidad aún está inicializando, isAuthenticated
  * puede ser false temporalmente aunque el usuario tenga sesión.
  * Esperar a que termine la inicialización garantiza decisiones correctas.
  */
@@ -24,7 +24,7 @@ function RequireAuth({ children }: RequireAuthProps) {
   const { isLoading, isAuthenticated } = useAuth()
   const location = useLocation()
 
-  // Mientras Keycloak se está inicializando, muestra un mensaje de carga.
+  // Mientras proveedor de identidad se está inicializando, muestra un mensaje de carga.
   // Esto evita redirigir al login antes de saber si el usuario tiene sesión.
   if (isLoading) {
     return <div style={{ padding: '2rem' }}>Cargando sesión...</div>
@@ -32,7 +32,7 @@ function RequireAuth({ children }: RequireAuthProps) {
 
   // Si no está autenticado, guarda la ruta actual y redirige al login
   if (!isAuthenticated) {
-    // sessionStorage sobrevive al redirect externo de Keycloak, a diferencia
+    // sessionStorage sobrevive al redirect externo del proveedor de identidad, a diferencia
     // del location.state de React Router que se pierde.
     if (location.pathname !== '/login') {
       sessionStorage.setItem('redirectAfterLogin', location.pathname)

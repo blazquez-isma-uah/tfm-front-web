@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import type { UserCreatePayload } from '../../api/usersApi'
-import type { KeycloakRoleResponse } from '../../types/roles'
+import type { RoleResponse } from '../../types/roles'
 import { useFormValidation, rules } from '../../hooks/useFormValidation'
 import '../../styles/common.css'
 
@@ -25,7 +25,7 @@ const VALIDATION_RULES = {
 
 interface UserCreateFormProps {
   createPayload: UserCreatePayload
-  roles: KeycloakRoleResponse[]
+  roles: RoleResponse[]
   onFieldChange: (field: keyof UserCreatePayload, value: string) => void
   onToggleRole: (roleName: string) => void
   onSubmit: (e: FormEvent) => void

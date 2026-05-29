@@ -10,7 +10,7 @@ import {
 import { getAllInstruments, setUserInstruments } from '../../api/instrumentsApi'
 import { getAllRoles } from '../../api/rolesApi'
 import type { UserDTO } from '../../types/users'
-import type { KeycloakRoleResponse } from '../../types/roles'
+import type { RoleResponse } from '../../types/roles'
 import type { InstrumentGroup } from '../../utils/instrumentUtils'
 import { groupInstrumentsByInitial } from '../../utils/instrumentUtils'
 import { formatDate } from '../../utils/date'
@@ -70,7 +70,7 @@ function UsersPage() {
     const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<number[]>([])
     const [managingRoles, setManagingRoles]                 = useState(false)
     const [selectedRoleNames, setSelectedRoleNames]         = useState<string[]>([])
-    const [roles, setRoles]                                 = useState<KeycloakRoleResponse[]>([])
+    const [roles, setRoles]                                 = useState<RoleResponse[]>([])
     const [rolesLoading, setRolesLoading]                   = useState(false)
 
     // Filtros visibles (UI)

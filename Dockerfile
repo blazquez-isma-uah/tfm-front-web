@@ -10,7 +10,7 @@ RUN npm ci
 
 # Copia el código fuente y compila
 COPY . .
-RUN npm run build
+RUN npm run build:docker
 # El resultado es /app/dist — HTML + JS + CSS estáticos listos para servir
 
 # ---------- Runtime stage ----------

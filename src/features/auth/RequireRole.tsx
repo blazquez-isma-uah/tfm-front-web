@@ -20,7 +20,7 @@ type RequireRoleProps = {
  * - RequireRole: verifica rol específico (¿es ADMIN?, ¿es MUSICIAN?).
  *
  * Renderiza null durante isLoading para evitar el flash de contenido
- * o de mensajes de error antes de que Keycloak haya terminado de inicializar.
+ * o de mensajes de error antes de que proveedor de identidad haya terminado de inicializar.
  * Si hasRole() se invoca mientras isLoading es true, puede devolver false
  * incorrectamente porque el token aún no está disponible.
  *
@@ -52,7 +52,7 @@ function RequireRole({ role, children, redirectTo }: RequireRoleProps) {
     }
   }, [])
 
-  // Mientras Keycloak se está inicializando, no renderiza nada.
+  // Mientras proveedor de identidad se está inicializando, no renderiza nada.
   // Esto evita el flash de contenido o mensajes de error antes de saber
   // si el usuario tiene el rol requerido.
   if (isLoading) {

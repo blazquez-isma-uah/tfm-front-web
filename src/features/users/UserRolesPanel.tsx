@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import type { UserDTO } from '../../types/users'
-import type { KeycloakRoleResponse } from '../../types/roles'
+import type { RoleResponse } from '../../types/roles'
 import '../../styles/common.css'
 import { SaveIcon, CancelIcon } from '../../components/Icons'
 
@@ -13,7 +13,7 @@ import { SaveIcon, CancelIcon } from '../../components/Icons'
 
 interface UserRolesPanelProps {
   selectedUser: UserDTO
-  roles: KeycloakRoleResponse[]
+  roles: RoleResponse[]
   selectedRoleNames: string[]
   onToggleRole: (roleName: string) => void
   onSubmit: (e: FormEvent) => void

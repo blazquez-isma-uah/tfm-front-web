@@ -59,6 +59,7 @@ export const StaticDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Solo cargamos cuando el usuario está autenticado y tenemos token.
     // Si cierra sesión (isAuthenticated=false), reseteamos los datos.
     if (!isAuthenticated || !token) {
+      setIsLoading(false)
       setRoles([]); setEventTypes([]); setEventStatuses([])
       setEventVisibilities([]); setSurveyStatuses([]); setResponseTypes([])
       setYesNoMaybeAnswers([]); setSurveyTypes([])

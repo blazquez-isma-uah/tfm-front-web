@@ -71,10 +71,7 @@ export const StaticDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setIsLoading(true)
       try {
         // Todas las llamadas en paralelo para minimizar la latencia total.
-        const [
-          rolesData, typesData, statusesData, visibilitiesData,
-          surveyStatusesData, responseTypesData, yesNoData, surveyTypesData,
-        ] = await Promise.all([
+        const results = await Promise.allSettled([
           getAllRoles(token),
           getAvailableEventTypes(token),
           getAvailableEventStatuses(token),
@@ -84,16 +81,22 @@ export const StaticDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           getAvailableYesNoMaybeAnswers(token),
           getAvailableSurveyTypes(token),
         ])
+
         if (cancelled) return
-        setRoles(rolesData)
-        setEventTypes(typesData)
-        setEventStatuses(statusesData)
-        setEventVisibilities(visibilitiesData)
-        setSurveyStatuses(surveyStatusesData)
-        setResponseTypes(responseTypesData)
-        setYesNoMaybeAnswers(yesNoData)
-        setSurveyTypes(surveyTypesData)
-      } catch (e) {
+
+        const [
+          rolesRes, typesRes, statusesRes, visibilitiesRes,
+          surveyStatusesRes, responseTypesRes, yesNoRes, surveyTypesRes,
+        ] = results
+
+        setRoles(rolesRes.status === 'fulfilled' ? rolesRes.value : [])
+        setEventTypes(typesRes.status === 'fulfilled' ? typesRes.value : [])
+        setEventStatuses(statusesRes.status === 'fulfilled' ? statusesRes.value : [])
+        setEventVisibilities(visibilitiesRes.status === 'fulfilled' ? visibilitiesRes.value : [])
+        setSurveyStatuses(surveyStatusesRes.status === 'fulfilled' ? surveyStatusesRes.value : [])
+        setResponseTypes(responseTypesRes.status === 'fulfilled' ? responseTypesRes.value : [])
+        setYesNoMaybeAnswers(yesNoRes.status === 'fulfilled' ? yesNoRes.value : [])
+        setSurveyTypes(surveyTypesRes.status === 'fulfilled' ? surveyTypesRes.value : [])
         console.error('Error cargando datos estáticos del sistema:', e)
       } finally {
         if (!cancelled) setIsLoading(false)

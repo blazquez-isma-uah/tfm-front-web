@@ -104,7 +104,7 @@ export const StaticDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
     load()
     return () => { cancelled = true }
-  }, [isAuthenticated, token])
+  }, [isAuthenticated]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const value: StaticDataContextValue = {
     roles, eventTypes, eventStatuses, eventVisibilities,

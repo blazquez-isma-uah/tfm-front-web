@@ -97,7 +97,7 @@ export const StaticDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setResponseTypes(responseTypesRes.status === 'fulfilled' ? responseTypesRes.value : [])
         setYesNoMaybeAnswers(yesNoRes.status === 'fulfilled' ? yesNoRes.value : [])
         setSurveyTypes(surveyTypesRes.status === 'fulfilled' ? surveyTypesRes.value : [])
-        console.error('Error cargando datos estáticos del sistema:', e)
+        if (results.some(r => r.status === 'rejected')) console.error('Error cargando datos estáticos del sistema:', results)
       } finally {
         if (!cancelled) setIsLoading(false)
       }

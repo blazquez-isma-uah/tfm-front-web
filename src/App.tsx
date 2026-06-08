@@ -13,6 +13,7 @@ import { AuthProvider } from './features/auth/AuthContext'
 import RequireAuth from './features/auth/RequireAuth'
 import RequireRole from './features/auth/RequireRole'
 import { ToastProvider } from './context/ToastContext'
+import { StaticDataProvider } from './context/StaticDataContext'
 
 /**
  * Orden de providers:
@@ -30,6 +31,7 @@ function App() {
   return (
     <ToastProvider>
       <AuthProvider>
+        <StaticDataProvider>
         <Routes>
           {/* Ruta pública */}
           <Route path="/login" element={<LoginPage />} />
@@ -61,6 +63,7 @@ function App() {
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </StaticDataProvider>
       </AuthProvider>
     </ToastProvider>
   )

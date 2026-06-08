@@ -11,9 +11,6 @@ import {
     closeSurvey,
     cancelSurvey,
     resetSurvey,
-    getAvailableSurveyStatuses,
-    getAvailableResponseTypes,
-    getAvailableSurveyTypes,
 } from '../../api/surveysApi'
 import { searchEventsPage } from '../../api/eventsApi'
 import type { EventDTO } from '../../types/events'
@@ -23,7 +20,6 @@ import type {
     UpdateSurveyRequestDTO,
     SurveySortableField,
     SurveyStatus,
-    SurveyType,
 } from '../../types/surveys'
 import { DataTable } from '../../components/DataTable'
 import { PaginationBar } from '../../components/PaginationBar'
@@ -39,6 +35,7 @@ import {
 } from '../../utils/surveyTranslations'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
 import { useToast } from '../../context/ToastContext'
+import { useStaticData } from '../../context/StaticDataContext'
 import { ErrorState } from '../../components/ErrorState'
 import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
@@ -122,9 +119,7 @@ function SurveysPage() {
     const [selectedSurvey, setSelectedSurvey] = useState<SurveyDTO | null>(null)
 
     // Opciones de selectores
-    const [surveyStatuses, setSurveyStatuses]   = useState<SurveyStatus[]>([])
-    const [responseTypes, setResponseTypes]     = useState<ResponseType[]>([])
-    const [surveyTypes, setSurveyTypes]         = useState<SurveyType[]>([])
+    const { surveyStatuses, responseTypes, surveyTypes } = useStaticData()
     const [availableEvents, setAvailableEvents] = useState<EventDTO[]>([])
     const [loadingOptions, setLoadingOptions]   = useState(false)
 
@@ -244,21 +239,13 @@ function SurveysPage() {
         }
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Cargar opciones de selectores
+    // Cargar eventos disponibles para el selector del formulario
     useEffect(() => {
         if (!token || !isAdmin) return
         const loadOptions = async () => {
             try {
                 setLoadingOptions(true)
-                const [statuses, responseTypesData, surveyTypesData, eventsData] = await Promise.all([
-                    getAvailableSurveyStatuses(token),
-                    getAvailableResponseTypes(token),
-                    getAvailableSurveyTypes(token),
-                    searchEventsPage({ page: 0, size: 1000 }, token),
-                ])
-                setSurveyStatuses(statuses as SurveyStatus[])
-                setResponseTypes(responseTypesData as ResponseType[])
-                setSurveyTypes(surveyTypesData as SurveyType[])
+                const eventsData = await searchEventsPage({ page: 0, size: 1000 }, token)
                 setAvailableEvents(eventsData.content ?? [])
             } catch (e) {
                 console.error('Error loading survey options:', e)

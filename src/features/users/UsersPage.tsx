@@ -8,9 +8,7 @@ import {
     type UserCreatePayload, setUserRoles,
 } from '../../api/usersApi'
 import { getAllInstruments, setUserInstruments } from '../../api/instrumentsApi'
-import { getAllRoles } from '../../api/rolesApi'
 import type { UserDTO } from '../../types/users'
-import type { RoleResponse } from '../../types/roles'
 import type { InstrumentGroup } from '../../utils/instrumentUtils'
 import { groupInstrumentsByInitial } from '../../utils/instrumentUtils'
 import { formatDate } from '../../utils/date'
@@ -26,6 +24,7 @@ import { UserInstrumentsPanel } from './UserInstrumentsPanel'
 import { EditIcon, TrashIcon, CheckIcon, CancelIcon } from '../../components/Icons'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
 import { useToast } from '../../context/ToastContext'
+import { useStaticData } from '../../context/StaticDataContext'
 import { ErrorState } from '../../components/ErrorState'
 import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
@@ -70,8 +69,8 @@ function UsersPage() {
     const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<number[]>([])
     const [managingRoles, setManagingRoles]                 = useState(false)
     const [selectedRoleNames, setSelectedRoleNames]         = useState<string[]>([])
-    const [roles, setRoles]                                 = useState<RoleResponse[]>([])
-    const [rolesLoading, setRolesLoading]                   = useState(false)
+
+    const { roles, isLoading: rolesLoading } = useStaticData()
 
     // Filtros visibles (UI)
     const [filterUsername, setFilterUsername]                 = useState('')
@@ -173,24 +172,6 @@ function UsersPage() {
     ]
 
     // ── Effects ───────────────────────────────────────────────────────────────
-
-    // Cargamos la lista de roles al montar y cuando cambian token/isAdmin.
-    // Si no hay autorización, salimos sin hacer llamadas a la API.
-    useEffect(() => {
-        if (!token || !isAdmin) return
-        let cancelled = false
-        const load = async () => {
-            try {
-                setRolesLoading(true)
-                const result = await getAllRoles(token)
-                if (!cancelled) setRoles(result)
-            } catch (e) {
-                if (!cancelled) console.error('Error cargando roles:', e)
-            } finally { if (!cancelled) setRolesLoading(false) }
-        }
-        load()
-        return () => { cancelled = true }
-    }, [token, isAdmin])
 
     // Cargamos usuarios cada vez que cambia paginación, ordenación o search*.
     // Estas dependencias son las que realmente alteran el resultado del listado.

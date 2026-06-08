@@ -3,9 +3,6 @@ import { useAuth } from '../auth/AuthContext'
 import {
     searchEventsPage,
     getEventById,
-    getAvailableEventTypes,
-    getAvailableEventStatuses,
-    getAvailableEventVisibilities,
     getCalendar,
     type EventSearchParams,
 } from '../../api/eventsApi'
@@ -32,6 +29,7 @@ import { EventFiltersPanel } from './EventFiltersPanel'
 import { EventCalendarView } from './EventCalendarView'
 import { usePagination, useSorting, useRowExpansion } from '../../hooks'
 import { ErrorState } from '../../components/ErrorState'
+import { useStaticData } from '../../context/StaticDataContext'
 import '../../styles/common.css'
 
 /**
@@ -100,10 +98,7 @@ function MyEventsPage() {
     const [currentMonth, setCurrentMonth]   = useState(new Date())
 
     // Opciones de selectores para la tab BUSQUEDA
-    const [eventTypes, setEventTypes]               = useState<EventType[]>([])
-    const [eventStatuses, setEventStatuses]         = useState<EventStatus[]>([])
-    const [eventVisibilities, setEventVisibilities] = useState<EventVisibility[]>([])
-    const [loadingOptions, setLoadingOptions]       = useState(false)
+    const { eventTypes, eventStatuses, eventVisibilities, isLoading: loadingOptions } = useStaticData()
 
     // Filtros visibles
     const [filterTitle, setFilterTitle]             = useState('')
@@ -139,29 +134,6 @@ function MyEventsPage() {
     ]
 
     // ── Effects ───────────────────────────────────────────────────────────────
-
-    // Opciones de selectores: solo necesarias en tab BUSQUEDA
-    useEffect(() => {
-        if (!token) return
-        const loadOptions = async () => {
-            try {
-                setLoadingOptions(true)
-                const [types, statuses, visibilities] = await Promise.all([
-                    getAvailableEventTypes(token),
-                    getAvailableEventStatuses(token),
-                    getAvailableEventVisibilities(token),
-                ])
-                setEventTypes(types)
-                setEventStatuses(statuses)
-                setEventVisibilities(visibilities)
-            } catch (e) {
-                console.error('Error loading options', e)
-            } finally {
-                setLoadingOptions(false)
-            }
-        }
-        loadOptions()
-    }, [token])
 
     useEffect(() => {
         if (!token) return

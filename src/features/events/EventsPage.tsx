@@ -6,9 +6,6 @@ import {
     createEvent,
     updateEvent,
     deleteEvent,
-    getAvailableEventTypes,
-    getAvailableEventStatuses,
-    getAvailableEventVisibilities,
     type EventSearchParams,
 } from '../../api/eventsApi'
 import type {
@@ -32,6 +29,7 @@ import { EventForm } from './EventForm'
 import { EditIcon, TrashIcon } from '../../components/Icons'
 import { usePagination, useSorting, useConfirmDialog, useRowExpansion } from '../../hooks'
 import { useToast } from '../../context/ToastContext'
+import { useStaticData } from '../../context/StaticDataContext'
 import { ErrorState } from '../../components/ErrorState'
 import { Spinner } from '../../components/Spinner'
 import '../../styles/common.css'
@@ -90,10 +88,7 @@ function EventsPage() {
     const [mode, setMode]                   = useState<ViewMode>('LIST')
     const [selectedEvent, setSelectedEvent] = useState<EventDTO | null>(null)
 
-    const [eventTypes, setEventTypes]               = useState<EventType[]>([])
-    const [eventStatuses, setEventStatuses]         = useState<EventStatus[]>([])
-    const [eventVisibilities, setEventVisibilities] = useState<EventVisibility[]>([])
-    const [loadingOptions, setLoadingOptions]       = useState(false)
+    const { eventTypes, eventStatuses, eventVisibilities, isLoading: loadingOptions } = useStaticData()
 
     // Filtros visibles
     const [filterTitle, setFilterTitle]             = useState('')
@@ -154,31 +149,6 @@ function EventsPage() {
     ]
 
     // ── Effects ───────────────────────────────────────────────────────────────
-
-    // Cargar opciones de tipos, estados y visibilidades al montar el componente.
-    // Se hace una única vez por token. Las opciones son necesarias para los
-    // selectores de filtros y para el formulario de creación/edición.
-    useEffect(() => {
-        if (!token) return
-        const loadOptions = async () => {
-            try {
-                setLoadingOptions(true)
-                const [types, statuses, visibilities] = await Promise.all([
-                    getAvailableEventTypes(token),
-                    getAvailableEventStatuses(token),
-                    getAvailableEventVisibilities(token),
-                ])
-                setEventTypes(types)
-                setEventStatuses(statuses)
-                setEventVisibilities(visibilities)
-            } catch (e) {
-                console.error('Error loading options', e)
-            } finally {
-                setLoadingOptions(false)
-            }
-        }
-        loadOptions()
-    }, [token])
 
     useEffect(() => {
         if (!token) return

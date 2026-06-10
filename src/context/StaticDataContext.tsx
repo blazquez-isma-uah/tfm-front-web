@@ -67,42 +67,39 @@ export const StaticDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     let cancelled = false
-    const load = async () => {
-      setIsLoading(true)
-      try {
-        // Todas las llamadas en paralelo para minimizar la latencia total.
-        const results = await Promise.allSettled([
-          getAllRoles(token),
-          getAvailableEventTypes(token),
-          getAvailableEventStatuses(token),
-          getAvailableEventVisibilities(token),
-          getAvailableSurveyStatuses(token),
-          getAvailableResponseTypes(token),
-          getAvailableYesNoMaybeAnswers(token),
-          getAvailableSurveyTypes(token),
-        ])
-
-        if (cancelled) return
-
-        const [
-          rolesRes, typesRes, statusesRes, visibilitiesRes,
-          surveyStatusesRes, responseTypesRes, yesNoRes, surveyTypesRes,
-        ] = results
-
-        setRoles(rolesRes.status === 'fulfilled' ? rolesRes.value : [])
-        setEventTypes(typesRes.status === 'fulfilled' ? typesRes.value : [])
-        setEventStatuses(statusesRes.status === 'fulfilled' ? statusesRes.value : [])
-        setEventVisibilities(visibilitiesRes.status === 'fulfilled' ? visibilitiesRes.value : [])
-        setSurveyStatuses(surveyStatusesRes.status === 'fulfilled' ? surveyStatusesRes.value : [])
-        setResponseTypes(responseTypesRes.status === 'fulfilled' ? responseTypesRes.value : [])
-        setYesNoMaybeAnswers(yesNoRes.status === 'fulfilled' ? yesNoRes.value : [])
-        setSurveyTypes(surveyTypesRes.status === 'fulfilled' ? surveyTypesRes.value : [])
-        if (results.some(r => r.status === 'rejected')) console.error('Error cargando datos estáticos del sistema:', results)
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
+    let pending = 8
+    const finishOne = () => {
+      pending -= 1
+      if (pending === 0 && !cancelled) setIsLoading(false)
     }
-    load()
+
+    // Carga un recurso con reintentos independientes y backoff creciente (3s, 6s, 9s).
+    const loadResource = <T,>(fetcher: () => Promise<T>, setter: (value: T) => void, label: string, attempt = 1): void => {
+      fetcher().then(value => {
+        if (cancelled) return
+        setter(value)
+        finishOne()
+      }).catch(err => {
+        if (cancelled) return
+        if (attempt < 3) {
+          setTimeout(() => { if (!cancelled) loadResource(fetcher, setter, label, attempt + 1) }, attempt * 3000)
+        } else {
+          console.error(`Error cargando ${label}: se agotaron los reintentos`, err)
+          finishOne()
+        }
+      })
+    }
+
+    setIsLoading(true)
+    loadResource(() => getAllRoles(token), setRoles, 'roles')
+    loadResource(() => getAvailableEventTypes(token), setEventTypes, 'tipos de evento')
+    loadResource(() => getAvailableEventStatuses(token), setEventStatuses, 'estados de evento')
+    loadResource(() => getAvailableEventVisibilities(token), setEventVisibilities, 'visibilidades de evento')
+    loadResource(() => getAvailableSurveyStatuses(token), setSurveyStatuses, 'estados de encuesta')
+    loadResource(() => getAvailableResponseTypes(token), setResponseTypes, 'tipos de respuesta')
+    loadResource(() => getAvailableYesNoMaybeAnswers(token), setYesNoMaybeAnswers, 'respuestas sí/no/quizás')
+    loadResource(() => getAvailableSurveyTypes(token), setSurveyTypes, 'tipos de encuesta')
+
     return () => { cancelled = true }
   }, [isAuthenticated]) // eslint-disable-line react-hooks/exhaustive-deps
 

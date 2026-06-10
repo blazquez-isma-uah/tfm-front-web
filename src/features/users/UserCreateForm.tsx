@@ -17,7 +17,7 @@ import '../../styles/common.css'
 const VALIDATION_RULES = {
   username:           [rules.required('El username es obligatorio'), rules.minLength(3, 'Mínimo 3 caracteres'), rules.maxLength(100, 'Máximo 100 caracteres'), rules.noSpaces('No puede contener espacios')],
   email:              [rules.required('El email es obligatorio'), rules.email('Formato de email no válido')],
-  password:           [rules.required('La contraseña es obligatoria'), rules.minLength(6, 'Mínimo 6 caracteres')],
+  password:           [rules.required('La contraseña es obligatoria'), rules.minPasswordLength('Mínimo 8 caracteres'), rules.passwordUppercase('Debe contener al menos una mayúscula'), rules.passwordLowercase('Debe contener al menos una minúscula'), rules.passwordNumber('Debe contener al menos un número')],
   firstName:          [rules.required('El nombre es obligatorio')],
   lastName:           [rules.required('El primer apellido es obligatorio')],
   profilePictureUrl:  [rules.url()],

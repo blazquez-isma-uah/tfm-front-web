@@ -80,6 +80,22 @@ export const rules = {
         return msg
       }
     },
+
+  // Mínimo 8 caracteres para contraseña
+  minPasswordLength: (msg = 'Mínimo 8 caracteres'): RuleFn =>
+    (v) => v.length < 8 ? msg : null,
+
+  // Al menos una mayúscula
+  passwordUppercase: (msg = 'Debe contener al menos una mayúscula'): RuleFn =>
+    (v) => !/[A-Z]/.test(v) ? msg : null,
+
+  // Al menos una minúscula
+  passwordLowercase: (msg = 'Debe contener al menos una minúscula'): RuleFn =>
+    (v) => !/[a-z]/.test(v) ? msg : null,
+
+  // Al menos un número
+  passwordNumber: (msg = 'Debe contener al menos un número'): RuleFn =>
+    (v) => !/[0-9]/.test(v) ? msg : null,
 }
 
 

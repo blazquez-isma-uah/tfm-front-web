@@ -166,7 +166,7 @@ function LoginPage() {
           <h1 className="login-title">El sistema está arrancando</h1>
           <p className="login-text">
             La base de datos está iniciando tras un período de inactividad.
-            Este proceso tarda entre 2 y 4 minutos. El acceso se abrirá
+            Este proceso puede tardar entre 5 y 10 minutos. El acceso se abrirá
             automáticamente en cuanto esté disponible.
           </p>
           <p className="login-status">

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 // ─── Imports Keycloak ─────────────────────────────────────────────────────────
 import keycloak from './keycloak'
@@ -33,6 +33,15 @@ const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart'] as cons
  * válido y aun así forzamos logout si no hay interacción real con la pantalla.
  */
 function useIdleLogout(onIdle: () => void, enabled: boolean) {
+  // Guardamos la última versión de onIdle en un ref para no depender de su
+  // identidad en el efecto principal. Sin esto, cualquier re-render que
+  // recree la función logout (p.ej. el refresco de sesión cada 20s) reinicia
+  // el temporizador de inactividad sin que haya actividad real del usuario.
+  const onIdleRef = useRef(onIdle)
+  useEffect(() => {
+    onIdleRef.current = onIdle
+  }, [onIdle])
+
   useEffect(() => {
     if (!enabled) return
 
@@ -40,7 +49,7 @@ function useIdleLogout(onIdle: () => void, enabled: boolean) {
 
     const resetTimer = () => {
       window.clearTimeout(timeoutId)
-      timeoutId = window.setTimeout(onIdle, IDLE_TIMEOUT_MS)
+      timeoutId = window.setTimeout(() => onIdleRef.current(), IDLE_TIMEOUT_MS)
     }
 
     ACTIVITY_EVENTS.forEach((evt) => window.addEventListener(evt, resetTimer, { passive: true }))
@@ -50,7 +59,7 @@ function useIdleLogout(onIdle: () => void, enabled: boolean) {
       window.clearTimeout(timeoutId)
       ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, resetTimer))
     }
-  }, [enabled, onIdle])
+  }, [enabled]) // ← ya no depende de onIdle
 }
 
 /**

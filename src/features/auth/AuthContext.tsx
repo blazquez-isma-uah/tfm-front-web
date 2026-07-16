@@ -16,6 +16,43 @@ import { Hub } from 'aws-amplify/utils'
 // ─── Selector de proveedor (resuelto en tiempo de compilación por Vite) ────────
 const AUTH_PROVIDER = import.meta.env.VITE_AUTH_PROVIDER ?? 'keycloak'
 
+
+// Tiempo de inactividad tras el cual se fuerza logout automático, 
+// independientemente de que el token siga siendo técnicamente válido.
+const IDLE_TIMEOUT_MINUTES = 15
+const IDLE_TIMEOUT_MS = IDLE_TIMEOUT_MINUTES * 60 * 1000
+
+// Eventos que cuentan como "actividad real" del usuario.
+// Se excluye mousemove deliberadamente: dispara con demasiada frecuencia
+// y no implica que el usuario esté realmente atendiendo a la pantalla.
+const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart'] as const
+
+/**
+ * useIdleLogout — cierra sesión tras IDLE_TIMEOUT_MS sin actividad del usuario.
+ * Independiente del refresco proactivo de token: el token puede seguir siendo
+ * válido y aun así forzamos logout si no hay interacción real con la pantalla.
+ */
+function useIdleLogout(onIdle: () => void, enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return
+
+    let timeoutId: number
+
+    const resetTimer = () => {
+      window.clearTimeout(timeoutId)
+      timeoutId = window.setTimeout(onIdle, IDLE_TIMEOUT_MS)
+    }
+
+    ACTIVITY_EVENTS.forEach((evt) => window.addEventListener(evt, resetTimer, { passive: true }))
+    resetTimer()
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, resetTimer))
+    }
+  }, [enabled, onIdle])
+}
+
 /**
  * Configuración de Amplify.
  * Se ejecuta una sola vez al cargar el módulo, solo en el perfil cognito.
@@ -122,6 +159,9 @@ const KeycloakAuthProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const login = () => keycloak.login({ redirectUri: window.location.origin + '/' })
   const logout = () => keycloak.logout({ redirectUri: window.location.origin + '/login' })
+
+  // Cierre de sesión automático tras IDLE_TIMEOUT_MS sin actividad del usuario.
+  useIdleLogout(logout, isAuthenticated)
 
   // Roles en Keycloak: realm_access.roles en el JWT
   const hasRole = (role: string) =>
@@ -247,6 +287,9 @@ const CognitoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // signOut() en Cognito con Hosted UI redirige al logout endpoint de Cognito,
   // que invalida la sesión y redirige a la logoutUrl configurada (/login).
   const logout = () => signOut().catch(console.error)
+
+  // Cierre de sesión automático tras IDLE_TIMEOUT_MS sin actividad del usuario.
+  useIdleLogout(logout, isAuthenticated)
 
   // Roles en Cognito: claim cognito:groups en el access token
   const hasRole = (role: string) => groups.includes(role)

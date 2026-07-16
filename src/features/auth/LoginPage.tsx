@@ -152,7 +152,7 @@ function LoginPage() {
     return (
       <div className="login-root">
         <div className="login-card">
-          <p className="login-status">Verificando el sistema...</p>
+          <p className="login-status">Verificando el sistema ...</p>
         </div>
       </div>
     )
@@ -166,7 +166,7 @@ function LoginPage() {
           <h1 className="login-title">El sistema está arrancando</h1>
           <p className="login-text">
             La base de datos está iniciando tras un período de inactividad.
-            Este proceso puede tardar entre 5 y 10 minutos. El acceso se abrirá
+            Este proceso puede tardar entre 1 y 5 minutos. El acceso se abrirá
             automáticamente en cuanto esté disponible.
           </p>
           <p className="login-status">
@@ -213,14 +213,11 @@ function LoginPage() {
 
         <p className="login-text">
           Para acceder a la plataforma inicia sesión con tus credenciales.
-          Serás redirigido al servidor de autenticación y, tras verificar
-          tu identidad, volverás automáticamente a la aplicación.
         </p>
 
         <div className="login-footer">
           <div>
             <div className="login-brand">TFM Bandas</div>
-            <div>Panel de gestión y asistencia</div>
           </div>
           <button className="login-button" onClick={handleLoginClick}>
             Iniciar sesión

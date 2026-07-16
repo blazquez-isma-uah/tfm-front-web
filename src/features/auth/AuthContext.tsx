@@ -19,7 +19,7 @@ const AUTH_PROVIDER = import.meta.env.VITE_AUTH_PROVIDER ?? 'keycloak'
 
 // Tiempo de inactividad tras el cual se fuerza logout automático, 
 // independientemente de que el token siga siendo técnicamente válido.
-const IDLE_TIMEOUT_MINUTES = 2
+const IDLE_TIMEOUT_MINUTES = 15
 const IDLE_TIMEOUT_MS = IDLE_TIMEOUT_MINUTES * 60 * 1000
 
 // Eventos que cuentan como "actividad real" del usuario.

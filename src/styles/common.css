@@ -1838,3 +1838,53 @@ input[type="date"] {
   padding: var(--space-6) 0;
   margin: 0;
 }
+
+/* UserDetailCard — header con avatar, título y acción de cierre.
+   Mobile First: apilado y centrado en base, fila de 3 columnas desde md. */
+.user-detail-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.user-detail-header__close-row {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.user-detail-header__identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.user-detail-header__title {
+  margin-bottom: 0;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .user-detail-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+
+  .user-detail-header__close-row {
+    width: auto;
+    /* En desktop pasa a ser la 3ª columna de la grid en vez de una fila propia */
+    order: 3;
+  }
+
+  .user-detail-header__identity {
+    order: 1;
+  }
+
+  .user-detail-header__title {
+    order: 2;
+  }
+}

@@ -103,12 +103,12 @@ function UsersPage() {
         email: '', username: '', password: '',
         firstName: '', lastName: '', secondLastName: '',
         birthDate: '', bandJoinDate: '', systemSignupDate: '',
-        phone: '', notes: '', profilePictureUrl: '',
+        phone: '', notes: '',
         instrumentIds: [], roles: [],
     })
     const [editPayload, setEditPayload] = useState<UserUpdatePayload>({
         email: '', firstName: '', lastName: '', secondLastName: '',
-        birthDate: '', bandJoinDate: '', phone: '', notes: '', profilePictureUrl: '',
+        birthDate: '', bandJoinDate: '', phone: '', notes: '',
     })
 
     // Badge: cuenta los filtros efectivos (search*), no los del formulario (filter*).
@@ -274,7 +274,7 @@ function UsersPage() {
         setCreatePayload({
             email: '', username: '', password: '', firstName: '', lastName: '',
             secondLastName: '', birthDate: '', bandJoinDate: '', systemSignupDate: '',
-            phone: '', notes: '', profilePictureUrl: '', instrumentIds: [], roles: [],
+            phone: '', notes: '', instrumentIds: [], roles: [],
         })
     }
 
@@ -291,7 +291,6 @@ function UsersPage() {
                 systemSignupDate: createPayload.systemSignupDate || undefined,
                 phone: createPayload.phone || undefined,
                 notes: createPayload.notes || undefined,
-                profilePictureUrl: createPayload.profilePictureUrl || undefined,
                 instrumentIds: createPayload.instrumentIds ?? [],
                 roles: createPayload.roles ?? [],
             }, token)
@@ -313,7 +312,6 @@ function UsersPage() {
             lastName: user.lastName ?? '', secondLastName: user.secondLastName ?? '',
             birthDate: user.birthDate ?? '', bandJoinDate: user.bandJoinDate ?? '',
             phone: user.phone ?? '', notes: user.notes ?? '',
-            profilePictureUrl: user.profilePictureUrl ?? '',
         })
         setMode('EDIT')
     }
@@ -331,7 +329,6 @@ function UsersPage() {
                 bandJoinDate: editPayload.bandJoinDate || undefined,
                 phone: editPayload.phone || undefined,
                 notes: editPayload.notes || undefined,
-                profilePictureUrl: editPayload.profilePictureUrl || undefined,
             }, selectedUser.version, token)
             setUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
             showToast('Usuario actualizado correctamente', 'success')
@@ -601,6 +598,7 @@ function UsersPage() {
                     onSubmit={handleSaveEdit}
                     onCancel={handleCancelForm}
                     saving={saving}
+                    token={token ?? undefined}
                 />
             )}
 

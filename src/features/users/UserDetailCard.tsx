@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
 import type { UserDTO } from '../../types/users'
+import { useAuth } from '../auth/AuthContext'
+import { getUserPictureUrl } from '../../api/usersApi'
 import { XMarkIcon } from '../../components/Icons'
 import { formatDate } from '../../utils/date'
 import '../../styles/common.css'
@@ -12,6 +15,10 @@ interface UserDetailCardProps {
   onManageRoles?: (user: UserDTO) => void
   showButtons?: boolean
   backButtonLabel?: string
+  // Solo se usan desde ProfilePage. Si no se pasan, la tarjeta es de solo lectura.
+  onPictureFileSelected?: (file: File) => void
+  pictureUploading?: boolean
+  pictureError?: string | null
 }
 
 /**
@@ -26,7 +33,23 @@ export function UserDetailCard({
   onManageInstruments,
   onManageRoles,
   showButtons = true,
+  onPictureFileSelected,
+  pictureUploading = false,
+  pictureError = null,
 }: UserDetailCardProps) {
+  const { token } = useAuth()
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!token || user.id == null) return
+    let cancelled = false
+    getUserPictureUrl(user.id, token)
+      .then((url) => { if (!cancelled) setPictureUrl(url) })
+      .catch(() => { if (!cancelled) setPictureUrl(null) }) // p.ej. 501 en local: sin foto, sin error visible
+    return () => { cancelled = true }
+  }, [user.id, token])
+
   const fullLastName = [user.lastName, user.secondLastName].filter(Boolean).join(' ')
 
   const instrumentsList =
@@ -48,14 +71,69 @@ export function UserDetailCard({
   return (
     <div className="card" style={{ marginTop: '1rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-        <div className="section-title" style={{ marginBottom: 0 }}>Detalle de usuario</div>
+      <div className="user-detail-header">
         {showButtons && onBack && (
-          <button type="button" className="button-secondary" onClick={onBack}>
-            <XMarkIcon /> Ocultar
-          </button>
+          <div className="user-detail-header__close-row">
+            <button type="button" className="button-secondary" onClick={onBack}>
+              <XMarkIcon /> Ocultar
+            </button>
+          </div>
         )}
+
+        <div className="user-detail-header__identity">
+            <div
+              style={{
+                width: 56, height: 56, borderRadius: '50%', overflow: 'hidden',
+                background: 'var(--color-gray-200)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}
+            >
+              {pictureUrl ? (
+                <img
+                  src={pictureUrl}
+                  alt="Foto de perfil"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={() => setPictureUrl(null)}
+                />
+              ) : (
+                <span style={{ fontSize: '1.2rem', color: 'var(--color-gray-500)' }}>
+                  {user.firstName?.[0]?.toUpperCase() ?? '?'}
+                </span>
+              )}
+            </div>            
+            {onPictureFileSelected && (
+              <>
+                <button
+                  type="button"
+                  className="button-secondary"
+                  style={{ padding: '0.3rem 0.75rem', fontSize: '0.85rem' }}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={pictureUploading}
+                >
+                  {pictureUploading ? 'Subiendo...' : 'Cambiar foto'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) onPictureFileSelected(file)
+                    e.target.value = ''
+                  }}
+                />
+              </>
+            )}
+
+        </div>
+        <div className="section-title user-detail-header__title">
+          Detalle de usuario
+        </div>        
       </div>
+      {onPictureFileSelected && pictureError && (
+        <p className="error-message" style={{ marginBottom: 'var(--space-4)' }}>{pictureError}</p>
+      )}
 
       {/* Sección: Identidad */}
       <div className="detail-section">

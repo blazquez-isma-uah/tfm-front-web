@@ -71,22 +71,16 @@ export function UserDetailCard({
   return (
     <div className="card" style={{ marginTop: '1rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'auto 1fr auto',
-            alignItems: 'center',
-            gap: 'var(--space-3)',
-            width: '100%',
-            marginBottom: 'var(--space-4)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)',
-            }}
-          >
+      <div className="user-detail-header">
+        {showButtons && onBack && (
+          <div className="user-detail-header__close-row">
+            <button type="button" className="button-secondary" onClick={onBack}>
+              <XMarkIcon /> Ocultar
+            </button>
+          </div>
+        )}
+
+        <div className="user-detail-header__identity">
             <div
               style={{
                 width: 56, height: 56, borderRadius: '50%', overflow: 'hidden',
@@ -131,18 +125,11 @@ export function UserDetailCard({
                 />
               </>
             )}
-          </div>
-          <div className="section-title" style={{ marginBottom: 0, textAlign: 'center' }}>
-            Detalle de usuario
-          </div>
-          <div style={{ minWidth: 130, display: 'flex', justifyContent: 'flex-end' }}>
-            {showButtons && onBack && (
-              <button type="button" className="button-secondary" onClick={onBack}>
-                <XMarkIcon /> Ocultar
-              </button>
-            )}
-          </div>
+
         </div>
+        <div className="section-title user-detail-header__title">
+          Detalle de usuario
+        </div>        
       </div>
       {onPictureFileSelected && pictureError && (
         <p className="error-message" style={{ marginBottom: 'var(--space-4)' }}>{pictureError}</p>

@@ -20,7 +20,6 @@ const VALIDATION_RULES = {
   password:           [rules.required('La contraseña es obligatoria'), rules.minPasswordLength('Mínimo 8 caracteres'), rules.passwordUppercase('Debe contener al menos una mayúscula'), rules.passwordLowercase('Debe contener al menos una minúscula'), rules.passwordNumber('Debe contener al menos un número')],
   firstName:          [rules.required('El nombre es obligatorio')],
   lastName:           [rules.required('El primer apellido es obligatorio')],
-  profilePictureUrl:  [rules.url()],
 }
 
 interface UserCreateFormProps {
@@ -169,16 +168,6 @@ export function UserCreateForm({
             value={createPayload.notes ?? ''}
             onChange={e => handleChange('notes', e.target.value)}
           />
-        </div>
-
-        <div className="form-field grid-full-width">
-          <label className="label-text">URL foto de perfil</label>
-          <input
-            type="text" className={`input-full-width${errors.profilePictureUrl ? ' input--error' : ''}`}
-            value={createPayload.profilePictureUrl ?? ''}
-            onChange={e => handleChange('profilePictureUrl', e.target.value)}
-          />
-          {errors.profilePictureUrl && <span className="field-error">{errors.profilePictureUrl}</span>}
         </div>
 
         {/* ── Roles ── */}

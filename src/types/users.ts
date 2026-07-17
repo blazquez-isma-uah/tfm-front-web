@@ -27,7 +27,6 @@ export interface MyProfileUpdateRequestDTO {
     secondLastName?: string
     phone?: string
     notes?: string
-    profilePictureUrl?: string
     birthDate?: string // YYYY-MM-DD
 }
 

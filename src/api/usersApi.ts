@@ -114,7 +114,6 @@ export interface UserCreatePayload {
   systemSignupDate?: string
   phone?: string
   notes?: string
-  profilePictureUrl?: string
   instrumentIds: number[]
   roles: string[]
 }
@@ -139,7 +138,6 @@ export interface UserUpdatePayload {
     bandJoinDate?: string
     phone?: string
     notes?: string
-    profilePictureUrl?: string
 }
 
 // PUT /api/users/{userId}
@@ -226,4 +224,92 @@ export async function setUserRoles(
         },
     )
     return response.data
+}
+
+// ==================== Profile Picture ====================
+
+// POST /api/users/picture/me/upload-url
+export async function getMyPictureUploadUrl(token?: string): Promise<string> {
+    const response = await api.post<{ uploadUrl: string }>(
+        '/api/users/picture/me/upload-url',
+        {},
+        { headers: authHeaders(token) },
+    )
+    return response.data.uploadUrl
+}
+
+// POST /api/users/picture/{userId}/upload-url  (ADMIN)
+export async function getUserPictureUploadUrl(userId: number, token?: string): Promise<string> {
+    const response = await api.post<{ uploadUrl: string }>(
+        `/api/users/picture/${userId}/upload-url`,
+        {},
+        { headers: authHeaders(token) },
+    )
+    return response.data.uploadUrl
+}
+
+// PUT /api/users/picture/me
+export async function confirmMyPictureUpload(token?: string): Promise<void> {
+    await api.put('/api/users/picture/me', {}, { headers: authHeaders(token) })
+}
+
+// PUT /api/users/picture/{userId}  (ADMIN)
+export async function confirmUserPictureUpload(userId: number, token?: string): Promise<void> {
+    await api.put(`/api/users/picture/${userId}`, {}, { headers: authHeaders(token) })
+}
+
+// GET /api/users/picture/me
+export async function getMyPictureUrl(token?: string): Promise<string | null> {
+    const response = await api.get<{ pictureUrl: string | null }>('/api/users/picture/me', {
+        headers: authHeaders(token),
+    })
+    return response.data.pictureUrl
+}
+
+// GET /api/users/picture/{userId}
+export async function getUserPictureUrl(userId: number, token?: string): Promise<string | null> {
+    const response = await api.get<{ pictureUrl: string | null }>(`/api/users/picture/${userId}`, {
+        headers: authHeaders(token),
+    })
+    return response.data.pictureUrl
+}
+
+
+// PUT contra la propia S3 -- fuera de la instancia `api`, sin cabeceras de autenticación ni baseURL: 
+// la presigned URL ya lleva su propia autorización incrustada en el query string.
+export async function uploadToPresignedUrl(uploadUrl: string, blob: Blob): Promise<void> {
+    const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob,
+    })
+    if (!response.ok) {
+        throw new Error(`Error al subir la imagen a S3 (status ${response.status})`)
+    }
+}
+
+/**
+ * Flujo completo de subida: comprime -> pide URL -> sube a S3 -> confirma.
+ * Reutilizable tanto por el propio usuario como por un ADMIN sobre otro usuario.
+ */
+export async function uploadProfilePicture(
+    file: File,
+    isAdmin: boolean,
+    targetUserId: number | undefined,
+    token?: string,
+): Promise<void> {
+    const { compressImageToJpeg } = await import('../utils/imageCompression')
+    const compressed = await compressImageToJpeg(file)
+
+    const uploadUrl = isAdmin && targetUserId !== undefined
+        ? await getUserPictureUploadUrl(targetUserId, token)
+        : await getMyPictureUploadUrl(token)
+
+    await uploadToPresignedUrl(uploadUrl, compressed)
+
+    if (isAdmin && targetUserId !== undefined) {
+        await confirmUserPictureUpload(targetUserId, token)
+    } else {
+        await confirmMyPictureUpload(token)
+    }
 }

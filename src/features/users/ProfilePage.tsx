@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthContext'
-import { getMyProfile, updateMyProfile, updateMyPassword } from '../../api/usersApi'
+import { getMyProfile, updateMyProfile, updateMyPassword, uploadProfilePicture } from '../../api/usersApi'
 import type { UserDTO, MyProfileUpdateRequestDTO, PasswordUpdateRequestDTO } from '../../types/users'
 import { UserDetailCard } from './UserDetailCard'
 import '../../styles/common.css'
@@ -30,7 +30,6 @@ function ProfilePage() {
         secondLastName: '',
         phone: '',
         notes: '',
-        profilePictureUrl: '',
         birthDate: '',
     })
 
@@ -55,7 +54,6 @@ function ProfilePage() {
                     secondLastName: profile.secondLastName || '',
                     phone: profile.phone || '',
                     notes: profile.notes || '',
-                    profilePictureUrl: profile.profilePictureUrl || '',
                     birthDate: profile.birthDate || '',
                 })
             } catch (err) {
@@ -94,7 +92,6 @@ function ProfilePage() {
                 secondLastName: user.secondLastName || '',
                 phone: user.phone || '',
                 notes: user.notes || '',
-                profilePictureUrl: user.profilePictureUrl || '',
                 birthDate: user.birthDate || '',
             })
         }
@@ -150,6 +147,32 @@ function ProfilePage() {
         }
     }
 
+    const [uploadingPicture, setUploadingPicture] = useState(false)
+    const [pictureError, setPictureError] = useState<string | null>(null)
+
+    const handlePictureChange = async (file: File) => {
+        if (!token) return
+
+        setPictureError(null)
+        setUploadingPicture(true)
+        try {
+            await uploadProfilePicture(file, false, undefined, token)
+            const refreshed = await getMyProfile(token)
+            setUser(refreshed)
+            setSuccessMessage('Foto de perfil actualizada')
+            setTimeout(() => setSuccessMessage(null), 3000)
+        } catch (err: any) {
+            if (err.response?.status === 501) {
+                setPictureError('La foto de perfil no está disponible en el entorno local')
+            } else {
+                console.error('Error uploading picture:', err)
+                setPictureError('No se pudo subir la foto de perfil')
+            }
+        } finally {
+            setUploadingPicture(false)
+        }
+    }
+
     // ── Estados de carga / error crítico ─────────────────────────
     if (loading) {
         return (
@@ -190,6 +213,9 @@ function ProfilePage() {
                     <UserDetailCard
                         user={user}
                         showButtons={false}
+                        onPictureFileSelected={handlePictureChange}
+                        pictureUploading={uploadingPicture}
+                        pictureError={pictureError}
                     />
                     <div className="button-row-1rem">
                         <button
@@ -258,15 +284,6 @@ function ProfilePage() {
                                 type="date"
                                 value={formProfile.birthDate}
                                 onChange={(e) => setFormProfile({ ...formProfile, birthDate: e.target.value })}
-                                className="input-full-width"
-                            />
-                        </div>
-                        <div className="form-field grid-full-width">
-                            <label className="label-text">URL foto de perfil</label>
-                            <input
-                                type="url"
-                                value={formProfile.profilePictureUrl}
-                                onChange={(e) => setFormProfile({ ...formProfile, profilePictureUrl: e.target.value })}
                                 className="input-full-width"
                             />
                         </div>

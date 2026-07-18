@@ -145,28 +145,18 @@ export function EventCalendarView({
         <div className="card">
             {/* Navegación de mes */}
             <div className="cal-nav">
-                <button type="button" className="button-secondary" onClick={onPrevMonth}>
-                    ← Anterior
+                <button type="button" className="button-secondary" onClick={onPrevMonth} aria-label="Mes anterior">
+                    ← <span className="cal-nav__prev-next-label">Anterior</span>
                 </button>
                 
                 {/* Selector de mes/año personalizado */}
                 <div style={{ position: 'relative' }} ref={pickerRef}>
                     <button
                         type="button"
-                        className="button-secondary"
+                        className="button-secondary cal-nav__month-btn"
                         onClick={() => {
                             setPickerYear(currentMonth.getFullYear())
                             setIsPickerOpen(!isPickerOpen)
-                        }}
-                        style={{
-                            fontSize: '1.1rem',
-                            fontWeight: '600',
-                            padding: '0.6rem 1.2rem',
-                            minWidth: '200px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '0.5rem'
                         }}
                     >
                         <span>{formatCurrentMonth()}</span>
@@ -280,8 +270,8 @@ export function EventCalendarView({
                     )}
                 </div>
 
-                <button type="button" className="button-secondary" onClick={onNextMonth}>
-                    Siguiente →
+                <button type="button" className="button-secondary" onClick={onNextMonth} aria-label="Mes siguiente">
+                    <span className="cal-nav__prev-next-label">Siguiente</span> →
                 </button>
             </div>
 

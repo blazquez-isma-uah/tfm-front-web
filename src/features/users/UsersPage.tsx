@@ -15,8 +15,8 @@ import { formatDate } from '../../utils/date'
 import { PaginationBar } from '../../components/PaginationBar'
 import { DataTable } from '../../components/DataTable'
 import { UserDetailCard } from './UserDetailCard'
+import { UserFiltersPanel } from './UserFiltersPanel'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { SearchFiltersPanel } from '../../components/SearchFiltersPanel'
 import { UserEditForm } from './UserEditForm'
 import { UserCreateForm } from './UserCreateForm'
 import { UserRolesPanel } from './UserRolesPanel'
@@ -475,89 +475,29 @@ function UsersPage() {
             <h1 className="page-title">Gestión de usuarios</h1>
 
             {!error && (
-            <SearchFiltersPanel
+            <UserFiltersPanel
+                filterUsername={filterUsername}                 setFilterUsername={setFilterUsername}
+                filterEmail={filterEmail}                         setFilterEmail={setFilterEmail}
+                filterActive={filterActive}                       setFilterActive={setFilterActive}
+                filterRole={filterRole}                           setFilterRole={setFilterRole}
+                filterFirstName={filterFirstName}                 setFilterFirstName={setFilterFirstName}
+                filterLastName={filterLastName}                   setFilterLastName={setFilterLastName}
+                filterSecondLastName={filterSecondLastName}       setFilterSecondLastName={setFilterSecondLastName}
+                filterBirthDateFrom={filterBirthDateFrom}         setFilterBirthDateFrom={setFilterBirthDateFrom}
+                filterBirthDateTo={filterBirthDateTo}             setFilterBirthDateTo={setFilterBirthDateTo}
+                filterBandJoinDateFrom={filterBandJoinDateFrom}   setFilterBandJoinDateFrom={setFilterBandJoinDateFrom}
+                filterBandJoinDateTo={filterBandJoinDateTo}       setFilterBandJoinDateTo={setFilterBandJoinDateTo}
+                roles={roles}
+                rolesLoading={rolesLoading}
                 activeFiltersCount={activeFiltersCount}
                 onSubmit={handleSearchSubmit}
+                onReset={handleResetFilters}
                 actionButton={
                     <button type="button" className="button-secondary" onClick={handleOpenCreateUser}>
                         + Nuevo usuario
                     </button>
                 }
-            >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '0.5rem', width: '100%' }}>
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Username</span>
-                            <input type="text" placeholder="Buscar por username" value={filterUsername} onChange={e => setFilterUsername(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Email</span>
-                            <input type="text" placeholder="Buscar por email" value={filterEmail} onChange={e => setFilterEmail(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Estado</span>
-                            <select value={filterActive} onChange={e => setFilterActive(e.target.value as 'all' | 'true' | 'false')} className="select-base">
-                                <option value="all">Todos</option>
-                                <option value="true">Activos</option>
-                                <option value="false">Inactivos</option>
-                            </select>
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">Rol</span>
-                            <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="select-base" disabled={rolesLoading}>
-                                <option value="">Todos</option>
-                                {roles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="search-grid">
-                        <div className="form-field">
-                            <span className="label-text">Nombre</span>
-                            <input type="text" placeholder="Nombre" value={filterFirstName} onChange={e => setFilterFirstName(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">1er apellido</span>
-                            <input type="text" placeholder="Primer apellido" value={filterLastName} onChange={e => setFilterLastName(e.target.value)} className="input-full-width" />
-                        </div>
-                        <div className="form-field">
-                            <span className="label-text">2º apellido</span>
-                            <input type="text" placeholder="Segundo apellido" value={filterSecondLastName} onChange={e => setFilterSecondLastName(e.target.value)} className="input-full-width" />
-                        </div>
-                    </div>
-
-                    <div className="search-date-row">
-                        <div className="search-date-group">
-                            <div className="form-field">
-                                <span className="label-text">Nacimiento (desde)</span>
-                                <input type="date" value={filterBirthDateFrom} onChange={e => setFilterBirthDateFrom(e.target.value)} className="input-full-width" />
-                            </div>
-                            <div className="form-field">
-                                <span className="label-text">Nacimiento (hasta)</span>
-                                <input type="date" value={filterBirthDateTo} onChange={e => setFilterBirthDateTo(e.target.value)} className="input-full-width" />
-                            </div>
-                        </div>
-                        <div className="search-date-group">
-                            <div className="form-field">
-                                <span className="label-text">Alta en banda (desde)</span>
-                                <input type="date" value={filterBandJoinDateFrom} onChange={e => setFilterBandJoinDateFrom(e.target.value)} className="input-full-width" />
-                            </div>
-                            <div className="form-field">
-                                <span className="label-text">Alta en banda (hasta)</span>
-                                <input type="date" value={filterBandJoinDateTo} onChange={e => setFilterBandJoinDateTo(e.target.value)} className="input-full-width" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="search-actions-row" style={{ justifyContent: 'space-between' }}>
-                    <button type="button" className="button-subtle" onClick={handleResetFilters}
-                        style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}>
-                        Resetear filtros
-                    </button>
-                    <button type="submit" className="button-primary">Buscar</button>
-                </div>
-            </SearchFiltersPanel>
+            />            
             )}
 
             {loading && <Spinner />}
@@ -581,7 +521,6 @@ function UsersPage() {
                                     onToggleActive={handleToggleActive}
                                     onManageInstruments={openManageInstruments}
                                     onManageRoles={openManageRoles}
-                                    backButtonLabel="Ocultar"
                                 />
                             )}
                         />

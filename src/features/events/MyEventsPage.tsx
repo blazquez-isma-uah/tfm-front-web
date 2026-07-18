@@ -395,7 +395,6 @@ function MyEventsPage() {
                                             onBack={() => {
                                                 rowExpansion.close()
                                             }}
-                                            backButtonLabel="Ocultar"
                                         />
                                     )}
                                 />

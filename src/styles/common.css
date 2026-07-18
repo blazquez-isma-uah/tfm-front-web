@@ -373,6 +373,17 @@ input[type="date"] {
   background-color: var(--color-gray-300);
 }
 
+/* HideDetailButton — texto "Ocultar" solo visible desde md (768px) */
+.hide-detail-button__label {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-detail-button__label {
+    display: inline;
+  }
+}
+
 .btn-subtle,
 .button-subtle {
   background-color: var(--color-gray-100);

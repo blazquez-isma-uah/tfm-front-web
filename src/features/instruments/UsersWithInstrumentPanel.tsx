@@ -102,7 +102,6 @@ export function UsersWithInstrumentPanel({
                   user={selectedUserDetail}
                   onBack={onBack}
                   showButtons={true}
-                  backButtonLabel="Ocultar"
                 />
               )
             }

@@ -474,7 +474,7 @@ function UsersPage() {
         <div className="page-container">
             <h1 className="page-title">Gestión de usuarios</h1>
 
-            {!error && (
+            {mode === 'LIST' && !error && (
             <UserFiltersPanel
                 filterUsername={filterUsername}                 setFilterUsername={setFilterUsername}
                 filterEmail={filterEmail}                         setFilterEmail={setFilterEmail}

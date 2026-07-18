@@ -7,13 +7,12 @@ import { searchSurveysPage, getMyResponse } from '../../api/surveysApi'
 import { useAuth } from '../auth/AuthContext'
 import { translateSurveyStatus } from '../../utils/surveyTranslations'
 import { Spinner } from '../../components/Spinner'
-import { XMarkIcon } from '../../components/Icons'
+import { HideDetailButton } from '../../components/HideDetailButton'
 import '../../styles/common.css'
 
 interface EventDetailCardCompleteProps {
     event: EventDTO
     onBack?: () => void
-    backButtonLabel?: string
 }
 
 /**
@@ -93,9 +92,7 @@ export function EventDetailCardComplete({
                     Detalle del evento
                 </div>
                 {onBack && (
-                    <button type="button" className="button-secondary" onClick={onBack}>
-                        <XMarkIcon /> Ocultar
-                    </button>
+                    <HideDetailButton onClick={onBack} />
                 )}
             </div>
 

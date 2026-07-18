@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import type { EventDTO } from '../../types/events'
 import { EventInfoSection } from './EventInfoSection'
-import { XMarkIcon } from '../../components/Icons'
+import { HideDetailButton } from '../../components/HideDetailButton'
 import '../../styles/common.css'
 
 interface EventDetailCardProps {
@@ -9,7 +9,6 @@ interface EventDetailCardProps {
     onBack?: () => void
     onEdit?: (event: EventDTO) => void
     showButtons?: boolean
-    backButtonLabel?: string
 }
 
 /**
@@ -67,9 +66,7 @@ export function EventDetailCard({
                     Detalle del evento
                 </div>
                 {showButtons && onBack && (
-                    <button type="button" className="button-secondary" onClick={onBack}>
-                        <XMarkIcon/> Ocultar
-                    </button>
+                    <HideDetailButton onClick={onBack} />
                 )}
             </div>
 

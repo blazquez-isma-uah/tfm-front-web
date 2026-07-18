@@ -361,7 +361,7 @@ function InstrumentsPage() {
     <div className="page-container">
       <h1 className="page-title">Gestión de instrumentos</h1>
 
-      {!error && (
+      {mode === 'LIST' && !error && (
       <SearchFiltersPanel
         activeFiltersCount={activeFiltersCount}
         onSubmit={handleSearchSubmit}

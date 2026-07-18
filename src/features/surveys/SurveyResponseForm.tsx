@@ -12,7 +12,7 @@ import { useAuth } from '../auth/AuthContext'
 import { extractErrorMessage } from '../../utils/errorHandler'
 import { translateYesNoMaybeAnswer } from '../../utils/surveyTranslations'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { XMarkIcon } from '../../components/Icons'
+import { HideDetailButton } from '../../components/HideDetailButton'
 import '../../styles/common.css'
 
 interface SurveyResponseFormProps {
@@ -288,9 +288,7 @@ export function SurveyResponseForm({ survey, onResponseSubmitted, onHide }: Surv
                     {hasResponse ? 'Actualizar respuesta' : 'Responder encuesta'}
                 </h3>
                 {onHide && (
-                    <button type="button" className="button-secondary" onClick={onHide}>
-                        <XMarkIcon /> Ocultar
-                    </button>
+                    <HideDetailButton onClick={onHide} />
                 )}
             </div>
 

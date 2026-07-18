@@ -590,7 +590,7 @@ function SurveysPage() {
                     <h1 className="page-title">Gestión de encuestas</h1>
 
                     {/* ── Buscador ── */}
-                    {!error && (
+                    {mode === 'LIST' && !error && (
                     <SurveyFiltersPanel
                         filterTitle={filterTitle}               setFilterTitle={setFilterTitle}
                         filterEventId={filterEventId}           setFilterEventId={setFilterEventId}
@@ -639,7 +639,6 @@ function SurveysPage() {
                                                 rowExpansion.close()
                                                 setTimeout(() => { setSelectedSurvey(null) }, 250)
                                             }}
-                                            backButtonLabel="Ocultar"
                                         />
                                     )}
                                 />

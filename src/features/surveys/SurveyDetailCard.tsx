@@ -12,7 +12,7 @@ import { getEventById } from '../../api/eventsApi'
 import { getUserByIamId } from '../../api/usersApi'
 import { useAuth } from '../auth/AuthContext'
 import { SurveyResponseForm } from './SurveyResponseForm'
-import { XMarkIcon } from '../../components/Icons'
+import { HideDetailButton } from '../../components/HideDetailButton'
 import '../../styles/common.css'
 
 interface SurveyDetailCardProps {
@@ -24,7 +24,6 @@ interface SurveyDetailCardProps {
   onCancel?: (survey: SurveyDTO) => void
   onViewResults?: (survey: SurveyDTO) => void
   showButtons?: boolean
-  backButtonLabel?: string
   compact?: boolean // Modo compacto para mostrar dentro de otros componentes
   showResponseForm?: boolean // Mostrar formulario para responder encuesta
   onResponseSubmitted?: () => void // Callback cuando se envía una respuesta
@@ -160,9 +159,7 @@ export function SurveyDetailCard({
           Detalle de la encuesta
         </div>
         {showButtons && onBack && (
-          <button type="button" className="button-secondary" onClick={onBack}>
-            <XMarkIcon /> Ocultar
-          </button>
+          <HideDetailButton onClick={onBack} />
         )}
       </div>
 

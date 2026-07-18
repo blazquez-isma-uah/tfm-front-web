@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { UserDTO } from '../../types/users'
 import { useAuth } from '../auth/AuthContext'
 import { getUserPictureUrl } from '../../api/usersApi'
-import { XMarkIcon } from '../../components/Icons'
+import { HideDetailButton } from '../../components/HideDetailButton'
 import { formatDate } from '../../utils/date'
 import '../../styles/common.css'
 
@@ -14,7 +14,6 @@ interface UserDetailCardProps {
   onManageInstruments?: (user: UserDTO) => void
   onManageRoles?: (user: UserDTO) => void
   showButtons?: boolean
-  backButtonLabel?: string
   // Solo se usan desde ProfilePage. Si no se pasan, la tarjeta es de solo lectura.
   onPictureFileSelected?: (file: File) => void
   pictureUploading?: boolean
@@ -74,9 +73,7 @@ export function UserDetailCard({
       <div className="user-detail-header">
         {showButtons && onBack && (
           <div className="user-detail-header__close-row">
-            <button type="button" className="button-secondary" onClick={onBack}>
-              <XMarkIcon /> Ocultar
-            </button>
+            <HideDetailButton onClick={onBack} />
           </div>
         )}
 

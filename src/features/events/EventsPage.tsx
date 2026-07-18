@@ -393,6 +393,7 @@ function EventsPage() {
 
             {!loading && !error && (
                 <>
+                    {mode === 'LIST' && (
                     <EventFiltersPanel
                         filterTitle={filterTitle}               setFilterTitle={setFilterTitle}
                         filterLocation={filterLocation}         setFilterLocation={setFilterLocation}
@@ -416,6 +417,7 @@ function EventsPage() {
                             </button>
                         }
                     />
+                    )}
 
                     {mode === 'LIST' && (
                         <>
@@ -435,7 +437,6 @@ function EventsPage() {
                                                 rowExpansion.close()
                                                 setTimeout(() => setSelectedEvent(null), 250)
                                             }}
-                                            backButtonLabel="Ocultar"
                                         />
                                     )}
                                 />

@@ -85,7 +85,6 @@ function SurveyExpandedRow({ survey, onBack, onResponseSubmitted }: SurveyExpand
             <SurveyDetailCard
                 survey={survey}
                 onBack={onBack}
-                backButtonLabel="Ocultar"
                 showResponseForm={showForm}
                 onResponseSubmitted={onResponseSubmitted}
                 onHideResponseForm={() => setShowForm(false)}

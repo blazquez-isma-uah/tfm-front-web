@@ -1616,31 +1616,32 @@ input[type="date"] {
   gap: 0;
   border-bottom: 2px solid var(--border-light);
   margin-bottom: var(--space-3);
-  /* Scroll horizontal en móvil si los tabs no caben */
-  overflow-x: auto;
-  scrollbar-width: none; /* Firefox: oculta scrollbar pero mantiene funcionalidad */
-  -ms-overflow-style: none;
-}
-
-.tab-nav::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
 }
 
 .tab-nav__item {
-  flex-shrink: 0; /* Los tabs no se encogen — se hace scroll si no caben */
+  /* Reparto proporcional: todos los tabs ocupan el mismo ancho disponible,
+     sin scroll horizontal. min-width: 0 es necesario para que flex-basis: 0
+     permita encoger el contenido por debajo de su ancho natural. */
+  flex: 1 1 0;
+  min-width: 0;  
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
   /* El borde inferior del tab está sobre el borde del contenedor.
      margin-bottom: -2px lo superpone para que el activo "rompa" la línea */
   margin-bottom: -2px;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-1);
   color: var(--text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   font-family: var(--font-family-base);
   cursor: pointer;
-  white-space: nowrap;
+  /* En vez de recortar el texto (ellipsis) o forzar scroll, dejamos que un
+     label largo se parta en 2 líneas dentro de su propia celda si hace
+     falta -- no se pierde información, y no afecta a los tabs vecinos. */
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
   transition: color var(--transition-fast),
               border-color var(--transition-fast);
 }
@@ -1648,6 +1649,8 @@ input[type="date"] {
 @media (min-width: 480px) {
   .tab-nav__item {
     padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
   }
 }
 

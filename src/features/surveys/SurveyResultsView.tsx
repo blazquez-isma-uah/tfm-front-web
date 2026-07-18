@@ -339,25 +339,27 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
       {/* Título */}
       <h1 className="page-title">Resultados: {survey.title}</h1>
 
-      {/* Navegación por tabs + botón volver alineados */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <nav className="tab-nav" style={{ marginBottom: 0 }} aria-label="Secciones de resultados">
-          {visibleTabs.map(tab => (
-            <button
-              key={tab}
-              type="button"
-              className={`tab-nav__item${activeTab === tab ? ' tab-nav__item--active' : ''}`}
-              onClick={() => setActiveTab(tab)}
-              aria-current={activeTab === tab ? 'page' : undefined}
-            >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </nav>
+      {/* Botón volver, propia fila, alineado a la derecha */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
         <button type="button" className="button-secondary" onClick={onBack}>
           Volver al listado
         </button>
       </div>
+
+      {/* Navegación por tabs, ancho completo, propia fila */}
+      <nav className="tab-nav" style={{ marginBottom: '1rem' }} aria-label="Secciones de resultados">
+        {visibleTabs.map(tab => (
+          <button
+            key={tab}
+            type="button"
+            className={`tab-nav__item${activeTab === tab ? ' tab-nav__item--active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+            aria-current={activeTab === tab ? 'page' : undefined}
+          >
+            {TAB_LABELS[tab]}
+          </button>
+        ))}
+      </nav>
 
       {/* ── Tab: Resumen ── */}
       {activeTab === 'SUMMARY' && (

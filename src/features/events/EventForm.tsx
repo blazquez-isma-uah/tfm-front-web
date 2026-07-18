@@ -136,7 +136,7 @@ export function EventForm({
             </h2>
 
             {/* Línea 1: Título, Localización */}
-            <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
+            <div className="form-grid form-grid--event-2col" style={{ marginBottom: '0.75rem' }}>
                 <div className="form-field">
                     <label className="label-text">Título *</label>
                     <input
@@ -202,7 +202,7 @@ export function EventForm({
             </div>
 
             {/* Línea 3: Fecha inicio, Fecha fin */}
-            <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.75rem' }}>
+            <div className="form-grid form-grid--event-2col" style={{ marginBottom: '0.75rem' }}>
                 <div className="form-field">
                     <label className="label-text">Fecha inicio *</label>
                     <input

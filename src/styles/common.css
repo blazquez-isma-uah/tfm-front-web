@@ -244,6 +244,36 @@
   }
 }
 
+/* Grids con proporciones fijas específicas de un formulario -- 1 columna en
+   mobile (igual que .form-grid base), proporciones fijas solo desde 640px. */
+.form-grid--survey-line1,
+.form-grid--survey-line2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .form-grid--survey-line1 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .form-grid--survey-line2 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.form-grid--event-2col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .form-grid--event-2col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (min-width: 768px) {
   .detail-grid {
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

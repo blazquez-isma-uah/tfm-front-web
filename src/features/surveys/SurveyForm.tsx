@@ -141,7 +141,7 @@ export function SurveyForm({
             </h2>
 
             {/* Línea 1: Tipo de respuesta, Tipo de encuesta, Evento */}
-            <div className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '0.75rem' }}>
+            <div className="form-grid form-grid--survey-line1" style={{ marginBottom: '0.75rem' }}>
                 <div className="form-field">
                     <label className="label-text">Tipo de respuesta *</label>
                     <select
@@ -188,7 +188,7 @@ export function SurveyForm({
             </div>
 
             {/* Línea 2: Título (2 cols), Fecha apertura, Fecha cierre */}
-            <div className="form-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '0.75rem' }}>
+            <div className="form-grid form-grid--survey-line2" style={{ marginBottom: '0.75rem' }}>
                 <div className="form-field" style={{ gridColumn: 'span 2' }}>
                     <label className="label-text">Título *</label>
                     <input

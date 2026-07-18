@@ -116,52 +116,52 @@ export function EventDetailCardComplete({
                             key={survey.id}
                             style={{
                                 display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
+                                flexDirection: 'column',
                                 padding: '0.6rem 0.9rem',
                                 border: '1px solid var(--border-light)',
                                 borderRadius: 'var(--radius-md)',
                                 backgroundColor: 'var(--surface-subtle)',
-                                gap: 'var(--space-3)',
+                                gap: 'var(--space-2)',
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>
-                                <span style={{
-                                    fontWeight: 'var(--font-weight-medium)',
-                                    fontSize: 'var(--font-size-sm)',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}>
-                                    {survey.title}
-                                </span>
-                                <span 
+                            {/* Fila 1: título completo, sin truncar -- puede ocupar varias líneas */}
+                            <span style={{
+                                fontWeight: 'var(--font-weight-medium)',
+                                fontSize: 'var(--font-size-sm)',
+                                whiteSpace: 'normal',
+                                wordBreak: 'break-word',
+                            }}>
+                                {survey.title}
+                            </span>
+                            {/* Fila 2: badge de estado + acción, en extremos opuestos */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                <span
                                     className={
                                         survey.status === 'OPEN' ? 'badge badge--success' :
                                         survey.status === 'DRAFT' ? 'badge badge--info' :
                                         survey.status === 'CANCELLED' ? 'badge badge--error' :
                                         'badge badge--neutral'
-                                    } 
+                                    }
                                     style={{ flexShrink: 0 }}
                                 >
                                     {translateSurveyStatus(survey.status)}
                                 </span>
+                                <button
+                                    type="button"
+                                    className="button-primary"
+                                    style={{ flexShrink: 0, fontSize: 'var(--font-size-sm)', padding: '0.35rem 0.8rem' }}
+                                    onClick={() =>
+                                        navigate('/surveys', {
+                                            state: {
+                                                surveyId: survey.id,
+                                                tab: answeredSurveyIds.has(survey.id) ? 'ACTIVE' : 'PENDING',
+                                            },
+                                        })
+                                    }
+                                >
+                                    {answeredSurveyIds.has(survey.id) ? 'Ver respuesta' : 'Responder'}
+                                </button>
                             </div>
-                            <button
-                                type="button"
-                                className="button-primary"
-                                style={{ flexShrink: 0, fontSize: 'var(--font-size-sm)', padding: '0.35rem 0.8rem' }}
-                                onClick={() =>
-                                    navigate('/surveys', {
-                                        state: {
-                                            surveyId: survey.id,
-                                            tab: answeredSurveyIds.has(survey.id) ? 'ACTIVE' : 'PENDING',
-                                        },
-                                    })
-                                }
-                            >
-                                {answeredSurveyIds.has(survey.id) ? 'Ver respuesta' : 'Responder'}
-                            </button>
                         </div>
                     ))}
                 </div>

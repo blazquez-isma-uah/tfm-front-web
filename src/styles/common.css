@@ -995,6 +995,26 @@ input[type="date"] {
   font-size: var(--font-size-sm);
 }
 
+.dt-mobile-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.dt-mobile-sort {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.dt-mobile-sort__field {
+  flex: 1 1 auto;
+}
+
+.dt-mobile-sort__direction {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-3);
+}
+
 /* ── Card view (móvil < 480px) ──────────────────────────── */
 
 /*

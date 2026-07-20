@@ -105,17 +105,60 @@ export function DataTable<T, F extends string>({
     const dataColumns = columns.filter((c) => c.key !== 'actions')
     const actionsColumn = columns.find((c) => c.key === 'actions')
 
-    // Mensaje cuando no hay datos que mostrar
-    if (data.length === 0) {
-      return (
-        <p className="dt-card-empty">
-          No hay datos para los filtros actuales.
-        </p>
-      )
-    }
+    // Columnas ordenables: mismo criterio que decide qué cabeceras son
+    // clicables en la vista de tabla (col.sortable && col.sortField).
+    // El control de ordenación en móvil reutiliza exactamente esas mismas
+    // columnas y el mismo onSortChange -- no hay una lista de campos
+    // ordenables distinta para cada vista.
+    const sortableColumns = columns.filter((c) => c.sortable && c.sortField)
+    const showSortControl = sortableColumns.length > 0 && !!onSortChange
 
     return (
-      <ul className="dt-card-list" role="list">
+      <div className="dt-mobile-wrapper">
+        {showSortControl && (
+          <div className="dt-mobile-sort">
+            <select
+              className="select-base dt-mobile-sort__field"
+              value={sortState?.field ?? ''}
+              onChange={(e) => {
+                const field = e.target.value
+                if (field) onSortChange!(field as F)
+              }}
+              aria-label="Ordenar por"
+            >
+              <option value="" disabled>Ordenar por...</option>
+              {sortableColumns.map((col) => (
+                <option key={col.key} value={col.sortField as string}>
+                  {col.header}
+                </option>
+              ))}
+            </select>
+            {/* Solo visible con un campo ya activo: pulsar invierte la
+                dirección, igual que un segundo click sobre la misma
+                cabecera en la vista de tabla. */}
+            {sortState?.field && (
+              <button
+                type="button"
+                className="button-secondary dt-mobile-sort__direction"
+                onClick={() => onSortChange!(sortState.field as F)}
+                aria-label={
+                  sortState.direction === 'asc'
+                    ? 'Orden ascendente, pulsar para invertir'
+                    : 'Orden descendente, pulsar para invertir'
+                }
+              >
+                {sortState.direction === 'asc' ? '▲' : '▼'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {data.length === 0 ? (
+          <p className="dt-card-empty">
+            No hay datos para los filtros actuales.
+          </p>
+        ) : (
+        <ul className="dt-card-list" role="list">
         {data.map((row, idx) => {
           const rowId = resolveId(row, idx)
           const expanded = isRowExpanded(row, idx)
@@ -175,6 +218,8 @@ export function DataTable<T, F extends string>({
           )
         })}
       </ul>
+        )}
+      </div>
     )
   }
 

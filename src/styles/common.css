@@ -337,6 +337,11 @@ input[type="datetime-local"],
 input[type="date"] {
   width: 100%;
   box-sizing: border-box;
+  /* Safari/iOS: los controles nativos de fecha tienen un ancho mínimo
+     interno mayor que en Chrome/Blink. Sin min-width: 0, Safari ignora el
+     width: 100% del contenedor y fuerza su ancho nativo, desbordando la
+     celda de grid/flex que lo envuelve (no reproducible en Android). */
+  min-width: 0;
 }
 
 .textarea-base {

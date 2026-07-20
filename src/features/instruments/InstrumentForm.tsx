@@ -81,7 +81,7 @@ export function InstrumentForm({
             className={`input-full-width${errors.voice ? ' input--error' : ''}`}
             value={payload.voice ?? ''}
             onChange={e => handleChange('voice', e.target.value)}
-            placeholder="Ej: Soprano, Tenor…"
+            placeholder="Ej: Principal, 1, 2…"
           />
           {errors.voice && <span className="field-error">{errors.voice}</span>}
         </div>

@@ -189,7 +189,7 @@ export function SurveyForm({
 
             {/* Línea 2: Título (2 cols), Fecha apertura, Fecha cierre */}
             <div className="form-grid form-grid--survey-line2" style={{ marginBottom: '0.75rem' }}>
-                <div className="form-field" style={{ gridColumn: 'span 2' }}>
+                <div className="form-field form-grid--survey-title-field">
                     <label className="label-text">Título *</label>
                     <input
                         type="text"

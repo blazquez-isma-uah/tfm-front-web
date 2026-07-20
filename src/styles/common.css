@@ -260,6 +260,9 @@
   .form-grid--survey-line2 {
     grid-template-columns: repeat(4, 1fr);
   }
+  .form-grid--survey-title-field {
+    grid-column: span 2;
+  }
 }
 
 .form-grid--event-2col {

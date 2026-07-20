@@ -45,6 +45,14 @@ const TAB_LABELS: Record<ResultsTab, string> = {
   DETAILED:    'Respuestas detalladas',
 }
 
+// Mismos colores que ya se usan en la pestaña "Por instrumentos", para
+// mantener el mismo criterio visual entre ambos resúmenes.
+const ANSWER_COLORS: Record<YesNoMaybeAnswer, string> = {
+  YES:   '#059669', // verde
+  MAYBE: '#f59e0b', // ámbar
+  NO:    '#dc2626', // rojo
+}
+
 // ── Componente ────────────────────────────────────────────────────────────────
 
 /**
@@ -383,7 +391,12 @@ export function SurveyResultsView({ survey, onBack, token }: SurveyResultsViewPr
                     border: '1px solid #e5e7eb',
                   }}
                 >
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#111827' }}>
+                  <div style={{
+                    fontSize: '2rem',
+                    fontWeight: 'bold',
+                    marginBottom: '0.5rem',
+                    color: ANSWER_COLORS[answer as YesNoMaybeAnswer],
+                  }}>
                     {count}
                   </div>
                   <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>

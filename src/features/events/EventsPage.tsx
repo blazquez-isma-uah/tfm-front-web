@@ -386,7 +386,7 @@ function EventsPage() {
 
     return (
         <div className="page-container">
-            <h1 className="page-title">Administración de eventos</h1>
+            <h1 className="page-title">Gestión de eventos</h1>
 
             {loading && <Spinner />}
             {error   && <ErrorState message={error} onRetry={() => setSearchTrigger(prev => prev + 1)} />}

@@ -208,7 +208,7 @@ function LoginPage() {
   return (
     <div className="login-root">
       <div className="login-card">
-        <h1 className="login-title">Acceso a Sistema de gestión de bandas de música</h1>
+        <h1 className="login-title">Sistema de Gestión de Bandas de Música</h1>
 
         <p className="login-subtitle">
           Para acceder a la plataforma inicia sesión con tus credenciales.

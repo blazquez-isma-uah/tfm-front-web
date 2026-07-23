@@ -208,8 +208,7 @@ function LoginPage() {
   return (
     <div className="login-root">
       <div className="login-card">
-        <h1 className="login-title">Acceso a TFM Bandas</h1>
-        <p className="login-subtitle">Sistema de gestión de bandas de música</p>
+        <h1 className="login-title">Acceso a Sistema de gestión de bandas de música</h1>
 
         <p className="login-subtitle">
           Para acceder a la plataforma inicia sesión con tus credenciales.
